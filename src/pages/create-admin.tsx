@@ -333,7 +333,7 @@ export function CreateAdmin() {
               setInternalMemo("");
               setErrors({});
             }}
-            className="px-6 py-3 border border-slate-200 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors"
+            className="px-6 py-3 bg-white border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors"
           >
             초기화
           </button>
