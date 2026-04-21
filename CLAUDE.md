@@ -85,6 +85,15 @@ pages/페이지 컴포넌트  ──uses──►  features/<domain>/hooks.ts
 - 사이드바에 새 메뉴를 추가할 때는 `src/config/nav.ts`의 `MAIN_NAV` / `FOOTER_NAV`에 `requires` 권한을 함께 명시해야 자동 필터링된다.
 - 새 도메인을 추가할 때는 `features/<domain>/`에 `types.ts`(DTO+Model), `mapper.ts`, `api.ts`(mock/real 분기), `hooks.ts`(TanStack Query 래퍼), 필요 시 `schema.ts`를 세트로 만든다 — `features/auth/`가 레퍼런스.
 
+## 커밋 규칙
+
+- **기능 단위 / 수정 단위로 커밋을 쪼개서 쌓아나간다.** 여러 관심사를 한 커밋에 묶지 말 것. PR 리뷰 코멘트 반영도 항목별로 분리 커밋한다.
+- 작업 중 논리적으로 독립된 변경이 끝날 때마다 바로 커밋. 큰 작업이 끝난 뒤 한 번에 몰아 커밋하지 않는다 — 리뷰어가 diff를 의미 단위로 따라갈 수 있어야 한다.
+- 커밋 메시지 prefix는 Conventional Commits 계열을 쓴다: `feat:` / `fix:` / `refactor:` / `chore:` / `docs:` / `style:` / `test:`. 필요하면 `feat(auth):`처럼 스코프 병기.
+- 제목은 한국어 현재형 요약(50자 내외), 본문이 필요하면 공백 한 줄 뒤 **왜**를 적는다 — 무엇을 바꿨는지는 diff가 이미 보여준다.
+- 커밋 전 반드시 `pnpm typecheck`가 깨끗해야 한다. 타입 에러가 남은 채로 커밋하지 않는다.
+- 리베이스로 히스토리를 억지로 정리하기보다 **처음부터 작은 단위로 커밋**하는 쪽을 우선한다.
+
 ## Mock 로그인 계정 (`VITE_USE_MOCK=true`)
 
 | user_id | password | role |
