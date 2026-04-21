@@ -178,18 +178,20 @@ export function ReservationManagement() {
                 </td>
                 <td className="px-6 py-4">
                   <div className="flex items-center justify-center gap-2">
-                    <button
-                      className="p-2 bg-ds-primary-subtle text-ds-primary-pressed rounded-lg hover:bg-ds-blue-100 transition-colors"
+                    <a
+                      href={`tel:${reservation.contact.replace(/-/g, '')}`}
+                      className="inline-flex p-2 bg-ds-primary-subtle text-ds-primary-pressed rounded-lg hover:bg-ds-blue-100 transition-colors"
                       onClick={(e) => e.stopPropagation()}
                     >
                       <Phone size={16} />
-                    </button>
-                    <button
-                      className="p-2 bg-ds-success-subtle text-ds-success-pressed rounded-lg transition-colors"
+                    </a>
+                    <a
+                      href={`sms:${reservation.contact.replace(/-/g, '')}`}
+                      className="inline-flex p-2 bg-ds-success-subtle text-ds-success-pressed rounded-lg transition-colors"
                       onClick={(e) => e.stopPropagation()}
                     >
                       <MessageSquare size={16} />
-                    </button>
+                    </a>
                   </div>
                 </td>
               </tr>
@@ -244,14 +246,20 @@ export function ReservationManagement() {
                 <X size={18} />
                 취소
               </button>
-              <button className="px-4 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-ds-primary-pressed transition-colors flex items-center justify-center gap-2">
+              <a
+                href={`sms:${selectedReservation.contact.replace(/-/g, '')}`}
+                className="px-4 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-ds-primary-pressed transition-colors flex items-center justify-center gap-2"
+              >
                 <MessageSquare size={18} />
                 문자
-              </button>
-              <button className="px-4 py-3 bg-ds-secondary-a text-white rounded-lg hover:bg-ds-secondary-a-pressed transition-colors flex items-center justify-center gap-2">
+              </a>
+              <a
+                href={`tel:${selectedReservation.contact.replace(/-/g, '')}`}
+                className="px-4 py-3 bg-ds-secondary-a text-white rounded-lg hover:bg-ds-secondary-a-pressed transition-colors flex items-center justify-center gap-2"
+              >
                 <Phone size={18} />
                 전화
-              </button>
+              </a>
             </div>
           </div>
         </div>
