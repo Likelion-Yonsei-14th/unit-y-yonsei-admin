@@ -1,0 +1,423 @@
+/*
+ * 대동제 어드민 테마 — 멋쟁이사자처럼 연세대학교 14기 디자인 시스템 기반.
+ *
+ * 두 계층으로 구성:
+ *   1) 원시 토큰(raw tokens): 디자인 시스템의 모든 색상 값. --ds-* 프리픽스.
+ *   2) 시맨틱 토큰(semantic tokens): shadcn/ui가 기대하는 이름(--primary, --background 등).
+ *      원시 토큰을 참조하여 정의.
+ *
+ * 커스터마이징은 시맨틱 계층에서. 원시 토큰은 수정하지 말 것.
+ */
+
+@custom-variant dark (&:is(.dark *));
+
+/* ============================================================
+ * 1. 원시 토큰 (Design System Raw Tokens)
+ * ============================================================ */
+:root {
+  /* -------- Brand Colors -------- */
+
+  /* Primary (Blue) */
+  --ds-primary: #1e53ff;
+  --ds-primary-pressed: #153bb5;
+  --ds-primary-subtle: #e9eeff;
+
+  /* Secondary A (Violet) */
+  --ds-secondary-a: #7052ff;
+  --ds-secondary-a-pressed: #503ab5;
+  --ds-secondary-a-subtle: #f1eeff;
+
+  /* Secondary B (Pink) */
+  --ds-secondary-b: #ff40a5;
+  --ds-secondary-b-pressed: #b52d75;
+  --ds-secondary-b-subtle: #ffecf6;
+
+  /* -------- Text -------- */
+  --ds-text-primary: #1f242c;
+  --ds-text-secondary: #4a5568;
+  --ds-text-disabled: #acb1ba;
+  --ds-text-inverse: #ffffff;
+
+  /* -------- Background -------- */
+  --ds-bg-primary: #ffffff;
+  --ds-bg-secondary: #edeef0;
+  --ds-bg-tertiary: #c7cad0;
+
+  /* -------- Border -------- */
+  --ds-border-default: #edeef0;
+  --ds-border-strong: #c7cad0;
+  --ds-border-focus: #1e53ff;
+
+  /* -------- State: Error -------- */
+  --ds-error: #ff5a36;
+  --ds-error-pressed: #b52e10;
+  --ds-error-subtle: #fff0ec;
+
+  /* -------- State: Warning -------- */
+  --ds-warning: #ffb020;
+  --ds-warning-pressed: #b57000;
+  --ds-warning-subtle: #fff8e0;
+
+  /* -------- State: Success -------- */
+  --ds-success: #00c070;
+  --ds-success-pressed: #007a46;
+  --ds-success-subtle: #e0fff3;
+
+  /* -------- Gray Scale -------- */
+  --ds-gray-0: #ffffff;
+  --ds-gray-50: #edeef0;
+  --ds-gray-100: #c7cad0;
+  --ds-gray-200: #acb1ba;
+  --ds-gray-300: #868d9a;
+  --ds-gray-400: #6e7786;
+  --ds-gray-500: #4a5568;
+  --ds-gray-600: #434d5f;
+  --ds-gray-700: #353c4a;
+  --ds-gray-800: #292f39;
+  --ds-gray-900: #1f242c;
+
+  /* -------- Primary Blue Scale -------- */
+  --ds-blue-50: #e9eeff;
+  --ds-blue-100: #b9caff;
+  --ds-blue-200: #99b0ff;
+  --ds-blue-300: #688cff;
+  --ds-blue-400: #4875ff;
+  --ds-blue-500: #1e53ff; /* main */
+  --ds-blue-600: #1b4ce8;
+  --ds-blue-700: #153bb5;
+  --ds-blue-800: #112e8c;
+  --ds-blue-900: #0d236b;
+
+  /* -------- Secondary A Violet Scale -------- */
+  --ds-violet-50: #f1eeff;
+  --ds-violet-100: #d3c9ff;
+  --ds-violet-200: #bdafff;
+  --ds-violet-300: #9f8bff;
+  --ds-violet-400: #8d75ff;
+  --ds-violet-500: #7052ff; /* main */
+  --ds-violet-600: #664be8;
+  --ds-violet-700: #503ab5;
+  --ds-violet-800: #3e2d8c;
+  --ds-violet-900: #2f226b;
+
+  /* -------- Secondary B Pink Scale -------- */
+  --ds-pink-50: #ffecf6;
+  --ds-pink-100: #ffc4e3;
+  --ds-pink-200: #ffa7d6;
+  --ds-pink-300: #ff7fc3;
+  --ds-pink-400: #ff66b7;
+  --ds-pink-500: #ff40a5; /* main */
+  --ds-pink-600: #e83a96;
+  --ds-pink-700: #b52d75;
+  --ds-pink-800: #8c235b;
+  --ds-pink-900: #6b1b45;
+
+  /* -------- Typography Scale (px values as design system dictates) -------- */
+  --ds-text-display: 28px;
+  --ds-text-h1: 24px;
+  --ds-text-h2: 20px;
+  --ds-text-h3: 17px;
+  --ds-text-body-1: 15px;
+  --ds-text-body-2: 14px;
+  --ds-text-caption: 12px;
+  --ds-text-label: 11px;
+
+  --ds-leading-heading: 1.2;
+  --ds-leading-heading-tight: 1.3;
+  --ds-leading-body: 1.5;
+  --ds-tracking-default: -0.02em;
+
+  --ds-weight-regular: 400;
+  --ds-weight-medium: 500;
+  --ds-weight-semibold: 600;
+  --ds-weight-bold: 700;
+  --ds-weight-extrabold: 800;
+}
+
+/* ============================================================
+ * 2. 시맨틱 토큰 (shadcn/ui 호환)
+ *    -- shadcn 컴포넌트가 참조하는 이름. 원시 토큰에 매핑.
+ * ============================================================ */
+:root {
+  --font-size: 15px; /* design system body-1 기준 */
+
+  --background: var(--ds-bg-primary);
+  --foreground: var(--ds-text-primary);
+
+  --card: var(--ds-bg-primary);
+  --card-foreground: var(--ds-text-primary);
+
+  --popover: var(--ds-bg-primary);
+  --popover-foreground: var(--ds-text-primary);
+
+  /* 메인 브랜드 = Primary Blue (사용자 선택) */
+  --primary: var(--ds-primary);
+  --primary-foreground: var(--ds-text-inverse);
+
+  --secondary: var(--ds-primary-subtle);
+  --secondary-foreground: var(--ds-primary-pressed);
+
+  --muted: var(--ds-bg-secondary);
+  --muted-foreground: var(--ds-text-secondary);
+
+  --accent: var(--ds-primary-subtle);
+  --accent-foreground: var(--ds-primary-pressed);
+
+  --destructive: var(--ds-error);
+  --destructive-foreground: var(--ds-text-inverse);
+
+  --border: var(--ds-border-default);
+  --input: transparent;
+  --input-background: var(--ds-bg-secondary);
+  --switch-background: var(--ds-border-strong);
+
+  --font-weight-normal: var(--ds-weight-regular);
+  --font-weight-medium: var(--ds-weight-medium);
+
+  --ring: var(--ds-border-focus);
+
+  /* 차트 색상: 브랜드 컬러 기반 팔레트 */
+  --chart-1: var(--ds-blue-500);
+  --chart-2: var(--ds-violet-500);
+  --chart-3: var(--ds-pink-500);
+  --chart-4: var(--ds-success);
+  --chart-5: var(--ds-warning);
+
+  --radius: 0.625rem;
+
+  /* 사이드바 (shadcn sidebar 컴포넌트용) */
+  --sidebar: var(--ds-bg-primary);
+  --sidebar-foreground: var(--ds-text-primary);
+  --sidebar-primary: var(--ds-primary);
+  --sidebar-primary-foreground: var(--ds-text-inverse);
+  --sidebar-accent: var(--ds-primary-subtle);
+  --sidebar-accent-foreground: var(--ds-primary-pressed);
+  --sidebar-border: var(--ds-border-default);
+  --sidebar-ring: var(--ds-border-focus);
+}
+
+/* ============================================================
+ * 3. 다크 모드 (잠정: 디자인 시스템에 다크 토큰 미정의)
+ *    -- 디자인팀과 논의 후 확정 예정. 지금은 반전 스케일로 대응.
+ * ============================================================ */
+.dark {
+  --background: var(--ds-gray-900);
+  --foreground: var(--ds-gray-50);
+
+  --card: var(--ds-gray-800);
+  --card-foreground: var(--ds-gray-50);
+
+  --popover: var(--ds-gray-800);
+  --popover-foreground: var(--ds-gray-50);
+
+  --primary: var(--ds-blue-400);
+  --primary-foreground: var(--ds-gray-900);
+
+  --secondary: var(--ds-gray-700);
+  --secondary-foreground: var(--ds-gray-50);
+
+  --muted: var(--ds-gray-800);
+  --muted-foreground: var(--ds-gray-300);
+
+  --accent: var(--ds-gray-700);
+  --accent-foreground: var(--ds-gray-50);
+
+  --destructive: var(--ds-error);
+  --destructive-foreground: var(--ds-gray-50);
+
+  --border: var(--ds-gray-700);
+  --input: var(--ds-gray-700);
+  --input-background: var(--ds-gray-800);
+  --switch-background: var(--ds-gray-600);
+
+  --ring: var(--ds-blue-400);
+
+  --sidebar: var(--ds-gray-800);
+  --sidebar-foreground: var(--ds-gray-50);
+  --sidebar-primary: var(--ds-blue-400);
+  --sidebar-primary-foreground: var(--ds-gray-900);
+  --sidebar-accent: var(--ds-gray-700);
+  --sidebar-accent-foreground: var(--ds-gray-50);
+  --sidebar-border: var(--ds-gray-700);
+  --sidebar-ring: var(--ds-blue-400);
+}
+
+/* ============================================================
+ * 4. Tailwind v4 @theme — 원시/시맨틱 토큰을 유틸리티에 노출
+ *    -- bg-background, text-foreground 등 유틸리티 작동 지원
+ *    -- 원시 토큰은 bg-ds-blue-500 같은 식으로 접근 가능
+ * ============================================================ */
+@theme inline {
+  /* shadcn 시맨틱 */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-input-background: var(--input-background);
+  --color-switch-background: var(--switch-background);
+  --color-ring: var(--ring);
+
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  /* 디자인 시스템 원시 컬러 (유틸리티로 직접 접근 가능) */
+  --color-ds-primary: var(--ds-primary);
+  --color-ds-primary-pressed: var(--ds-primary-pressed);
+  --color-ds-primary-subtle: var(--ds-primary-subtle);
+
+  --color-ds-secondary-a: var(--ds-secondary-a);
+  --color-ds-secondary-a-pressed: var(--ds-secondary-a-pressed);
+  --color-ds-secondary-a-subtle: var(--ds-secondary-a-subtle);
+
+  --color-ds-secondary-b: var(--ds-secondary-b);
+  --color-ds-secondary-b-pressed: var(--ds-secondary-b-pressed);
+  --color-ds-secondary-b-subtle: var(--ds-secondary-b-subtle);
+
+  --color-ds-error: var(--ds-error);
+  --color-ds-error-pressed: var(--ds-error-pressed);
+  --color-ds-error-subtle: var(--ds-error-subtle);
+
+  --color-ds-warning: var(--ds-warning);
+  --color-ds-warning-pressed: var(--ds-warning-pressed);
+  --color-ds-warning-subtle: var(--ds-warning-subtle);
+
+  --color-ds-success: var(--ds-success);
+  --color-ds-success-pressed: var(--ds-success-pressed);
+  --color-ds-success-subtle: var(--ds-success-subtle);
+
+  /* Gray Scale */
+  --color-ds-gray-0: var(--ds-gray-0);
+  --color-ds-gray-50: var(--ds-gray-50);
+  --color-ds-gray-100: var(--ds-gray-100);
+  --color-ds-gray-200: var(--ds-gray-200);
+  --color-ds-gray-300: var(--ds-gray-300);
+  --color-ds-gray-400: var(--ds-gray-400);
+  --color-ds-gray-500: var(--ds-gray-500);
+  --color-ds-gray-600: var(--ds-gray-600);
+  --color-ds-gray-700: var(--ds-gray-700);
+  --color-ds-gray-800: var(--ds-gray-800);
+  --color-ds-gray-900: var(--ds-gray-900);
+
+  /* Blue Scale */
+  --color-ds-blue-50: var(--ds-blue-50);
+  --color-ds-blue-100: var(--ds-blue-100);
+  --color-ds-blue-200: var(--ds-blue-200);
+  --color-ds-blue-300: var(--ds-blue-300);
+  --color-ds-blue-400: var(--ds-blue-400);
+  --color-ds-blue-500: var(--ds-blue-500);
+  --color-ds-blue-600: var(--ds-blue-600);
+  --color-ds-blue-700: var(--ds-blue-700);
+  --color-ds-blue-800: var(--ds-blue-800);
+  --color-ds-blue-900: var(--ds-blue-900);
+
+  /* Violet Scale */
+  --color-ds-violet-50: var(--ds-violet-50);
+  --color-ds-violet-100: var(--ds-violet-100);
+  --color-ds-violet-200: var(--ds-violet-200);
+  --color-ds-violet-300: var(--ds-violet-300);
+  --color-ds-violet-400: var(--ds-violet-400);
+  --color-ds-violet-500: var(--ds-violet-500);
+  --color-ds-violet-600: var(--ds-violet-600);
+  --color-ds-violet-700: var(--ds-violet-700);
+  --color-ds-violet-800: var(--ds-violet-800);
+  --color-ds-violet-900: var(--ds-violet-900);
+
+  /* Pink Scale */
+  --color-ds-pink-50: var(--ds-pink-50);
+  --color-ds-pink-100: var(--ds-pink-100);
+  --color-ds-pink-200: var(--ds-pink-200);
+  --color-ds-pink-300: var(--ds-pink-300);
+  --color-ds-pink-400: var(--ds-pink-400);
+  --color-ds-pink-500: var(--ds-pink-500);
+  --color-ds-pink-600: var(--ds-pink-600);
+  --color-ds-pink-700: var(--ds-pink-700);
+  --color-ds-pink-800: var(--ds-pink-800);
+  --color-ds-pink-900: var(--ds-pink-900);
+}
+
+/* ============================================================
+ * 5. Typography utility classes
+ *    -- Tailwind 유틸리티 외에, 디자인 시스템 공식 스타일 직접 사용 가능
+ *    -- 예: <h1 className="ds-heading-1">제목</h1>
+ * ============================================================ */
+@layer components {
+  .ds-display {
+    font-size: var(--ds-text-display);
+    font-weight: var(--ds-weight-extrabold);
+    line-height: var(--ds-leading-heading);
+    letter-spacing: var(--ds-tracking-default);
+  }
+  .ds-heading-1 {
+    font-size: var(--ds-text-h1);
+    font-weight: var(--ds-weight-bold);
+    line-height: var(--ds-leading-heading);
+    letter-spacing: var(--ds-tracking-default);
+  }
+  .ds-heading-2 {
+    font-size: var(--ds-text-h2);
+    font-weight: var(--ds-weight-bold);
+    line-height: var(--ds-leading-heading-tight);
+    letter-spacing: var(--ds-tracking-default);
+  }
+  .ds-heading-3 {
+    font-size: var(--ds-text-h3);
+    font-weight: var(--ds-weight-semibold);
+    line-height: var(--ds-leading-heading-tight);
+    letter-spacing: var(--ds-tracking-default);
+  }
+  .ds-body-1 {
+    font-size: var(--ds-text-body-1);
+    font-weight: var(--ds-weight-medium);
+    line-height: var(--ds-leading-body);
+    letter-spacing: var(--ds-tracking-default);
+  }
+  .ds-body-2 {
+    font-size: var(--ds-text-body-2);
+    font-weight: var(--ds-weight-regular);
+    line-height: var(--ds-leading-body);
+    letter-spacing: var(--ds-tracking-default);
+  }
+  .ds-caption {
+    font-size: var(--ds-text-caption);
+    font-weight: var(--ds-weight-regular);
+    line-height: var(--ds-leading-body);
+    letter-spacing: var(--ds-tracking-default);
+  }
+  .ds-label {
+    font-size: var(--ds-text-label);
+    font-weight: var(--ds-weight-medium);
+    line-height: var(--ds-leading-body);
+    letter-spacing: var(--ds-tracking-default);
+  }
+}
