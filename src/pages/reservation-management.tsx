@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Phone, MessageSquare, Check, X } from "lucide-react";
+import { Phone, MessageSquare, Check, X, Calendar } from "lucide-react";
 import { mockReservations, type Reservation } from "@/mocks/reservations";
 
 type ReservationStatus = "전체 목록" | "대기자 목록" | "취소 목록" | "완료 목록";
@@ -60,7 +60,10 @@ export function ReservationManagement() {
       <div className="flex items-center justify-between mb-8">
         <div>
           <div className="text-sm text-slate-500 mb-1">문헌정보학과 부스 예약 현황</div>
-          <h1 className="text-3xl font-bold text-slate-800">예약 관리</h1>
+          <h1 className="text-3xl font-bold text-slate-800 flex items-center gap-3">
+            <Calendar size={32} />
+            예약 관리
+          </h1>
         </div>
 
         <div className="flex items-center gap-4">

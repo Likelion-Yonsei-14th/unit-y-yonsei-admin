@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Upload, Plus, Trash2, Edit2 } from "lucide-react";
+import { Upload, Plus, Trash2, Edit2, FileText } from "lucide-react";
 import { mockNotices, type Notice } from "@/mocks/notices";
 
 export function NoticePage() {
@@ -29,7 +29,10 @@ export function NoticePage() {
   return (
     <div className="p-8">
       <div className="flex items-center justify-between mb-8">
-        <h1 className="text-3xl font-bold text-slate-800">총학생회 공지사항</h1>
+        <h1 className="text-3xl font-bold text-slate-800 flex items-center gap-3">
+          <FileText size={32} />
+          총학생회 공지사항
+        </h1>
         {!showForm && (
           <button 
             onClick={handleCreateNew}

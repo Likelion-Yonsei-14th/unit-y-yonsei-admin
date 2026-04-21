@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, Trash2, Edit2, Upload } from "lucide-react";
+import { Plus, Trash2, Edit2, Upload, Package } from "lucide-react";
 import { mockLostItems, type LostItem } from "@/mocks/lost-items";
 
 export function LostFoundPage() {
@@ -29,7 +29,10 @@ export function LostFoundPage() {
   return (
     <div className="p-8">
       <div className="flex items-center justify-between mb-8">
-        <h1 className="text-3xl font-bold text-slate-800">분실물 관리</h1>
+        <h1 className="text-3xl font-bold text-slate-800 flex items-center gap-3">
+          <Package size={32} />
+          분실물 관리
+        </h1>
         {!showForm && (
           <button 
             onClick={handleCreateNew}

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, Trash2, UserX, Edit } from "lucide-react";
+import { Plus, Trash2, UserX, Edit, Users } from "lucide-react";
 import { mockUsers, type MockUser as User } from "@/mocks/users";
 
 type UserRole = "전체" | "Super" | "Master" | "Booth" | "Performer";
@@ -64,7 +64,10 @@ export function UserManagement() {
   return (
     <div className="p-8">
       <div className="flex items-center justify-between mb-8">
-        <h1 className="text-3xl font-bold text-slate-800">유저 관리</h1>
+        <h1 className="text-3xl font-bold text-slate-800 flex items-center gap-3">
+          <Users size={32} />
+          유저 관리
+        </h1>
         <div className="flex items-center gap-3">
           <button 
             onClick={handleStatusChange}

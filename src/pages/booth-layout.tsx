@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Trash2 } from "lucide-react";
+import { Trash2, Map } from "lucide-react";
 import { mockMappings, type BoothMapping } from "@/mocks/booth-mappings";
 
 export function BoothLayoutPage() {
@@ -54,7 +54,10 @@ export function BoothLayoutPage() {
 
   return (
     <div className="p-8">
-      <h1 className="text-3xl font-bold text-slate-800 mb-8">부스 배치도 매칭</h1>
+      <h1 className="text-3xl font-bold text-slate-800 mb-8 flex items-center gap-3">
+        <Map size={32} />
+        부스 배치도 매칭
+      </h1>
 
       <div className="bg-white rounded-2xl border border-slate-200 p-8 shadow-sm mb-8">
         <h2 className="text-lg font-semibold text-slate-800 mb-6">부스 정보 등록</h2>

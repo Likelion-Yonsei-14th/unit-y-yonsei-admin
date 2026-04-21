@@ -39,11 +39,11 @@ export function InactiveUsers() {
     <div className="p-8">
       <div className="flex items-center justify-between mb-8">
         <div>
-          <div className="flex items-center gap-2 mb-2">
-            <UserX size={24} className="text-slate-600" />
-            <h1 className="text-3xl font-bold text-slate-800">비활성 유저 목록</h1>
-          </div>
-          <p className="text-sm text-slate-500">비활성화된 유저를 관리합니다</p>
+          <h1 className="text-3xl font-bold text-slate-800 flex items-center gap-3">
+            <UserX size={32} />
+            비활성 유저 목록
+          </h1>
+          <p className="text-slate-600 mt-2">비활성화된 유저를 관리합니다.</p>
         </div>
         <button 
           onClick={handleReactivate}

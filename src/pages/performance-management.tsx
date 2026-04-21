@@ -97,7 +97,10 @@ export function PerformanceManagement() {
   return (
     <div className="p-8">
       <div className="flex items-center justify-between mb-8">
-        <h1 className="text-3xl font-bold text-slate-800">공연 정보 관리</h1>
+        <h1 className="text-3xl font-bold text-slate-800 flex items-center gap-3">
+          <Music size={32} />
+          공연 정보 관리
+        </h1>
         
         <div className="flex items-center gap-3">
           {/* Edit Button */}
