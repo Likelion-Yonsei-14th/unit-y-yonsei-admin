@@ -33,6 +33,14 @@ const MOCK_USERS: Record<string, { password: string; user: CurrentUserDTO }> = {
       name: '부스운영자1', booth_id: 1,
     },
   },
+  booth2: {
+    // 작성 전 상태 데모용 — 프로필 필드가 전부 비어있는 mock 부스
+    password: 'booth1234',
+    user: {
+      id: 11, user_id: 'booth2', role: 'Booth',
+      name: '부스운영자2', booth_id: 2,
+    },
+  },
   performer1: {
     password: 'perf1234',
     user: {

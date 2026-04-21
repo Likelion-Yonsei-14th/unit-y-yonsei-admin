@@ -18,7 +18,7 @@ export const PERMISSIONS = {
   'user.deactivate': ['Super', 'Master'],
 
   // 부스
-  'booth.read': ['Super', 'Master', 'Booth', 'Performer'],
+  'booth.read': ['Super', 'Master', 'Booth'],
   'booth.create': ['Super', 'Master'],
   'booth.update.any': ['Super', 'Master'],
   'booth.update.own': ['Booth'],

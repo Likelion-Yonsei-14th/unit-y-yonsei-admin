@@ -1,22 +1,20 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Upload, Plus, Trash2, Check, X, GripVertical, ArrowLeft, Star, Edit } from "lucide-react";
 import { DndProvider, useDrag, useDrop } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
-import { mockBoothProfile, mockMenuItems, type MenuItem } from "@/mocks/booth-profile";
-
-interface BoothImage {
-  id: number;
-  url: string;
-  isMain: boolean;
-}
+import { useMyBoothProfile } from "@/features/booths/hooks";
+import {
+  isBoothInfoCompleted, isMenuListCompleted,
+  type BoothImage, type BoothMenuItem,
+} from "@/features/booths/types";
 
 const ItemType = "MENU_ITEM";
 
 interface DraggableMenuItemProps {
-  item: MenuItem;
+  item: BoothMenuItem;
   index: number;
   moveItem: (fromIndex: number, toIndex: number) => void;
-  onUpdate: (id: number, field: keyof MenuItem, value: string | boolean) => void;
+  onUpdate: (id: number, field: keyof BoothMenuItem, value: string | boolean) => void;
   onDelete: (id: number) => void;
 }
 
@@ -116,25 +114,52 @@ function DraggableMenuItem({ item, index, moveItem, onUpdate, onDelete }: Dragga
 }
 
 export function BoothManagement() {
-  const [boothInfoCompleted] = useState(true);
-  const [menuListCompleted] = useState(true);
-  const [reservationEnabled, setReservationEnabled] = useState(true);
+  // 이 페이지는 RequirePermission('booth.update.own')으로 가드 → Booth 역할만 진입.
+  const { data: booth, isPending, isError } = useMyBoothProfile();
+
+  // "작성 완료" 여부는 저장된 데이터에서 파생 — 편집 중 입력은 반영되지 않음
+  // (저장 전까지는 불완전한 입력으로 취급). 파일 상단의 helper 참고.
+  const boothInfoCompleted = isBoothInfoCompleted(booth);
+  const menuListCompleted = isMenuListCompleted(booth);
+
   const [showBoothInfoForm, setShowBoothInfoForm] = useState(false);
   const [showMenuListForm, setShowMenuListForm] = useState(false);
   const [isEditingBoothInfo, setIsEditingBoothInfo] = useState(false);
   const [isEditingMenuList, setIsEditingMenuList] = useState(false);
-  
+
+  // 폼 state — booth 로드 후 아래 useEffect에서 하이드레이션.
+  const [reservationEnabled, setReservationEnabled] = useState(false);
   const [boothImages, setBoothImages] = useState<BoothImage[]>([]);
+  const [boothName, setBoothName] = useState("");
+  const [organizationName, setOrganizationName] = useState("");
+  const [boothDescription, setBoothDescription] = useState("");
+  const [signatureMenu, setSignatureMenu] = useState("");
+  const [operatingHours, setOperatingHours] = useState("");
+  const [orderNotice, setOrderNotice] = useState("");
+  const [menuItems, setMenuItems] = useState<BoothMenuItem[]>([]);
 
-  // 부스 정보 — 실제 API 연결 시 useMyBooth()로 교체
-  const [boothName, setBoothName] = useState(mockBoothProfile.name);
-  const [organizationName, setOrganizationName] = useState(mockBoothProfile.organizationName);
-  const [boothDescription, setBoothDescription] = useState(mockBoothProfile.description);
-  const [signatureMenu, setSignatureMenu] = useState(mockBoothProfile.signatureMenu);
-  const [operatingHours, setOperatingHours] = useState(mockBoothProfile.operatingHours);
-  const [orderNotice, setOrderNotice] = useState(mockBoothProfile.orderNotice);
+  useEffect(() => {
+    if (!booth) return;
+    setReservationEnabled(booth.reservationEnabled);
+    setBoothImages(booth.thumbnails);
+    setBoothName(booth.name);
+    setOrganizationName(booth.organizationName);
+    setBoothDescription(booth.description);
+    setSignatureMenu(booth.signatureMenu);
+    setOperatingHours(booth.operatingHours);
+    setOrderNotice(booth.orderNotice);
+    setMenuItems(booth.menuItems);
+  }, [booth]);
 
-  const [menuItems, setMenuItems] = useState<MenuItem[]>(mockMenuItems);
+  /** 작성 전(=완료 안 된) 카드 클릭 시 바로 편집 모드로 진입. */
+  const openBoothInfoForm = () => {
+    setShowBoothInfoForm(true);
+    if (!boothInfoCompleted) setIsEditingBoothInfo(true);
+  };
+  const openMenuListForm = () => {
+    setShowMenuListForm(true);
+    if (!menuListCompleted) setIsEditingMenuList(true);
+  };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -177,7 +202,7 @@ export function BoothManagement() {
   };
 
   const addMenuItem = () => {
-    const newItem: MenuItem = {
+    const newItem: BoothMenuItem = {
       id: Date.now(),
       order: menuItems.length + 1,
       name: "",
@@ -189,7 +214,7 @@ export function BoothManagement() {
     setMenuItems([...menuItems, newItem]);
   };
 
-  const updateMenuItem = (id: number, field: keyof MenuItem, value: string | boolean) => {
+  const updateMenuItem = (id: number, field: keyof BoothMenuItem, value: string | boolean) => {
     setMenuItems(menuItems.map((item) => (item.id === id ? { ...item, [field]: value } : item)));
   };
 
@@ -200,10 +225,27 @@ export function BoothManagement() {
   };
 
   const toggleSoldOut = (id: number) => {
-    setMenuItems(menuItems.map((item) => 
+    setMenuItems(menuItems.map((item) =>
       item.id === id ? { ...item, soldOut: !item.soldOut } : item
     ));
   };
+
+  if (isPending) {
+    return (
+      <div className="p-8 flex items-center justify-center min-h-[60vh]">
+        <div className="h-10 w-10 animate-spin rounded-full border-4 border-slate-200 border-t-blue-500" />
+      </div>
+    );
+  }
+
+  if (isError || !booth) {
+    return (
+      <div className="p-8">
+        <h1 className="text-xl font-semibold text-slate-800">부스 정보를 불러오지 못했습니다.</h1>
+        <p className="mt-2 text-sm text-slate-500">잠시 후 다시 시도해 주세요.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="p-8">
@@ -237,7 +279,7 @@ export function BoothManagement() {
       {!showBoothInfoForm && !showMenuListForm && (
         <div className="grid grid-cols-2 gap-6 mb-8">
           <button
-            onClick={() => setShowBoothInfoForm(true)}
+            onClick={openBoothInfoForm}
             className={`
             relative overflow-hidden rounded-2xl p-8 transition-all duration-300 text-left cursor-pointer hover:scale-105
             ${boothInfoCompleted
@@ -277,7 +319,7 @@ export function BoothManagement() {
           </button>
 
           <button
-            onClick={() => setShowMenuListForm(true)}
+            onClick={openMenuListForm}
             className={`
             relative overflow-hidden rounded-2xl p-8 transition-all duration-300 text-left cursor-pointer hover:scale-105
             ${menuListCompleted

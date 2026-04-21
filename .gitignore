@@ -31,3 +31,4 @@ dist-types/
 /vite.config.d.ts
 src/**/*.js
 src/**/*.d.ts
+.gstack/
