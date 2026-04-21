@@ -40,8 +40,9 @@ import { LoginPage } from '@/pages/login';
  *   /login — 비로그인 전용 (이미 로그인 되어있으면 /로 튕김)
  *   /*     — 로그인 필요. AppLayout 내부에 중첩
  *
- * 세부 권한 체크는 각 페이지 안에서 useAuth().can() 또는 RequirePermission으로.
- * 현재는 라우트 레벨에서 로그인 여부만 체크.
+ * 라우트 레벨에서 로그인 + 권한까지 가드. 사이드바는 nav.ts의 requires로 이미 감춰주지만
+ * URL 직접 입력 루트도 막아둔다. 각 라우트의 permission은 nav.ts의 requires와 동일하게 맞춘다.
+ * 페이지 내부의 세부 액션(삭제/변경 버튼 등)은 useAuth().can()으로 별도 체크.
  */
 export const router = createBrowserRouter([
   {
@@ -64,8 +65,22 @@ export const router = createBrowserRouter([
       // Booth→/booth, Performer→/performance, Super·Master→/users.
       { index: true, element: <DefaultLanding /> },
 
-      { path: 'users', element: <UserManagement /> },
-      { path: 'users/inactive', element: <InactiveUsers /> },
+      {
+        path: 'users',
+        element: (
+          <RequirePermission permission="user.read">
+            <UserManagement />
+          </RequirePermission>
+        ),
+      },
+      {
+        path: 'users/inactive',
+        element: (
+          <RequirePermission permission="user.read">
+            <InactiveUsers />
+          </RequirePermission>
+        ),
+      },
 
       {
         path: 'booth',
@@ -76,19 +91,68 @@ export const router = createBrowserRouter([
         ),
       },
 
-      { path: 'reservations', element: <ReservationManagement /> },
+      {
+        path: 'reservations',
+        element: (
+          <RequirePermission permission="reservation.read">
+            <ReservationManagement />
+          </RequirePermission>
+        ),
+      },
 
-      { path: 'performance', element: <PerformanceManagement /> },
+      {
+        path: 'performance',
+        element: (
+          <RequirePermission permission="performance.read">
+            <PerformanceManagement />
+          </RequirePermission>
+        ),
+      },
 
       // '/general'은 순수 그룹 헤더 — 자체 페이지가 없어 첫 자식으로 리디렉트.
       // nav.ts에서 사이드바도 path 링크 없이 토글로만 동작하도록 설정돼 있다.
       { path: 'general', element: <Navigate to="/general/notice" replace /> },
-      { path: 'general/notice', element: <NoticePage /> },
-      { path: 'general/lost-found', element: <LostFoundPage /> },
-      { path: 'general/booth-layout', element: <BoothLayoutPage /> },
-      { path: 'general/performance-review', element: <PerformanceReviewPage /> },
+      {
+        path: 'general/notice',
+        element: (
+          <RequirePermission permission="notice.manage">
+            <NoticePage />
+          </RequirePermission>
+        ),
+      },
+      {
+        path: 'general/lost-found',
+        element: (
+          <RequirePermission permission="lostfound.read">
+            <LostFoundPage />
+          </RequirePermission>
+        ),
+      },
+      {
+        path: 'general/booth-layout',
+        element: (
+          <RequirePermission permission="boothlayout.read">
+            <BoothLayoutPage />
+          </RequirePermission>
+        ),
+      },
+      {
+        path: 'general/performance-review',
+        element: (
+          <RequirePermission permission="performancereview.read">
+            <PerformanceReviewPage />
+          </RequirePermission>
+        ),
+      },
 
-      { path: 'create-admin', element: <CreateAdmin /> },
+      {
+        path: 'create-admin',
+        element: (
+          <RequirePermission permission="admin.create">
+            <CreateAdmin />
+          </RequirePermission>
+        ),
+      },
     ],
   },
   { path: '*', element: <Navigate to="/" replace /> },
