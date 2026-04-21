@@ -100,7 +100,8 @@ pages/페이지 컴포넌트  ──uses──►  features/<domain>/hooks.ts
 |---|---|---|
 | `super` | `super1234` | Super |
 | `master` | `master1234` | Master |
-| `booth1` | `booth1234` | Booth (booth_id=1) |
+| `booth1` | `booth1234` | Booth (booth_id=1) — 프로필 **작성 완료** 상태 |
+| `booth2` | `booth1234` | Booth (booth_id=2) — 프로필 **빈 상태** (작성 전 플로우 확인용) |
 | `performer1` | `perf1234` | Performer (team_id=1) |
 
 ## 외부 산출물 출처
