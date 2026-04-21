@@ -34,6 +34,7 @@ export function PageHeaderAction({
 }: Props) {
   return (
     <Button
+      type="button"
       size="lg"
       className={cn(TONE_CLASS[tone], 'transition-all duration-200', className)}
       {...props}
