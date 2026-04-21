@@ -7,7 +7,6 @@ import { InactiveUsers } from '@/pages/inactive-users';
 import { BoothManagement } from '@/pages/booth-management';
 import { ReservationManagement } from '@/pages/reservation-management';
 import { PerformanceManagement } from '@/pages/performance-management';
-import { GeneralManagement } from '@/pages/general-management';
 import { NoticePage } from '@/pages/notice';
 import { LostFoundPage } from '@/pages/lost-found';
 import { BoothLayoutPage } from '@/pages/booth-layout';
@@ -54,7 +53,9 @@ export const router = createBrowserRouter([
 
       { path: 'performance', element: <PerformanceManagement /> },
 
-      { path: 'general', element: <GeneralManagement /> },
+      // '/general'은 순수 그룹 헤더 — 자체 페이지가 없어 첫 자식으로 리디렉트.
+      // nav.ts에서 사이드바도 path 링크 없이 토글로만 동작하도록 설정돼 있다.
+      { path: 'general', element: <Navigate to="/general/notice" replace /> },
       { path: 'general/notice', element: <NoticePage /> },
       { path: 'general/lost-found', element: <LostFoundPage /> },
       { path: 'general/booth-layout', element: <BoothLayoutPage /> },
