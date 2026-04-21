@@ -104,7 +104,8 @@ export function LoginPage() {
             <div className="ds-caption text-ds-warning-pressed space-y-0.5 font-mono">
               <div>super / super1234 (슈퍼어드민)</div>
               <div>master / master1234 (마스터어드민)</div>
-              <div>booth1 / booth1234 (부스운영자)</div>
+              <div>booth1 / booth1234 (부스운영자 · 작성 완료)</div>
+              <div>booth2 / booth1234 (부스운영자 · 빈 프로필)</div>
               <div>performer1 / perf1234 (공연팀)</div>
             </div>
           </div>
