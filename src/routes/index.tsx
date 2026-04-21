@@ -1,6 +1,25 @@
 import { createBrowserRouter, Navigate } from 'react-router';
 import { RequireAuth, RequireGuest, RequirePermission } from '@/features/auth/guard';
+import { useAuth } from '@/features/auth/hooks';
 import { AppLayout } from '@/components/layout/app-layout';
+
+/**
+ * 로그인 직후 `/`에 접근했을 때 역할에 맞는 기본 페이지로 리다이렉트.
+ * RequireAuth 하위에 있으므로 user가 null인 경우는 고려하지 않아도 된다.
+ */
+function DefaultLanding() {
+  const { user } = useAuth();
+  switch (user?.role) {
+    case 'Booth':
+      return <Navigate to="/booth" replace />;
+    case 'Performer':
+      return <Navigate to="/performance" replace />;
+    case 'Super':
+    case 'Master':
+    default:
+      return <Navigate to="/users" replace />;
+  }
+}
 
 import { UserManagement } from '@/pages/user-management';
 import { InactiveUsers } from '@/pages/inactive-users';
@@ -41,8 +60,9 @@ export const router = createBrowserRouter([
       </RequireAuth>
     ),
     children: [
-      // 기본 진입: 피그마 원본대로 /booth로 리디렉트
-      { index: true, element: <Navigate to="/booth" replace /> },
+      // 기본 진입: 역할별로 다른 페이지로 보낸다.
+      // Booth→/booth, Performer→/performance, Super·Master→/users.
+      { index: true, element: <DefaultLanding /> },
 
       { path: 'users', element: <UserManagement /> },
       { path: 'users/inactive', element: <InactiveUsers /> },
