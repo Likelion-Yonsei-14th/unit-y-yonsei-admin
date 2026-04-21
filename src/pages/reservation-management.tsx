@@ -60,8 +60,8 @@ export function ReservationManagement() {
     <div className="p-8">
       <div className="flex items-center justify-between mb-8">
         <div>
-          <div className="text-sm text-slate-500 mb-1">문헌정보학과 부스 예약 현황</div>
-          <h1 className="text-3xl font-bold text-slate-800 flex items-center gap-3">
+          <div className="text-sm text-muted-foreground mb-1">문헌정보학과 부스 예약 현황</div>
+          <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
             <Calendar size={32} />
             예약 관리
           </h1>
@@ -69,19 +69,19 @@ export function ReservationManagement() {
 
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
-            <span className="text-sm text-slate-600">예약 가능 ON/OFF</span>
+            <span className="text-sm text-muted-foreground">예약 가능 ON/OFF</span>
             <button
               onClick={() => setReservationEnabled(!reservationEnabled)}
               className={`
                 relative w-14 h-7 rounded-full transition-all duration-300
                 ${reservationEnabled
                   ? 'bg-gradient-to-r from-blue-500 to-cyan-500 shadow-lg shadow-blue-200'
-                  : 'bg-slate-300'
+                  : 'bg-ds-border-strong'
                 }
               `}
             >
               <div className={`
-                absolute top-1 w-5 h-5 bg-white rounded-full shadow-md transition-all duration-300
+                absolute top-1 w-5 h-5 bg-background rounded-full shadow-md transition-all duration-300
                 ${reservationEnabled ? 'left-8' : 'left-1'}
               `} />
             </button>
@@ -111,8 +111,8 @@ export function ReservationManagement() {
             className={`
               px-5 py-2 rounded-full text-sm font-medium transition-all duration-200
               ${selectedStatus === status
-                ? 'bg-slate-800 text-white shadow-lg'
-                : 'bg-white text-slate-600 border border-slate-200 hover:border-slate-300'
+                ? 'bg-foreground text-primary-foreground shadow-lg'
+                : 'bg-background text-muted-foreground border border hover:border-ds-border-strong'
               }
             `}
           >
@@ -122,25 +122,25 @@ export function ReservationManagement() {
       </div>
 
       {/* Reservations Table */}
-      <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
+      <div className="bg-background rounded-xl border border overflow-hidden shadow-sm">
         <table className="w-full">
-          <thead className="bg-slate-100 border-b border-slate-200">
+          <thead className="bg-muted border-b border">
             <tr>
               <th className="w-12 py-4 text-center">
                 <input
                   type="checkbox"
-                  className="w-4 h-4 rounded accent-blue-500"
+                  className="w-4 h-4 rounded accent-primary"
                   checked={selectedIds.length === filteredReservations.length}
                   onChange={toggleSelectAll}
                 />
               </th>
-              <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">예약 ID</th>
-              <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">예약 시간</th>
-              <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">예약 신청자명</th>
-              <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">인원수</th>
-              <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">연락처</th>
-              <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">상태</th>
-              <th className="px-6 py-4 text-center text-sm font-semibold text-slate-700">액션</th>
+              <th className="px-6 py-4 text-left text-sm font-semibold text-foreground">예약 ID</th>
+              <th className="px-6 py-4 text-left text-sm font-semibold text-foreground">예약 시간</th>
+              <th className="px-6 py-4 text-left text-sm font-semibold text-foreground">예약 신청자명</th>
+              <th className="px-6 py-4 text-left text-sm font-semibold text-foreground">인원수</th>
+              <th className="px-6 py-4 text-left text-sm font-semibold text-foreground">연락처</th>
+              <th className="px-6 py-4 text-left text-sm font-semibold text-foreground">상태</th>
+              <th className="px-6 py-4 text-center text-sm font-semibold text-foreground">액션</th>
             </tr>
           </thead>
           <tbody>
@@ -148,28 +148,28 @@ export function ReservationManagement() {
               <tr
                 key={reservation.id}
                 onClick={() => setSelectedReservation(reservation)}
-                className="border-b border-slate-100 hover:bg-slate-50 transition-colors cursor-pointer"
+                className="border-b border hover:bg-muted transition-colors cursor-pointer"
               >
                 <td className="py-4 text-center">
                   <input
                     type="checkbox"
-                    className="w-4 h-4 rounded accent-blue-500"
+                    className="w-4 h-4 rounded accent-primary"
                     checked={selectedIds.includes(reservation.id)}
                     onChange={() => toggleSelectId(reservation.id)}
                     onClick={(e) => e.stopPropagation()}
                   />
                 </td>
-                <td className="px-6 py-4 text-sm font-medium text-slate-800">{reservation.id}</td>
-                <td className="px-6 py-4 text-sm text-slate-600">{reservation.time}</td>
-                <td className="px-6 py-4 text-sm text-slate-800">{reservation.name}</td>
-                <td className="px-6 py-4 text-sm text-slate-600">{reservation.people}명</td>
-                <td className="px-6 py-4 text-sm text-slate-600">{reservation.contact}</td>
+                <td className="px-6 py-4 text-sm font-medium text-foreground">{reservation.id}</td>
+                <td className="px-6 py-4 text-sm text-muted-foreground">{reservation.time}</td>
+                <td className="px-6 py-4 text-sm text-foreground">{reservation.name}</td>
+                <td className="px-6 py-4 text-sm text-muted-foreground">{reservation.people}명</td>
+                <td className="px-6 py-4 text-sm text-muted-foreground">{reservation.contact}</td>
                 <td className="px-6 py-4">
                   <span className={`
                     inline-block px-3 py-1 rounded-full text-xs font-medium
-                    ${reservation.status === 'waiting' && 'bg-blue-100 text-blue-700'}
-                    ${reservation.status === 'completed' && 'bg-green-100 text-green-700'}
-                    ${reservation.status === 'cancelled' && 'bg-red-100 text-red-700'}
+                    ${reservation.status === 'waiting' && 'bg-ds-primary-subtle text-ds-primary-pressed'}
+                    ${reservation.status === 'completed' && 'bg-ds-success-subtle text-ds-success-pressed'}
+                    ${reservation.status === 'cancelled' && 'bg-ds-error-subtle text-ds-error-pressed'}
                   `}>
                     {reservation.status === 'waiting' && `대기 ${getWaitingNumber(reservation)}번`}
                     {reservation.status === 'completed' && '완료'}
@@ -179,13 +179,13 @@ export function ReservationManagement() {
                 <td className="px-6 py-4">
                   <div className="flex items-center justify-center gap-2">
                     <button
-                      className="p-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors"
+                      className="p-2 bg-ds-primary-subtle text-ds-primary-pressed rounded-lg hover:bg-ds-blue-100 transition-colors"
                       onClick={(e) => e.stopPropagation()}
                     >
                       <Phone size={16} />
                     </button>
                     <button
-                      className="p-2 bg-green-50 text-green-600 rounded-lg hover:bg-green-100 transition-colors"
+                      className="p-2 bg-ds-success-subtle text-ds-success-pressed rounded-lg transition-colors"
                       onClick={(e) => e.stopPropagation()}
                     >
                       <MessageSquare size={16} />
@@ -205,50 +205,50 @@ export function ReservationManagement() {
           onClick={() => setSelectedReservation(null)}
         >
           <div
-            className="bg-white rounded-2xl p-8 max-w-md w-full mx-4 shadow-2xl"
+            className="bg-background rounded-2xl p-8 max-w-md w-full mx-4 shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <h3 className="text-2xl font-bold text-slate-800 mb-6">예약 상세 정보</h3>
+            <h3 className="text-2xl font-bold text-foreground mb-6">예약 상세 정보</h3>
 
             <div className="space-y-4 mb-8">
               <div>
-                <div className="text-sm text-slate-500 mb-1">예약 ID</div>
-                <div className="text-lg font-semibold text-slate-800">{selectedReservation.id}</div>
+                <div className="text-sm text-muted-foreground mb-1">예약 ID</div>
+                <div className="text-lg font-semibold text-foreground">{selectedReservation.id}</div>
               </div>
               <div>
-                <div className="text-sm text-slate-500 mb-1">예약자명</div>
-                <div className="text-lg font-semibold text-slate-800">{selectedReservation.name}</div>
+                <div className="text-sm text-muted-foreground mb-1">예약자명</div>
+                <div className="text-lg font-semibold text-foreground">{selectedReservation.name}</div>
               </div>
               <div>
-                <div className="text-sm text-slate-500 mb-1">연락처</div>
-                <div className="text-lg font-semibold text-slate-800">{selectedReservation.contact}</div>
+                <div className="text-sm text-muted-foreground mb-1">연락처</div>
+                <div className="text-lg font-semibold text-foreground">{selectedReservation.contact}</div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <div className="text-sm text-slate-500 mb-1">예약 시간</div>
-                  <div className="text-lg font-semibold text-slate-800">{selectedReservation.time}</div>
+                  <div className="text-sm text-muted-foreground mb-1">예약 시간</div>
+                  <div className="text-lg font-semibold text-foreground">{selectedReservation.time}</div>
                 </div>
                 <div>
-                  <div className="text-sm text-slate-500 mb-1">인원수</div>
-                  <div className="text-lg font-semibold text-slate-800">{selectedReservation.people}명</div>
+                  <div className="text-sm text-muted-foreground mb-1">인원수</div>
+                  <div className="text-lg font-semibold text-foreground">{selectedReservation.people}명</div>
                 </div>
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
-              <button className="px-4 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors flex items-center justify-center gap-2">
+              <button className="px-4 py-3 bg-ds-success text-white rounded-lg hover:bg-ds-success-pressed transition-colors flex items-center justify-center gap-2">
                 <Check size={18} />
                 입장
               </button>
-              <button className="px-4 py-3 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors flex items-center justify-center gap-2">
+              <button className="px-4 py-3 bg-destructive text-destructive-foreground rounded-lg hover:bg-ds-error-pressed transition-colors flex items-center justify-center gap-2">
                 <X size={18} />
                 취소
               </button>
-              <button className="px-4 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors flex items-center justify-center gap-2">
+              <button className="px-4 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-ds-primary-pressed transition-colors flex items-center justify-center gap-2">
                 <MessageSquare size={18} />
                 문자
               </button>
-              <button className="px-4 py-3 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors flex items-center justify-center gap-2">
+              <button className="px-4 py-3 bg-ds-secondary-a text-white rounded-lg hover:bg-ds-secondary-a-pressed transition-colors flex items-center justify-center gap-2">
                 <Phone size={18} />
                 전화
               </button>
@@ -264,38 +264,38 @@ export function ReservationManagement() {
           onClick={() => setShowStatusChangeModal(false)}
         >
           <div
-            className="bg-white rounded-2xl p-8 max-w-md w-full mx-4 shadow-2xl"
+            className="bg-background rounded-2xl p-8 max-w-md w-full mx-4 shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <h3 className="text-2xl font-bold text-slate-800 mb-4">예약 상태 변경</h3>
-            <p className="text-slate-600 mb-6">
-              선택한 <span className="font-bold text-blue-600">{selectedIds.length}개</span>의 예약 상태를 변경합니다.
+            <h3 className="text-2xl font-bold text-foreground mb-4">예약 상태 변경</h3>
+            <p className="text-muted-foreground mb-6">
+              선택한 <span className="font-bold text-primary">{selectedIds.length}개</span>의 예약 상태를 변경합니다.
             </p>
 
             <div className="space-y-3">
               <button
                 onClick={() => handleStatusChange("waiting")}
-                className="w-full px-4 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors flex items-center justify-center gap-2"
+                className="w-full px-4 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-ds-primary-pressed transition-colors flex items-center justify-center gap-2"
               >
                 대기로 변경
               </button>
               <button
                 onClick={() => handleStatusChange("completed")}
-                className="w-full px-4 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors flex items-center justify-center gap-2"
+                className="w-full px-4 py-3 bg-ds-success text-white rounded-lg hover:bg-ds-success-pressed transition-colors flex items-center justify-center gap-2"
               >
                 <Check size={18} />
                 완료로 변경
               </button>
               <button
                 onClick={() => handleStatusChange("cancelled")}
-                className="w-full px-4 py-3 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors flex items-center justify-center gap-2"
+                className="w-full px-4 py-3 bg-destructive text-destructive-foreground rounded-lg hover:bg-ds-error-pressed transition-colors flex items-center justify-center gap-2"
               >
                 <X size={18} />
                 취소로 변경
               </button>
               <button
                 onClick={() => setShowStatusChangeModal(false)}
-                className="w-full px-4 py-3 border border-slate-200 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors"
+                className="w-full px-4 py-3 border border text-foreground rounded-lg hover:bg-muted transition-colors"
               >
                 닫기
               </button>
