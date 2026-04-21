@@ -72,7 +72,8 @@ export interface BoothProfileDTO {
 
 // ---- 완료 판정 헬퍼 ----
 // 기획 합의: 부스 상세는 필수 필드 + 대표 이미지 1장, 메뉴 리스트는
-// 이름+가격이 모두 채워진 아이템이 1개 이상 있을 때 "작성 완료".
+// 저장된 메뉴가 1개 이상이고 모든 아이템에 이름/가격이 채워져 있을 때 "작성 완료".
+// (저장된 데이터는 항상 정상 상태여야 한다는 전제 — 빈 필드 메뉴는 저장 단계에서 차단.)
 
 export function isBoothInfoCompleted(b: BoothProfile | null | undefined): boolean {
   if (!b) return false;
