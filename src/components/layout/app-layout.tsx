@@ -126,65 +126,69 @@ export function AppLayout() {
             return (
               <div key={item.path}>
                 {hasChildren ? (
-                  <div className="flex items-center gap-1">
-                    {/* 상위 메뉴: path 접근 가능하면 링크, 아니면 버튼 */}
-                    {item.requires && can(item.requires) ? (
+                  /**
+                   * 자식이 있는 상위 메뉴. 기획 의도: Link + Chevron이 시각적으로
+                   * 한 덩어리 버튼처럼 보여야 한다. 활성화 시 전체가 파란색으로.
+                   * 내부에서만 클릭 영역을 둘로 쪼갬: 좌측(Link) = 네비게이션,
+                   * 우측(chevron) = 서브메뉴 토글. rounded-lg + overflow-hidden로
+                   * 하나의 라운드 표면을 공유한다.
+                   */
+                  item.requires && can(item.requires) ? (
+                    <div
+                      className={`
+                        flex items-center rounded-lg overflow-hidden transition-colors
+                        ${isActive
+                          ? 'bg-primary text-primary-foreground'
+                          : 'text-muted-foreground hover:bg-muted'}
+                      `}
+                    >
                       <Link
                         to={item.path}
                         className={`
-                          flex items-center gap-3 rounded-lg transition-all flex-1
+                          flex items-center gap-3 flex-1 min-w-0
                           ${isCollapsed ? 'justify-center px-3 py-3' : 'px-4 py-2.5'}
-                          ${isActive
-                            ? 'bg-primary text-primary-foreground'
-                            : 'text-muted-foreground hover:bg-muted'}
                         `}
                         title={isCollapsed ? item.label : undefined}
                       >
                         <Icon size={18} />
                         {!isCollapsed && <span className="ds-body-2 flex-1">{item.label}</span>}
                       </Link>
-                    ) : (
-                      <button
-                        onClick={() => toggleMenu(item.path)}
-                        className={`
-                          flex items-center gap-3 rounded-lg transition-all flex-1 w-full
-                          ${isCollapsed ? 'justify-center px-3 py-3' : 'px-4 py-2.5'}
-                          text-muted-foreground hover:bg-muted
-                        `}
-                        title={isCollapsed ? item.label : undefined}
-                      >
-                        <Icon size={18} />
-                        {!isCollapsed && (
-                          <>
-                            <span className="ds-body-2 flex-1 text-left">{item.label}</span>
-                            <ChevronDown
-                              size={16}
-                              className={`transition-transform ${isExpanded ? 'rotate-180' : ''}`}
-                            />
-                          </>
-                        )}
-                      </button>
-                    )}
-
-                    {/* 확장 토글 (상위가 Link인 경우 별도 버튼) */}
-                    {item.requires && can(item.requires) && !isCollapsed && (
-                      <button
-                        onClick={() => toggleMenu(item.path)}
-                        className={`
-                          px-2 py-3 rounded-lg transition-all
-                          ${isActive
-                            ? 'text-primary-foreground hover:bg-ds-primary-pressed'
-                            : 'text-muted-foreground hover:bg-muted'}
-                        `}
-                        aria-label="서브메뉴 토글"
-                      >
-                        <ChevronDown
-                          size={16}
-                          className={`transition-transform ${isExpanded ? 'rotate-180' : ''}`}
-                        />
-                      </button>
-                    )}
-                  </div>
+                      {!isCollapsed && (
+                        <button
+                          onClick={() => toggleMenu(item.path)}
+                          className="self-stretch px-3 flex items-center hover:bg-black/10 transition-colors"
+                          aria-label="서브메뉴 토글"
+                        >
+                          <ChevronDown
+                            size={16}
+                            className={`transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+                          />
+                        </button>
+                      )}
+                    </div>
+                  ) : (
+                    /* path 권한이 없거나 path 자체가 없는 그룹 헤더: 순수 토글 버튼 */
+                    <button
+                      onClick={() => toggleMenu(item.path)}
+                      className={`
+                        flex items-center gap-3 rounded-lg transition-colors w-full
+                        ${isCollapsed ? 'justify-center px-3 py-3' : 'px-4 py-2.5'}
+                        text-muted-foreground hover:bg-muted
+                      `}
+                      title={isCollapsed ? item.label : undefined}
+                    >
+                      <Icon size={18} />
+                      {!isCollapsed && (
+                        <>
+                          <span className="ds-body-2 flex-1 text-left">{item.label}</span>
+                          <ChevronDown
+                            size={16}
+                            className={`transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+                          />
+                        </>
+                      )}
+                    </button>
+                  )
                 ) : (
                   <Link
                     to={item.path}
