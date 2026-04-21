@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Upload, Plus, Trash2, Check, X, GripVertical, ArrowLeft, Star, Edit } from "lucide-react";
+import { Upload, Plus, Trash2, Check, X, GripVertical, ArrowLeft, Star, Edit, Store } from "lucide-react";
 import { DndProvider, useDrag, useDrop } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import { useMyBoothProfile } from "@/features/booths/hooks";
@@ -251,8 +251,13 @@ export function BoothManagement() {
     <div className="p-8">
       <div className="flex items-center justify-between mb-8">
         <div>
-          <div className="text-sm text-slate-500 mb-1">문헌정보학과 부스 예약 관리</div>
-          <h1 className="text-3xl font-bold text-slate-800">부스 정보 관리</h1>
+          {booth.organizationName && (
+            <div className="text-sm text-slate-500 mb-1">{booth.organizationName} 부스 예약 관리</div>
+          )}
+          <h1 className="text-3xl font-bold text-slate-800 flex items-center gap-3">
+            <Store size={32} />
+            부스 정보 관리
+          </h1>
         </div>
 
         <div className="flex items-center gap-2">

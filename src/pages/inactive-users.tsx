@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { UserX, RotateCcw } from "lucide-react";
 import { mockInactiveUsers, type MockInactiveUser as User } from "@/mocks/users";
+import { PageHeaderAction } from "@/components/common/page-header-action";
 
 type UserRole = "전체" | "Super" | "Master" | "Booth" | "Performer";
 
@@ -39,19 +40,15 @@ export function InactiveUsers() {
     <div className="p-8">
       <div className="flex items-center justify-between mb-8">
         <div>
-          <div className="flex items-center gap-2 mb-2">
-            <UserX size={24} className="text-slate-600" />
-            <h1 className="text-3xl font-bold text-slate-800">비활성 유저 목록</h1>
-          </div>
-          <p className="text-sm text-slate-500">비활성화된 유저를 관리합니다</p>
+          <h1 className="text-3xl font-bold text-slate-800 flex items-center gap-3">
+            <UserX size={32} />
+            비활성 유저 목록
+          </h1>
+          <p className="text-slate-600 mt-2">비활성화된 유저를 관리합니다.</p>
         </div>
-        <button 
-          onClick={handleReactivate}
-          className="px-6 py-2.5 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-lg hover:shadow-lg hover:shadow-green-200 transition-all duration-200 flex items-center gap-2"
-        >
-          <RotateCcw size={18} />
+        <PageHeaderAction tone="green" onClick={handleReactivate} icon={<RotateCcw size={16} />}>
           유저 재활성화
-        </button>
+        </PageHeaderAction>
       </div>
 
       {/* Role Filter */}

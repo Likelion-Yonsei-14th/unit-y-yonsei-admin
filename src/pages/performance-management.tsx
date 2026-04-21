@@ -97,7 +97,10 @@ export function PerformanceManagement() {
   return (
     <div className="p-8">
       <div className="flex items-center justify-between mb-8">
-        <h1 className="text-3xl font-bold text-slate-800">공연 정보 관리</h1>
+        <h1 className="text-3xl font-bold text-slate-800 flex items-center gap-3">
+          <Music size={32} />
+          공연 정보 관리
+        </h1>
         
         <div className="flex items-center gap-3">
           {/* Edit Button */}
@@ -327,7 +330,7 @@ export function PerformanceManagement() {
         <div className="space-y-3">
           {(isEditMode ? editingSetlist : setlist).map((item, index) => (
             <div key={item.id} className="flex items-center gap-4 p-4 border border-slate-200 rounded-lg hover:border-blue-300 transition-colors">
-              <div className="flex items-center justify-center w-10 h-10 bg-gradient-to-br from-blue-500 to-cyan-500 text-white font-bold rounded-lg shadow-lg shadow-blue-200">
+              <div className="flex items-center justify-center w-10 h-10 bg-gradient-to-br from-blue-500 to-cyan-500 text-white font-bold rounded-lg">
                 {index + 1}
               </div>
               <div className="flex-1 grid grid-cols-2 gap-4">

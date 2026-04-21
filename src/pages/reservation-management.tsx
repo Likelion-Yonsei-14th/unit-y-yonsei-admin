@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { Phone, MessageSquare, Check, X } from "lucide-react";
+import { Phone, MessageSquare, Check, X, Calendar } from "lucide-react";
 import { mockReservations, type Reservation } from "@/mocks/reservations";
+import { PageHeaderAction } from "@/components/common/page-header-action";
 
 type ReservationStatus = "전체 목록" | "대기자 목록" | "취소 목록" | "완료 목록";
 
@@ -60,7 +61,10 @@ export function ReservationManagement() {
       <div className="flex items-center justify-between mb-8">
         <div>
           <div className="text-sm text-slate-500 mb-1">문헌정보학과 부스 예약 현황</div>
-          <h1 className="text-3xl font-bold text-slate-800">예약 관리</h1>
+          <h1 className="text-3xl font-bold text-slate-800 flex items-center gap-3">
+            <Calendar size={32} />
+            예약 관리
+          </h1>
         </div>
 
         <div className="flex items-center gap-4">
@@ -83,7 +87,8 @@ export function ReservationManagement() {
             </button>
           </div>
 
-          <button className="px-6 py-2.5 bg-slate-800 text-white rounded-lg hover:bg-slate-700 transition-colors"
+          <PageHeaderAction
+            tone="neutral"
             onClick={() => {
               if (selectedIds.length === 0) {
                 alert("상태를 변경할 예약을 선택해주세요.");
@@ -93,7 +98,7 @@ export function ReservationManagement() {
             }}
           >
             예약 상태 변경
-          </button>
+          </PageHeaderAction>
         </div>
       </div>
 

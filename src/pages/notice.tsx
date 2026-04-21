@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { Upload, Plus, Trash2, Edit2 } from "lucide-react";
+import { Upload, Plus, Trash2, Edit2, FileText } from "lucide-react";
 import { mockNotices, type Notice } from "@/mocks/notices";
+import { PageHeaderAction } from "@/components/common/page-header-action";
 
 export function NoticePage() {
   const [notices, setNotices] = useState<Notice[]>(mockNotices);
@@ -29,15 +30,14 @@ export function NoticePage() {
   return (
     <div className="p-8">
       <div className="flex items-center justify-between mb-8">
-        <h1 className="text-3xl font-bold text-slate-800">총학생회 공지사항</h1>
+        <h1 className="text-3xl font-bold text-slate-800 flex items-center gap-3">
+          <FileText size={32} />
+          총학생회 공지사항
+        </h1>
         {!showForm && (
-          <button 
-            onClick={handleCreateNew}
-            className="px-4 py-2 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-lg hover:shadow-lg hover:shadow-blue-200 transition-all duration-200 flex items-center gap-2 text-sm"
-          >
-            <Plus size={16} />
+          <PageHeaderAction tone="blue" onClick={handleCreateNew} icon={<Plus size={16} />}>
             새 공지사항 작성
-          </button>
+          </PageHeaderAction>
         )}
       </div>
 

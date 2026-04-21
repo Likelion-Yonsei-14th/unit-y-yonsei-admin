@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { Plus, Trash2, Edit2, Upload } from "lucide-react";
+import { Plus, Trash2, Edit2, Upload, Package } from "lucide-react";
 import { mockLostItems, type LostItem } from "@/mocks/lost-items";
+import { PageHeaderAction } from "@/components/common/page-header-action";
 
 export function LostFoundPage() {
   const [lostItems, setLostItems] = useState<LostItem[]>(mockLostItems);
@@ -29,15 +30,14 @@ export function LostFoundPage() {
   return (
     <div className="p-8">
       <div className="flex items-center justify-between mb-8">
-        <h1 className="text-3xl font-bold text-slate-800">분실물 관리</h1>
+        <h1 className="text-3xl font-bold text-slate-800 flex items-center gap-3">
+          <Package size={32} />
+          분실물 관리
+        </h1>
         {!showForm && (
-          <button 
-            onClick={handleCreateNew}
-            className="px-4 py-2 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-lg hover:shadow-lg hover:shadow-blue-200 transition-all duration-200 flex items-center gap-2 text-sm"
-          >
-            <Plus size={16} />
+          <PageHeaderAction tone="blue" onClick={handleCreateNew} icon={<Plus size={16} />}>
             분실물 등록
-          </button>
+          </PageHeaderAction>
         )}
       </div>
 
