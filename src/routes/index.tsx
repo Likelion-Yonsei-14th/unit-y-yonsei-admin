@@ -1,5 +1,5 @@
 import { createBrowserRouter, Navigate } from 'react-router';
-import { RequireAuth, RequireGuest } from '@/features/auth/guard';
+import { RequireAuth, RequireGuest, RequirePermission } from '@/features/auth/guard';
 import { AppLayout } from '@/components/layout/app-layout';
 
 import { UserManagement } from '@/pages/user-management';
@@ -47,7 +47,14 @@ export const router = createBrowserRouter([
       { path: 'users', element: <UserManagement /> },
       { path: 'users/inactive', element: <InactiveUsers /> },
 
-      { path: 'booth', element: <BoothManagement /> },
+      {
+        path: 'booth',
+        element: (
+          <RequirePermission permission="booth.update.own">
+            <BoothManagement />
+          </RequirePermission>
+        ),
+      },
 
       { path: 'reservations', element: <ReservationManagement /> },
 

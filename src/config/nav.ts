@@ -33,7 +33,9 @@ export const MAIN_NAV: NavItem[] = [
     path: '/booth',
     label: '부스 정보 관리',
     icon: Store,
-    requires: 'booth.read',
+    // 현재 /booth 페이지는 "내 부스 편집" 화면이라 Booth 역할만 의미 있음.
+    // Super/Master용 부스 목록/상세 화면이 생기면 별도 항목으로 추가.
+    requires: 'booth.update.own',
   },
   {
     path: '/reservations',
