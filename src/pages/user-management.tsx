@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Plus, Trash2, UserX, Edit, Users } from "lucide-react";
 import { mockUsers, type MockUser as User } from "@/mocks/users";
+import { PageHeaderAction } from "@/components/common/page-header-action";
 
 type UserRole = "전체" | "Super" | "Master" | "Booth" | "Performer";
 
@@ -69,20 +70,12 @@ export function UserManagement() {
           유저 관리
         </h1>
         <div className="flex items-center gap-3">
-          <button 
-            onClick={handleStatusChange}
-            className="px-6 py-2.5 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-lg hover:shadow-lg hover:shadow-blue-200 transition-all duration-200 flex items-center gap-2"
-          >
-            <UserX size={18} />
+          <PageHeaderAction tone="blue" onClick={handleStatusChange} icon={<UserX size={16} />}>
             유저 상태 변경
-          </button>
-          <button 
-            onClick={handleRoleChange}
-            className="px-6 py-2.5 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:shadow-lg hover:shadow-purple-200 transition-all duration-200 flex items-center gap-2"
-          >
-            <Edit size={18} />
+          </PageHeaderAction>
+          <PageHeaderAction tone="purple" onClick={handleRoleChange} icon={<Edit size={16} />}>
             권한 변경
-          </button>
+          </PageHeaderAction>
         </div>
       </div>
 
