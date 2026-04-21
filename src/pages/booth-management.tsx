@@ -251,7 +251,9 @@ export function BoothManagement() {
     <div className="p-8">
       <div className="flex items-center justify-between mb-8">
         <div>
-          <div className="text-sm text-slate-500 mb-1">문헌정보학과 부스 예약 관리</div>
+          {booth.organizationName && (
+            <div className="text-sm text-slate-500 mb-1">{booth.organizationName} 부스 예약 관리</div>
+          )}
           <h1 className="text-3xl font-bold text-slate-800">부스 정보 관리</h1>
         </div>
 
