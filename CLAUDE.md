@@ -109,3 +109,23 @@ pages/페이지 컴포넌트  ──uses──►  features/<domain>/hooks.ts
 - **Figma Make 프로토타입 원본** — `src/components/ui/*`, `src/components/figma/*`, `src/styles/index.css`, `src/styles/tailwind.css`, `vite.config.ts`, `index.html`, `postcss.config.mjs`. 수정 금지(shadcn/ui MIT, `ATTRIBUTIONS.md` 참고).
 - **멋쟁이사자처럼 연세대 14기 디자인 시스템** — `src/styles/theme.css`, `src/styles/fonts.css`, 루트의 `DESIGN_TOKENS.md`, `theme-preview.html`. 토큰 추가/변경은 `DESIGN_TOKENS.md`의 기여 규칙에 따라.
 - 기능 추가는 `src/features/`와 `src/pages/`에서 한다.
+
+## Skill routing
+
+When the user's request matches an available skill, ALWAYS invoke it using the Skill
+tool as your FIRST action. Do NOT answer directly, do NOT use other tools first.
+The skill has specialized workflows that produce better results than ad-hoc answers.
+
+Key routing rules:
+- Product ideas, "is this worth building", brainstorming → invoke office-hours
+- Bugs, errors, "why is this broken", 500 errors → invoke investigate
+- Ship, deploy, push, create PR → invoke ship
+- QA, test the site, find bugs → invoke qa
+- Code review, check my diff → invoke review
+- Update docs after shipping → invoke document-release
+- Weekly retro → invoke retro
+- Design system, brand → invoke design-consultation
+- Visual audit, design polish → invoke design-review
+- Architecture review → invoke plan-eng-review
+- Save progress, checkpoint, resume → invoke checkpoint
+- Code quality, health check → invoke health
