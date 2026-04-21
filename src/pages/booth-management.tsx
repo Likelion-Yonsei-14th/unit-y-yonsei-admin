@@ -114,8 +114,8 @@ function DraggableMenuItem({ item, index, moveItem, onUpdate, onDelete }: Dragga
 }
 
 export function BoothManagement() {
-  // 서버 상태. data가 undefined면 아직 로딩 중이거나 Booth 역할이 아님.
-  const { data: booth } = useMyBoothProfile();
+  // 이 페이지는 RequirePermission('booth.update.own')으로 가드 → Booth 역할만 진입.
+  const { data: booth, isPending, isError } = useMyBoothProfile();
 
   // "작성 완료" 여부는 저장된 데이터에서 파생 — 편집 중 입력은 반영되지 않음
   // (저장 전까지는 불완전한 입력으로 취급). 파일 상단의 helper 참고.
@@ -225,10 +225,27 @@ export function BoothManagement() {
   };
 
   const toggleSoldOut = (id: number) => {
-    setMenuItems(menuItems.map((item) => 
+    setMenuItems(menuItems.map((item) =>
       item.id === id ? { ...item, soldOut: !item.soldOut } : item
     ));
   };
+
+  if (isPending) {
+    return (
+      <div className="p-8 flex items-center justify-center min-h-[60vh]">
+        <div className="h-10 w-10 animate-spin rounded-full border-4 border-slate-200 border-t-blue-500" />
+      </div>
+    );
+  }
+
+  if (isError || !booth) {
+    return (
+      <div className="p-8">
+        <h1 className="text-xl font-semibold text-slate-800">부스 정보를 불러오지 못했습니다.</h1>
+        <p className="mt-2 text-sm text-slate-500">잠시 후 다시 시도해 주세요.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="p-8">
