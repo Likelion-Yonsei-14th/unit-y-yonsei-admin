@@ -14,8 +14,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 pnpm install              # 의존성 설치
 cp .env.example .env.local  # 환경변수 세팅 (최초 1회)
 pnpm dev                  # Vite 개발 서버
-pnpm build                # tsc --noEmit && vite build (타입 체크 + 번들)
-pnpm typecheck            # tsc --noEmit
+pnpm build                # tsc -b (references 포함, dist-types/에 .d.ts 생성) + vite build
+pnpm typecheck            # tsc -p tsconfig.json --noEmit (src만, emit 없음)
 pnpm preview              # 빌드 결과 로컬 프리뷰
 ```
 

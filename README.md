@@ -28,8 +28,8 @@ pnpm dev
 | Command | 설명 |
 |---|---|
 | `pnpm dev` | Vite 개발 서버 |
-| `pnpm build` | `tsc --noEmit` + 프로덕션 번들 |
-| `pnpm typecheck` | 타입 체크만 |
+| `pnpm build` | `tsc -b`로 project reference(`tsconfig.node.json`)까지 빌드해 `dist-types/`에 `.d.ts`를 생성한 뒤, `vite build`로 프로덕션 번들 생성 |
+| `pnpm typecheck` | `tsc -p tsconfig.json --noEmit` — src 타입 체크만 (emit X) |
 | `pnpm preview` | 빌드 결과 로컬 프리뷰 |
 
 ### Mock 로그인 계정 (`VITE_USE_MOCK=true`)
