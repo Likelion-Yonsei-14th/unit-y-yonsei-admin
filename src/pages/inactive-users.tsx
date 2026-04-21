@@ -123,7 +123,7 @@ export function InactiveUsers() {
                 </td>
                 <td className="px-6 py-4 text-sm text-slate-600">{user.affiliation}</td>
                 <td className="px-6 py-4 text-sm text-slate-600">{user.boothName}</td>
-                <td className="px-6 py-4 text-sm text-slate-600">{user.boothName}</td>
+                <td className="px-6 py-4 text-sm text-slate-600">{user.performanceTeamName}</td>
                 <td className="px-6 py-4 text-sm text-slate-600">{user.representative}</td>
                 <td className="px-6 py-4 text-sm text-slate-600">{user.phone}</td>
                 <td className="px-6 py-4 text-sm text-slate-500">{user.deactivatedDate}</td>
