@@ -1,8 +1,12 @@
 import { defineConfig } from 'vite'
 import path from 'path'
+import { fileURLToPath } from 'node:url'
 import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
 
+// package.json이 "type": "module"이라 ESM 컨텍스트에서 로드된다.
+// ESM에는 __dirname이 없으므로 import.meta.url에서 파생해서 쓴다.
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 function figmaAssetResolver() {
   return {
