@@ -1,0 +1,21 @@
+/*
+ * SUIT Variable — 멋쟁이사자처럼 연세대학교 14기 디자인 시스템 표준.
+ * CDN: sunn-us/SUIT (GitHub jsDelivr)
+ */
+@import url('https://cdn.jsdelivr.net/gh/sunn-us/SUIT/fonts/variable/woff2/SUIT-Variable.css');
+
+:root {
+  --font-sans: 'SUIT Variable', -apple-system, BlinkMacSystemFont, system-ui,
+    'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+}
+
+html,
+body {
+  font-family: var(--font-sans);
+  /* 디자인 시스템 letter-spacing -2% 전역 */
+  letter-spacing: -0.02em;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  font-feature-settings: 'kern' 1, 'calt' 1;
+}

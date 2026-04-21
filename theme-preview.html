@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>대동제 어드민 — 디자인 토큰 프리뷰</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/sunn-us/SUIT/fonts/variable/woff2/SUIT-Variable.css">
+  <style>
+    /* -------- 디자인 시스템 원시 토큰 -------- */
+    :root {
+      --ds-primary: #1E53FF;
+      --ds-primary-pressed: #153BB5;
+      --ds-primary-subtle: #E9EEFF;
+
+      --ds-secondary-a: #7052FF;
+      --ds-secondary-a-pressed: #503AB5;
+      --ds-secondary-a-subtle: #F1EEFF;
+
+      --ds-secondary-b: #FF40A5;
+      --ds-secondary-b-pressed: #B52D75;
+      --ds-secondary-b-subtle: #FFECF6;
+
+      --ds-text-primary: #1F242C;
+      --ds-text-secondary: #4A5568;
+      --ds-text-disabled: #ACB1BA;
+
+      --ds-bg-primary: #FFFFFF;
+      --ds-bg-secondary: #EDEEF0;
+      --ds-bg-tertiary: #C7CAD0;
+
+      --ds-border-default: #EDEEF0;
+      --ds-border-strong: #C7CAD0;
+      --ds-border-focus: #1E53FF;
+
+      --ds-error: #FF5A36;
+      --ds-warning: #FFB020;
+      --ds-success: #00C070;
+      --ds-error-subtle: #FFF0EC;
+      --ds-warning-subtle: #FFF8E0;
+      --ds-success-subtle: #E0FFF3;
+      --ds-error-pressed: #B52E10;
+      --ds-warning-pressed: #B57000;
+      --ds-success-pressed: #007A46;
+
+      --font-sans: 'SUIT Variable', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0; padding: 0;
+      font-family: var(--font-sans);
+      letter-spacing: -0.02em;
+      -webkit-font-smoothing: antialiased;
+      color: var(--ds-text-primary);
+      background: var(--ds-bg-secondary);
+    }
+
+    .wrap { max-width: 1200px; margin: 0 auto; padding: 48px 32px; }
+
+    header.page-header {
+      background: var(--ds-bg-primary);
+      border: 1px solid var(--ds-border-default);
+      border-radius: 16px;
+      padding: 32px;
+      margin-bottom: 32px;
+    }
+    header.page-header h1 {
+      font-size: 28px; font-weight: 800; line-height: 1.2;
+      margin: 0 0 8px; letter-spacing: -0.02em;
+    }
+    header.page-header p {
+      font-size: 15px; font-weight: 500; line-height: 1.5;
+      margin: 0; color: var(--ds-text-secondary);
+    }
+
+    section { margin-bottom: 32px; }
+    section h2 {
+      font-size: 20px; font-weight: 700; line-height: 1.3;
+      letter-spacing: -0.02em;
+      margin: 0 0 16px;
+    }
+
+    .card {
+      background: var(--ds-bg-primary);
+      border: 1px solid var(--ds-border-default);
+      border-radius: 16px;
+      padding: 24px;
+    }
+
+    /* -------- 컬러 스웻치 -------- */
+    .swatch-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; }
+    .swatch {
+      border: 1px solid var(--ds-border-default);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    .swatch .chip { height: 60px; }
+    .swatch .meta { padding: 10px 12px; }
+    .swatch .name { font-size: 12px; font-weight: 500; color: var(--ds-text-primary); }
+    .swatch .hex { font-size: 11px; color: var(--ds-text-secondary); margin-top: 2px; font-family: ui-monospace, monospace; }
+
+    /* -------- 타이포 -------- */
+    .typo-row {
+      display: flex; align-items: baseline; gap: 24px;
+      padding: 14px 0; border-bottom: 1px solid var(--ds-border-default);
+    }
+    .typo-row:last-child { border-bottom: 0; }
+    .typo-row .sample { flex: 1; }
+    .typo-row .token { font-size: 12px; color: var(--ds-text-secondary); font-family: ui-monospace, monospace; min-width: 120px; }
+    .typo-row .spec { font-size: 12px; color: var(--ds-text-secondary); min-width: 140px; text-align: right; }
+
+    /* -------- 버튼 -------- */
+    .btn-row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+    .btn {
+      font-family: var(--font-sans);
+      font-size: 14px; font-weight: 500;
+      letter-spacing: -0.02em;
+      padding: 10px 20px;
+      border-radius: 10px;
+      border: 1px solid transparent;
+      cursor: pointer;
+      transition: all 0.12s ease;
+    }
+    .btn-primary { background: var(--ds-primary); color: #fff; }
+    .btn-primary:hover { background: var(--ds-primary-pressed); }
+    .btn-secondary { background: var(--ds-primary-subtle); color: var(--ds-primary-pressed); }
+    .btn-outline { background: transparent; color: var(--ds-text-primary); border-color: var(--ds-border-strong); }
+    .btn-outline:hover { background: var(--ds-bg-secondary); }
+    .btn-destructive { background: var(--ds-error); color: #fff; }
+    .btn-destructive:hover { background: var(--ds-error-pressed); }
+    .btn-ghost { background: transparent; color: var(--ds-text-primary); }
+    .btn-ghost:hover { background: var(--ds-bg-secondary); }
+    .btn:disabled { background: var(--ds-bg-tertiary); color: var(--ds-text-disabled); cursor: not-allowed; border-color: transparent; }
+
+    /* -------- 배지 -------- */
+    .badge {
+      display: inline-flex; align-items: center;
+      font-size: 12px; font-weight: 500;
+      padding: 4px 10px;
+      border-radius: 999px;
+      letter-spacing: -0.02em;
+    }
+    .badge-success { background: var(--ds-success-subtle); color: var(--ds-success-pressed); }
+    .badge-error { background: var(--ds-error-subtle); color: var(--ds-error-pressed); }
+    .badge-warning { background: var(--ds-warning-subtle); color: var(--ds-warning-pressed); }
+    .badge-primary { background: var(--ds-primary-subtle); color: var(--ds-primary-pressed); }
+
+    /* -------- 테이블 -------- */
+    table.demo {
+      width: 100%; border-collapse: collapse;
+      font-size: 14px;
+    }
+    table.demo thead th {
+      text-align: left; font-weight: 600;
+      padding: 12px 16px;
+      background: var(--ds-bg-secondary);
+      color: var(--ds-text-secondary);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      border-bottom: 1px solid var(--ds-border-default);
+    }
+    table.demo tbody td {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--ds-border-default);
+    }
+    table.demo tbody tr:last-child td { border-bottom: 0; }
+    table.demo tbody tr:hover { background: var(--ds-primary-subtle); }
+
+    /* -------- 사이드바 미리 (mock) -------- */
+    .sidebar-preview {
+      display: grid; grid-template-columns: 240px 1fr;
+      gap: 0;
+      background: var(--ds-bg-primary);
+      border: 1px solid var(--ds-border-default);
+      border-radius: 16px;
+      overflow: hidden;
+      min-height: 320px;
+    }
+    .sidebar-preview aside {
+      background: var(--ds-bg-primary);
+      border-right: 1px solid var(--ds-border-default);
+      padding: 24px 16px;
+    }
+    .sidebar-preview .logo {
+      font-size: 18px; font-weight: 800;
+      color: var(--ds-primary);
+      margin-bottom: 24px;
+      padding: 0 8px;
+    }
+    .sidebar-preview .nav-item {
+      display: flex; align-items: center;
+      padding: 10px 12px;
+      border-radius: 10px;
+      font-size: 14px; font-weight: 500;
+      color: var(--ds-text-secondary);
+      margin-bottom: 2px;
+      cursor: default;
+    }
+    .sidebar-preview .nav-item.active {
+      background: var(--ds-primary);
+      color: #fff;
+    }
+    .sidebar-preview .nav-item:not(.active):hover {
+      background: var(--ds-bg-secondary);
+    }
+    .sidebar-preview main {
+      padding: 32px;
+      background: var(--ds-bg-secondary);
+    }
+    .sidebar-preview main h3 {
+      font-size: 20px; font-weight: 700;
+      margin: 0 0 16px;
+      letter-spacing: -0.02em;
+    }
+
+    /* 입력 필드 */
+    .input-field {
+      display: flex; flex-direction: column; gap: 6px; max-width: 400px;
+    }
+    .input-field label { font-size: 14px; font-weight: 500; }
+    .input-field input {
+      font-family: var(--font-sans);
+      font-size: 14px;
+      padding: 10px 14px;
+      border-radius: 10px;
+      border: 1px solid var(--ds-border-strong);
+      background: var(--ds-bg-primary);
+      letter-spacing: -0.02em;
+      transition: border-color 0.12s ease, box-shadow 0.12s ease;
+    }
+    .input-field input:focus {
+      outline: none;
+      border-color: var(--ds-border-focus);
+      box-shadow: 0 0 0 3px var(--ds-primary-subtle);
+    }
+    .input-field .hint { font-size: 12px; color: var(--ds-text-secondary); }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="page-header">
+      <h1>디자인 토큰 프리뷰</h1>
+      <p>2026 대동제 어드민 · 멋쟁이사자처럼 연세대학교 14기 디자인 시스템 기반</p>
+    </header>
+
+    <!-- 브랜드 컬러 -->
+    <section>
+      <h2>브랜드 컬러</h2>
+      <div class="card">
+        <div class="swatch-grid">
+          <div class="swatch">
+            <div class="chip" style="background:#1E53FF"></div>
+            <div class="meta"><div class="name">Primary</div><div class="hex">#1E53FF</div></div>
+          </div>
+          <div class="swatch">
+            <div class="chip" style="background:#153BB5"></div>
+            <div class="meta"><div class="name">Primary / Pressed</div><div class="hex">#153BB5</div></div>
+          </div>
+          <div class="swatch">
+            <div class="chip" style="background:#E9EEFF"></div>
+            <div class="meta"><div class="name">Primary / Subtle</div><div class="hex">#E9EEFF</div></div>
+          </div>
+          <div class="swatch">
+            <div class="chip" style="background:#7052FF"></div>
+            <div class="meta"><div class="name">Secondary A</div><div class="hex">#7052FF</div></div>
+          </div>
+          <div class="swatch">
+            <div class="chip" style="background:#503AB5"></div>
+            <div class="meta"><div class="name">Secondary A / Pressed</div><div class="hex">#503AB5</div></div>
+          </div>
+          <div class="swatch">
+            <div class="chip" style="background:#F1EEFF"></div>
+            <div class="meta"><div class="name">Secondary A / Subtle</div><div class="hex">#F1EEFF</div></div>
+          </div>
+          <div class="swatch">
+            <div class="chip" style="background:#FF40A5"></div>
+            <div class="meta"><div class="name">Secondary B</div><div class="hex">#FF40A5</div></div>
+          </div>
+          <div class="swatch">
+            <div class="chip" style="background:#B52D75"></div>
+            <div class="meta"><div class="name">Secondary B / Pressed</div><div class="hex">#B52D75</div></div>
+          </div>
+          <div class="swatch">
+            <div class="chip" style="background:#FFECF6"></div>
+            <div class="meta"><div class="name">Secondary B / Subtle</div><div class="hex">#FFECF6</div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 상태 컬러 -->
+    <section>
+      <h2>상태 (Semantic)</h2>
+      <div class="card">
+        <div class="swatch-grid">
+          <div class="swatch">
+            <div class="chip" style="background:#00C070"></div>
+            <div class="meta"><div class="name">Success</div><div class="hex">#00C070</div></div>
+          </div>
+          <div class="swatch">
+            <div class="chip" style="background:#FFB020"></div>
+            <div class="meta"><div class="name">Warning</div><div class="hex">#FFB020</div></div>
+          </div>
+          <div class="swatch">
+            <div class="chip" style="background:#FF5A36"></div>
+            <div class="meta"><div class="name">Error</div><div class="hex">#FF5A36</div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 타이포 -->
+    <section>
+      <h2>타이포그래피 (SUIT Variable, -2% tracking)</h2>
+      <div class="card">
+        <div class="typo-row">
+          <div class="sample" style="font-size:28px; font-weight:800; line-height:1.2">2026 대동제 어드민</div>
+          <div class="token">.ds-display</div>
+          <div class="spec">28 / 800 / 120%</div>
+        </div>
+        <div class="typo-row">
+          <div class="sample" style="font-size:24px; font-weight:700; line-height:1.2">부스 관리 페이지</div>
+          <div class="token">.ds-heading-1</div>
+          <div class="spec">24 / 700 / 120%</div>
+        </div>
+        <div class="typo-row">
+          <div class="sample" style="font-size:20px; font-weight:700; line-height:1.3">Heading 2 예시 문구</div>
+          <div class="token">.ds-heading-2</div>
+          <div class="spec">20 / 700 / 130%</div>
+        </div>
+        <div class="typo-row">
+          <div class="sample" style="font-size:17px; font-weight:600; line-height:1.3">Heading 3 예시 문구</div>
+          <div class="token">.ds-heading-3</div>
+          <div class="spec">17 / 600 / 130%</div>
+        </div>
+        <div class="typo-row">
+          <div class="sample" style="font-size:15px; font-weight:500; line-height:1.5">본문 텍스트. 참여 부스 목록을 조회하고 관리할 수 있습니다.</div>
+          <div class="token">.ds-body-1</div>
+          <div class="spec">15 / 500 / 150%</div>
+        </div>
+        <div class="typo-row">
+          <div class="sample" style="font-size:14px; font-weight:400; line-height:1.5; color: var(--ds-text-secondary)">보조 본문. 설명이나 부연 정보에 사용합니다.</div>
+          <div class="token">.ds-body-2</div>
+          <div class="spec">14 / 400 / 150%</div>
+        </div>
+        <div class="typo-row">
+          <div class="sample" style="font-size:12px; font-weight:400; line-height:1.5; color: var(--ds-text-secondary)">캡션 · 최근 수정 2026.04.20</div>
+          <div class="token">.ds-caption</div>
+          <div class="spec">12 / 400 / 150%</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 버튼 -->
+    <section>
+      <h2>버튼</h2>
+      <div class="card">
+        <div class="btn-row">
+          <button class="btn btn-primary">저장하기</button>
+          <button class="btn btn-secondary">보조 액션</button>
+          <button class="btn btn-outline">취소</button>
+          <button class="btn btn-ghost">건너뛰기</button>
+          <button class="btn btn-destructive">삭제</button>
+          <button class="btn btn-primary" disabled>비활성화</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 배지 -->
+    <section>
+      <h2>상태 배지</h2>
+      <div class="card">
+        <div class="btn-row">
+          <span class="badge badge-success">활성</span>
+          <span class="badge badge-warning">대기중</span>
+          <span class="badge badge-error">비활성</span>
+          <span class="badge badge-primary">Master</span>
+          <span class="badge" style="background:#F1EEFF; color:#503AB5">Super</span>
+          <span class="badge" style="background:#FFECF6; color:#B52D75">Performer</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- 인풋 -->
+    <section>
+      <h2>입력 필드</h2>
+      <div class="card">
+        <div class="input-field">
+          <label>부스명</label>
+          <input type="text" placeholder="예: 취중떡담" />
+          <span class="hint">최대 20자 이내로 입력해주세요</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- 테이블 -->
+    <section>
+      <h2>테이블</h2>
+      <div class="card" style="padding: 0; overflow:hidden;">
+        <table class="demo">
+          <thead>
+            <tr>
+              <th>유저 ID</th><th>권한</th><th>소속</th><th>부스명</th><th>상태</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>munjeong_01</td>
+              <td><span class="badge badge-primary">Booth</span></td>
+              <td>문헌정보학과</td>
+              <td>취중떡담</td>
+              <td><span class="badge badge-success">활성</span></td>
+            </tr>
+            <tr>
+              <td>computer_01</td>
+              <td><span class="badge" style="background:#FFECF6; color:#B52D75">Performer</span></td>
+              <td>멋쟁이사자처럼</td>
+              <td>해당없음</td>
+              <td><span class="badge badge-warning">대기중</span></td>
+            </tr>
+            <tr>
+              <td>admin_super</td>
+              <td><span class="badge" style="background:#F1EEFF; color:#503AB5">Super</span></td>
+              <td>총학생회</td>
+              <td>—</td>
+              <td><span class="badge badge-success">활성</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 사이드바 미리 -->
+    <section>
+      <h2>레이아웃 미리보기</h2>
+      <div class="sidebar-preview">
+        <aside>
+          <div class="logo">대동제 어드민</div>
+          <div class="nav-item">유저 관리</div>
+          <div class="nav-item active">부스 정보 관리</div>
+          <div class="nav-item">예약 관리</div>
+          <div class="nav-item">공연 정보 관리</div>
+          <div class="nav-item">기타 정보 관리</div>
+        </aside>
+        <main>
+          <h3>부스 정보 관리</h3>
+          <p style="color: var(--ds-text-secondary); font-size: 14px;">
+            등록된 부스를 조회하고 수정할 수 있습니다.
+          </p>
+          <div style="margin-top: 16px;">
+            <button class="btn btn-primary">+ 새 부스 등록</button>
+          </div>
+        </main>
+      </div>
+    </section>
+
+    <footer style="text-align: center; color: var(--ds-text-disabled); font-size: 12px; margin-top: 48px;">
+      이 페이지는 theme.css 토큰을 시각 확인하기 위한 데모입니다. 실제 shadcn/ui 컴포넌트와 통합된 모습이 아닙니다.
+    </footer>
+  </div>
+</body>
+</html>
