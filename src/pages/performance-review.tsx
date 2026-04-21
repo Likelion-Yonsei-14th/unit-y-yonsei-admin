@@ -51,79 +51,79 @@ export function PerformanceReviewPage() {
   return (
     <div className="p-8">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-slate-800 flex items-center gap-3">
+        <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
           <MessageCircle size={32} />
           공연 후기 수합
         </h1>
-        <p className="text-slate-600 mt-2">이용자들이 남긴 공연 후기와 응원 메시지를 관리합니다.</p>
+        <p className="text-muted-foreground mt-2">이용자들이 남긴 공연 후기와 응원 메시지를 관리합니다.</p>
       </div>
 
       {/* 통계 카드 */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+        <div className="bg-background rounded-xl border border p-5 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-slate-600">전체 후기</p>
-              <p className="text-2xl font-bold text-slate-800 mt-1">{stats.total}</p>
+              <p className="text-sm text-muted-foreground">전체 후기</p>
+              <p className="text-2xl font-bold text-foreground mt-1">{stats.total}</p>
             </div>
-            <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-              <MessageCircle size={24} className="text-blue-600" />
+            <div className="w-12 h-12 bg-ds-primary-subtle rounded-lg flex items-center justify-center">
+              <MessageCircle size={24} className="text-ds-primary-pressed" />
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+        <div className="bg-background rounded-xl border border p-5 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-slate-600">숨김 처리</p>
-              <p className="text-2xl font-bold text-slate-800 mt-1">{stats.hidden}</p>
+              <p className="text-sm text-muted-foreground">숨김 처리</p>
+              <p className="text-2xl font-bold text-foreground mt-1">{stats.hidden}</p>
             </div>
-            <div className="w-12 h-12 bg-amber-100 rounded-lg flex items-center justify-center">
-              <EyeOff size={24} className="text-amber-600" />
+            <div className="w-12 h-12 bg-ds-warning-subtle rounded-lg flex items-center justify-center">
+              <EyeOff size={24} className="text-ds-warning-pressed" />
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+        <div className="bg-background rounded-xl border border p-5 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-slate-600">평균 후기/팀</p>
-              <p className="text-2xl font-bold text-slate-800 mt-1">
+              <p className="text-sm text-muted-foreground">평균 후기/팀</p>
+              <p className="text-2xl font-bold text-foreground mt-1">
                 {stats.byTeam.length > 0 ? Math.round(stats.total / stats.byTeam.length) : 0}
               </p>
             </div>
-            <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-              <TrendingUp size={24} className="text-green-600" />
+            <div className="w-12 h-12 bg-ds-success-subtle rounded-lg flex items-center justify-center">
+              <TrendingUp size={24} className="text-ds-success-pressed" />
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+        <div className="bg-background rounded-xl border border p-5 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-slate-600">인기 곡 1위</p>
-              <p className="text-lg font-bold text-slate-800 mt-1 truncate">
+              <p className="text-sm text-muted-foreground">인기 곡 1위</p>
+              <p className="text-lg font-bold text-foreground mt-1 truncate">
                 {stats.topSongs[0]?.[0] || "-"}
               </p>
             </div>
-            <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-              <Music size={24} className="text-purple-600" />
+            <div className="w-12 h-12 bg-ds-secondary-a-subtle rounded-lg flex items-center justify-center">
+              <Music size={24} className="text-ds-secondary-a-pressed" />
             </div>
           </div>
         </div>
       </div>
 
       {/* 필터 및 검색 */}
-      <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm mb-6">
+      <div className="bg-background rounded-xl border border p-6 shadow-sm mb-6">
         <div className="flex flex-col md:flex-row gap-4">
           <div className="flex-1">
-            <label className="block text-sm font-semibold text-slate-700 mb-2">공연팀 필터</label>
+            <label className="block text-sm font-semibold text-foreground mb-2">공연팀 필터</label>
             <div className="relative">
-              <Filter size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+              <Filter size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-ds-text-disabled" />
               <select
                 value={selectedTeam}
                 onChange={(e) => setSelectedTeam(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full pl-10 pr-4 py-2.5 border border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
               >
                 {performanceTeams.map(team => (
                   <option key={team} value={team}>{team}</option>
@@ -133,28 +133,28 @@ export function PerformanceReviewPage() {
           </div>
 
           <div className="flex-1">
-            <label className="block text-sm font-semibold text-slate-700 mb-2">검색</label>
+            <label className="block text-sm font-semibold text-foreground mb-2">검색</label>
             <div className="relative">
-              <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+              <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-ds-text-disabled" />
               <input
                 type="text"
                 placeholder="메시지 또는 곡명 검색..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full pl-10 pr-4 py-2.5 border border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
               />
             </div>
           </div>
 
           <div className="flex items-end">
-            <label className="flex items-center gap-2 cursor-pointer px-4 py-2.5 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors">
+            <label className="flex items-center gap-2 cursor-pointer px-4 py-2.5 border border rounded-lg hover:bg-muted transition-colors">
               <input
                 type="checkbox"
                 checked={showHidden}
                 onChange={(e) => setShowHidden(e.target.checked)}
-                className="w-4 h-4 accent-blue-500"
+                className="w-4 h-4 accent-primary"
               />
-              <span className="text-sm text-slate-700">숨김 포함</span>
+              <span className="text-sm text-foreground">숨김 포함</span>
             </label>
           </div>
         </div>
@@ -162,9 +162,9 @@ export function PerformanceReviewPage() {
 
       {/* 인기 곡 순위 */}
       {stats.topSongs.length > 0 && (
-        <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm mb-6">
-          <h3 className="font-bold text-slate-800 mb-4 flex items-center gap-2">
-            <Heart size={20} className="text-red-500" />
+        <div className="bg-background rounded-xl border border p-6 shadow-sm mb-6">
+          <h3 className="font-bold text-foreground mb-4 flex items-center gap-2">
+            <Heart size={20} className="text-destructive" />
             인기 곡 TOP 5
           </h3>
           <div className="space-y-2">
@@ -175,13 +175,13 @@ export function PerformanceReviewPage() {
                   ${index === 0 ? 'bg-gradient-to-r from-yellow-400 to-orange-400 text-white' :
                     index === 1 ? 'bg-gradient-to-r from-slate-300 to-slate-400 text-white' :
                     index === 2 ? 'bg-gradient-to-r from-amber-600 to-amber-700 text-white' :
-                    'bg-slate-100 text-slate-600'}
+                    'bg-muted text-muted-foreground'}
                 `}>
                   {index + 1}
                 </div>
                 <div className="flex-1 flex items-center justify-between">
-                  <span className="text-sm font-medium text-slate-700">{song}</span>
-                  <span className="text-sm text-slate-500">{count}회 선택</span>
+                  <span className="text-sm font-medium text-foreground">{song}</span>
+                  <span className="text-sm text-muted-foreground">{count}회 선택</span>
                 </div>
               </div>
             ))}
@@ -190,25 +190,25 @@ export function PerformanceReviewPage() {
       )}
 
       {/* 후기 목록 */}
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
-        <div className="px-6 py-4 border-b border-slate-200">
-          <h3 className="font-bold text-slate-800">
+      <div className="bg-background rounded-xl border border shadow-sm">
+        <div className="px-6 py-4 border-b border">
+          <h3 className="font-bold text-foreground">
             후기 목록 ({filteredReviews.length})
           </h3>
         </div>
 
         {filteredReviews.length === 0 ? (
-          <div className="p-12 text-center text-slate-500">
-            <MessageCircle size={48} className="mx-auto mb-3 text-slate-300" />
+          <div className="p-12 text-center text-muted-foreground">
+            <MessageCircle size={48} className="mx-auto mb-3 text-ds-text-disabled" />
             <p>조건에 맞는 후기가 없습니다.</p>
           </div>
         ) : (
-          <div className="divide-y divide-slate-200">
+          <div className="divide-y divide-border">
             {filteredReviews.map((review) => (
               <div
                 key={review.id}
-                className={`p-6 hover:bg-slate-50 transition-colors ${
-                  review.isHidden ? 'bg-slate-50 opacity-60' : ''
+                className={`p-6 hover:bg-muted transition-colors ${
+                  review.isHidden ? 'bg-muted opacity-60' : ''
                 }`}
               >
                 <div className="flex items-start justify-between mb-3">
@@ -217,7 +217,7 @@ export function PerformanceReviewPage() {
                       {review.performanceTeam}
                     </div>
                     {review.isHidden && (
-                      <div className="px-3 py-1 bg-amber-100 text-amber-700 text-sm rounded-full flex items-center gap-1">
+                      <div className="px-3 py-1 bg-ds-warning-subtle text-ds-warning-pressed text-sm rounded-full flex items-center gap-1">
                         <EyeOff size={14} />
                         숨김
                       </div>
@@ -226,14 +226,14 @@ export function PerformanceReviewPage() {
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => toggleHidden(review.id)}
-                      className="p-2 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+                      className="p-2 text-muted-foreground hover:bg-muted rounded-lg transition-colors"
                       title={review.isHidden ? "표시" : "숨김"}
                     >
                       {review.isHidden ? <Eye size={18} /> : <EyeOff size={18} />}
                     </button>
                     <button
                       onClick={() => deleteReview(review.id)}
-                      className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                      className="p-2 text-destructive hover:bg-ds-error-subtle rounded-lg transition-colors"
                       title="삭제"
                     >
                       <Trash2 size={18} />
@@ -242,15 +242,15 @@ export function PerformanceReviewPage() {
                 </div>
 
                 <div className="mb-3">
-                  <div className="flex items-center gap-2 text-sm text-slate-600 mb-2">
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
                     <Music size={16} />
                     <span className="font-medium">가장 좋았던 곡:</span>
-                    <span className="text-slate-800">{review.favoriteSong}</span>
+                    <span className="text-foreground">{review.favoriteSong}</span>
                   </div>
-                  <p className="text-slate-700 leading-relaxed">{review.message}</p>
+                  <p className="text-foreground leading-relaxed">{review.message}</p>
                 </div>
 
-                <div className="flex items-center gap-2 text-xs text-slate-500">
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
                   <Calendar size={14} />
                   {review.createdAt}
                 </div>
@@ -262,13 +262,13 @@ export function PerformanceReviewPage() {
 
       {/* 공연팀별 통계 */}
       {stats.byTeam.length > 0 && (
-        <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm mt-6">
-          <h3 className="font-bold text-slate-800 mb-4">공연팀별 후기 수</h3>
+        <div className="bg-background rounded-xl border border p-6 shadow-sm mt-6">
+          <h3 className="font-bold text-foreground mb-4">공연팀별 후기 수</h3>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {stats.byTeam.map(({ team, count }) => (
-              <div key={team} className="p-4 border border-slate-200 rounded-lg">
-                <p className="text-sm text-slate-600 mb-1">{team}</p>
-                <p className="text-2xl font-bold text-slate-800">{count}</p>
+              <div key={team} className="p-4 border border rounded-lg">
+                <p className="text-sm text-muted-foreground mb-1">{team}</p>
+                <p className="text-2xl font-bold text-foreground">{count}</p>
               </div>
             ))}
           </div>
