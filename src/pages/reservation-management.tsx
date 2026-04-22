@@ -1,20 +1,45 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { Navigate, useParams } from "react-router";
 import { Phone, MessageSquare, Check, X, Calendar } from "lucide-react";
 import { mockReservations, type Reservation } from "@/mocks/reservations";
+import { mockBoothsById } from "@/mocks/booth-profile";
 import { PageHeaderAction } from "@/components/common/page-header-action";
+import { useAuth } from "@/features/auth/hooks";
 
 type ReservationStatus = "전체 목록" | "대기자 목록" | "취소 목록" | "완료 목록";
 
 export function ReservationManagement() {
+  const { boothId: boothIdParam } = useParams<{ boothId: string }>();
+  const boothId = Number(boothIdParam);
+  const booth = Number.isFinite(boothId) ? mockBoothsById[boothId] : undefined;
+  const { user } = useAuth();
+
   const [selectedStatus, setSelectedStatus] = useState<ReservationStatus>("전체 목록");
-  const [reservationEnabled, setReservationEnabled] = useState(true);
+  const [reservationEnabled, setReservationEnabled] = useState(booth?.reservationEnabled ?? true);
   const [selectedReservation, setSelectedReservation] = useState<Reservation | null>(null);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [showStatusChangeModal, setShowStatusChangeModal] = useState(false);
 
+  const boothReservations = useMemo(
+    () => mockReservations.filter((r) => r.boothId === boothId),
+    [boothId],
+  );
+
   const statuses: ReservationStatus[] = ["전체 목록", "대기자 목록", "취소 목록", "완료 목록"];
 
-  const filteredReservations = mockReservations.filter(res => {
+  // 훅 호출 이후에 조건부 리턴 — Rules of Hooks 위반 방지.
+  // Booth 계정이 본인 소속이 아닌 부스 URL 을 직접 입력한 경우 자기 부스로 튕김.
+  // Super/Master 는 모든 부스 열람 가능하므로 그대로 진행.
+  if (user?.role === "Booth" && user.boothId !== boothId) {
+    return <Navigate to={`/reservations/${user.boothId}`} replace />;
+  }
+
+  // 유효하지 않은 boothId (없는 부스 · 숫자 아님) → picker 로 복귀.
+  if (!booth) {
+    return <Navigate to="/reservations" replace />;
+  }
+
+  const filteredReservations = boothReservations.filter((res) => {
     if (selectedStatus === "전체 목록") return true;
     if (selectedStatus === "대기자 목록") return res.status === "waiting";
     if (selectedStatus === "취소 목록") return res.status === "cancelled";
@@ -22,14 +47,16 @@ export function ReservationManagement() {
     return true;
   });
 
-  // 대기 순번 계산
+  // 대기 순번은 부스 스코프 내에서 계산 (전역 순번이 아님).
   const getWaitingNumber = (reservation: Reservation) => {
     if (reservation.status !== "waiting") return null;
-    const waitingReservations = mockReservations
-      .filter(r => r.status === "waiting")
+    const waitingReservations = boothReservations
+      .filter((r) => r.status === "waiting")
       .sort((a, b) => a.time.localeCompare(b.time));
-    return waitingReservations.findIndex(r => r.id === reservation.id) + 1;
+    return waitingReservations.findIndex((r) => r.id === reservation.id) + 1;
   };
+
+  const boothHeaderLabel = booth.name || "이름 미입력 부스";
 
   // 체크박스 토글
   const toggleSelectId = (id: string) => {
@@ -60,7 +87,7 @@ export function ReservationManagement() {
     <div className="p-8">
       <div className="flex items-center justify-between mb-8">
         <div>
-          <div className="text-sm text-muted-foreground mb-1">문헌정보학과 부스 예약 현황</div>
+          <div className="text-sm text-muted-foreground mb-1">{boothHeaderLabel} 예약 현황</div>
           <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
             <Calendar size={32} />
             예약 관리
