@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, type KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { BoothSliderCard } from './booth-slider-card';
 import type { PickerBooth } from '@/features/booth-layout/types';
@@ -92,7 +92,7 @@ export function BoothSlider({
     }
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
+  const handleKeyDown = (e: ReactKeyboardEvent) => {
     if (e.key === 'ArrowLeft') {
       e.preventDefault();
       focusByOffset(-1);
