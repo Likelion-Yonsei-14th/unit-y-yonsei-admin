@@ -144,7 +144,7 @@ export function NoticePage() {
               />
             </div>
 
-            <div className="flex justify-end gap-3 pt-4 ">
+            <div className="flex justify-end gap-3 pt-4">
               <button 
                 onClick={handleCancel}
                 className="px-6 py-3 border border-border text-foreground rounded-lg hover:bg-muted transition-colors"

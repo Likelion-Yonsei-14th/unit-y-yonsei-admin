@@ -192,7 +192,7 @@ export function BoothLayoutPage() {
 
       {/* 아카이브: 등록된 매칭 정보 */}
       <div className="bg-background rounded-2xl overflow-hidden shadow-sm">
-        <div className="px-8 py-6 ">
+        <div className="px-8 py-6">
           <h2 className="text-lg font-semibold text-foreground">등록된 부스 배치 정보</h2>
         </div>
         

@@ -191,7 +191,7 @@ export function PerformanceReviewPage() {
 
       {/* 후기 목록 */}
       <div className="bg-background rounded-xl shadow-sm">
-        <div className="px-6 py-4 ">
+        <div className="px-6 py-4">
           <h3 className="font-bold text-foreground">
             후기 목록 ({filteredReviews.length})
           </h3>
