@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useAuth } from "@/features/auth/hooks";
 
-type ReservationStatus = "전체 목록" | "대기자 목록" | "취소 목록" | "완료 목록";
+type ReservationStatus = "대기자 목록" | "완료 목록" | "취소 목록" | "전체 목록";
 
 export function ReservationManagement() {
   const { boothId: boothIdParam } = useParams<{ boothId: string }>();
@@ -55,7 +55,9 @@ export function ReservationManagement() {
     return map;
   }, [boothReservations]);
 
-  const statuses: ReservationStatus[] = ["전체 목록", "대기자 목록", "취소 목록", "완료 목록"];
+  // 대기자 → 완료 → 취소 → 전체 순 — 운영 중 가장 자주 보는 "대기자" 를 좌측 첫 자리에,
+  // 요약/감사용 성격의 "전체" 는 맨 끝에 둔다.
+  const statuses: ReservationStatus[] = ["대기자 목록", "완료 목록", "취소 목록", "전체 목록"];
 
   // 훅 호출 이후에 조건부 리턴 — Rules of Hooks 위반 방지.
   // Booth 계정이 본인 소속이 아닌 부스 URL 을 직접 입력한 경우 자기 부스로 튕김.
@@ -78,11 +80,10 @@ export function ReservationManagement() {
   }
 
   const filteredReservations = boothReservations.filter((res) => {
-    if (selectedStatus === "전체 목록") return true;
     if (selectedStatus === "대기자 목록") return res.status === "waiting";
-    if (selectedStatus === "취소 목록") return res.status === "cancelled";
     if (selectedStatus === "완료 목록") return res.status === "completed";
-    return true;
+    if (selectedStatus === "취소 목록") return res.status === "cancelled";
+    return true; // 전체 목록
   });
 
   const boothHeaderLabel = booth.name || "이름 미입력 부스";
