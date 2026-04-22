@@ -289,7 +289,7 @@ export function UserManagement() {
         </table>
       </div>
 
-      {/* 비활성화 확인 */}
+      {/* 비활성화 확인 — 차단 방향은 파괴성이 커서 경고 패널을 동반한다 */}
       <AlertDialog
         open={!!pendingDeactivate}
         onOpenChange={(o) => !o && setPendingDeactivate(null)}
@@ -300,9 +300,14 @@ export function UserManagement() {
             <AlertDialogDescription>
               {pendingDeactivate?.userId}
               {pendingDeactivate?.representative ? ` (${pendingDeactivate.representative})` : ""}
-              을(를) 비활성화합니다. 해당 유저는 이후 로그인할 수 없게 됩니다.
+              을(를) 비활성화합니다.
             </AlertDialogDescription>
           </AlertDialogHeader>
+          {pendingDeactivate && (
+            <div className="rounded-md border border-ds-warning bg-ds-warning-subtle px-3 py-2 text-sm text-ds-warning-pressed">
+              비활성화 즉시 해당 유저는 로그인할 수 없게 됩니다. 되돌리려면 다시 활성화해야 합니다.
+            </div>
+          )}
           <AlertDialogFooter>
             <AlertDialogCancel>취소</AlertDialogCancel>
             <AlertDialogAction onClick={confirmDeactivate}>비활성화</AlertDialogAction>
