@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { UserPlus, Check, X, AlertCircle, Shield, FileText } from "lucide-react";
+import { UserPlus, Check, X, Shield, FileText } from "lucide-react";
 
 type PermissionType = "Super" | "Master" | "Booth" | "Performer";
 
@@ -54,19 +54,7 @@ export function CreateAdmin() {
       return;
     }
 
-    // 생성 로직
-    console.log({
-      userId,
-      tempPassword,
-      affiliation,
-      permissionType,
-      representativeName,
-      representativePhone,
-      boothName: needsBoothName ? boothName : undefined,
-      performanceTeamName: needsPerformanceTeamName ? performanceTeamName : undefined,
-      internalMemo,
-    });
-
+    // 생성 로직 — 백엔드 연결 시 features/users/api.ts 의 createUser 호출로 치환.
     setShowSuccess(true);
     setTimeout(() => {
       setShowSuccess(false);

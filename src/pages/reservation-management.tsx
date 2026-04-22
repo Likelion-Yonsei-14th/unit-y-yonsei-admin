@@ -191,13 +191,9 @@ export function ReservationManagement() {
 
           <PageHeaderAction
             tone="neutral"
-            onClick={() => {
-              if (selectedIds.length === 0) {
-                alert("상태를 변경할 예약을 선택해주세요.");
-              } else {
-                setShowStatusChangeModal(true);
-              }
-            }}
+            onClick={() => setShowStatusChangeModal(true)}
+            disabled={selectedIds.length === 0}
+            title={selectedIds.length === 0 ? "상태를 변경할 예약을 먼저 선택해주세요" : undefined}
           >
             예약 상태 변경
           </PageHeaderAction>
@@ -533,6 +529,7 @@ export function ReservationManagement() {
                 if (pendingCancel) applyStatus(pendingCancel.id, "cancelled");
                 setPendingCancel(null);
               }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               취소 확정
             </AlertDialogAction>

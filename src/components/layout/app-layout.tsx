@@ -6,6 +6,7 @@ import {
 import { MAIN_NAV, FOOTER_NAV, type NavItem } from '@/config/nav';
 import { useAuth, useLogout } from '@/features/auth/hooks';
 import { ROLE_LABEL } from '@/types/role';
+import { CsFloatingButton } from '@/components/common/cs-floating-button';
 
 /**
  * 어드민 공통 레이아웃.
@@ -285,6 +286,9 @@ export function AppLayout() {
       <main className="flex-1 overflow-auto">
         <Outlet />
       </main>
+
+      {/* 로그인 이후 전역 플로팅 CS 문의 버튼 */}
+      <CsFloatingButton />
     </div>
   );
 }

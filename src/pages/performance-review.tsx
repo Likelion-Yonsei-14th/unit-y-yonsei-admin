@@ -1,12 +1,23 @@
 import { useState } from "react";
 import { MessageCircle, Filter, Trash2, Eye, EyeOff, Calendar, Music, Heart, TrendingUp, Search } from "lucide-react";
 import { mockReviews, type Review } from "@/mocks/performance-reviews";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export function PerformanceReviewPage() {
   const [reviews, setReviews] = useState<Review[]>(mockReviews);
   const [selectedTeam, setSelectedTeam] = useState<string>("전체");
   const [searchQuery, setSearchQuery] = useState("");
   const [showHidden, setShowHidden] = useState(false);
+  const [pendingDelete, setPendingDelete] = useState<Review | null>(null);
 
   const performanceTeams = ["전체", ...Array.from(new Set(mockReviews.map(r => r.performanceTeam)))];
 
@@ -24,10 +35,11 @@ export function PerformanceReviewPage() {
     ));
   };
 
-  const deleteReview = (id: number) => {
-    if (confirm("이 후기를 삭제하시겠습니까?")) {
-      setReviews(reviews.filter(review => review.id !== id));
+  const confirmDelete = () => {
+    if (pendingDelete) {
+      setReviews((prev) => prev.filter((r) => r.id !== pendingDelete.id));
     }
+    setPendingDelete(null);
   };
 
   // 통계 계산
@@ -232,7 +244,7 @@ export function PerformanceReviewPage() {
                       {review.isHidden ? <Eye size={18} /> : <EyeOff size={18} />}
                     </button>
                     <button
-                      onClick={() => deleteReview(review.id)}
+                      onClick={() => setPendingDelete(review)}
                       className="p-2 text-destructive hover:bg-ds-error-subtle rounded-lg transition-colors"
                       title="삭제"
                     >
@@ -274,6 +286,32 @@ export function PerformanceReviewPage() {
           </div>
         </div>
       )}
+
+      {/* 후기 삭제 확인 — 파괴적이라 프로젝트 전반의 AlertDialog 패턴으로 통일. */}
+      <AlertDialog
+        open={!!pendingDelete}
+        onOpenChange={(o) => {
+          if (!o) setPendingDelete(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>후기 삭제</AlertDialogTitle>
+            <AlertDialogDescription>
+              {pendingDelete?.performanceTeam} 공연 후기를 삭제합니다. 삭제 후에는 복구할 수 없습니다.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>취소</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              삭제
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

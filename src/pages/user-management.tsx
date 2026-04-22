@@ -396,7 +396,12 @@ export function UserManagement() {
           )}
           <AlertDialogFooter>
             <AlertDialogCancel>취소</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDeactivate}>비활성화</AlertDialogAction>
+            <AlertDialogAction
+              onClick={confirmDeactivate}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              비활성화
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
