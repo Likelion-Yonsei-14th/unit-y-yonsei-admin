@@ -137,6 +137,9 @@ export function UserManagement() {
       ? "bg-ds-primary-subtle text-ds-primary-pressed"
       : "bg-ds-secondary-a-subtle text-ds-secondary-a-pressed";
 
+  // 역할 변경 시 가장 긴 라벨("Performer") 기준으로 폭을 고정해 시각적 지터를 막는다.
+  const roleBadgeSize = "h-7 w-28 rounded-full text-xs font-medium";
+
   return (
     <div className="p-8">
       <div className="flex items-center justify-between mb-8">
@@ -227,7 +230,7 @@ export function UserManagement() {
                       >
                         <SelectTrigger
                           size="sm"
-                          className={`w-auto border-0 shadow-none px-3 h-7 rounded-full text-xs font-medium ${roleBadgeClass(user.role)}`}
+                          className={`${roleBadgeSize} border-0 shadow-none px-3 ${roleBadgeClass(user.role)}`}
                         >
                           <SelectValue />
                         </SelectTrigger>
@@ -241,7 +244,7 @@ export function UserManagement() {
                       </Select>
                     ) : (
                       <span
-                        className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${roleBadgeClass(user.role)}`}
+                        className={`${roleBadgeSize} inline-flex items-center justify-center px-3 ${roleBadgeClass(user.role)}`}
                         title={isSelf ? "자신의 권한은 변경할 수 없습니다" : undefined}
                       >
                         {user.role}
