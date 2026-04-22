@@ -158,14 +158,14 @@ export function UserManagement() {
         )}
       </div>
 
-      {/* Role Filter */}
+      {/* Role Filter — 가장 긴 라벨("Performer") 기준으로 폭을 고정해 pill 크기 편차 제거 */}
       <div className="flex gap-3 mb-6">
         {roles.map((role) => (
           <button
             key={role}
             onClick={() => setSelectedRole(role)}
             className={`
-              px-5 py-2 rounded-full text-sm font-medium transition-all duration-200
+              min-w-28 px-5 py-2 rounded-full text-sm font-medium text-center transition-all duration-200
               ${
                 selectedRole === role
                   ? "bg-foreground text-primary-foreground shadow-lg"
