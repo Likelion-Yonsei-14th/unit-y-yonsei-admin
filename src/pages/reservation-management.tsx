@@ -103,13 +103,13 @@ export function ReservationManagement() {
     }
   };
 
-  // 예약 상태 변경
-  const handleStatusChange = (newStatus: "waiting" | "completed" | "cancelled") => {
-    // 실제로는 API 호출하여 상태 변경
-    console.log("선택된 예약:", selectedIds, "변경할 상태:", newStatus);
+  // 벌크 예약 상태 변경 — 모달 자체가 확인 단계 역할이라 여기서 바로 반영.
+  const handleStatusChange = (newStatus: ReservationState) => {
+    setReservations((prev) =>
+      prev.map((r) => (selectedIds.includes(r.id) ? { ...r, status: newStatus } : r)),
+    );
     setShowStatusChangeModal(false);
     setSelectedIds([]);
-    alert(`${selectedIds.length}개의 예약이 ${newStatus === "waiting" ? "대기" : newStatus === "completed" ? "완료" : "취소"} 상태로 변경되었습니다.`);
   };
 
   return (
