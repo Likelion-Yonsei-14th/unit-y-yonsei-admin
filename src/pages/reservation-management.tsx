@@ -221,8 +221,13 @@ export function ReservationManagement() {
                 <td className="px-6 py-4 text-sm text-muted-foreground">{reservation.people}명</td>
                 <td className="px-6 py-4 text-sm text-muted-foreground">{reservation.contact}</td>
                 <td className="px-6 py-4">
+                  {/*
+                    라벨 길이가 "완료/취소"(2자) ~ "대기 99번"(5자) 로 들쑥날쑥해
+                    행마다 배지 폭이 튀는 문제. min-w-24 로 가장 긴 케이스 기준 고정 +
+                    inline-flex 로 짧은 라벨도 중앙 정렬해 균일하게 보이도록.
+                  */}
                   <span className={`
-                    inline-block px-3 py-1 rounded-full text-xs font-medium
+                    inline-flex items-center justify-center min-w-24 px-3 py-1 rounded-full text-xs font-medium
                     ${reservation.status === 'waiting' && 'bg-ds-primary-subtle text-ds-primary-pressed'}
                     ${reservation.status === 'completed' && 'bg-ds-success-subtle text-ds-success-pressed'}
                     ${reservation.status === 'cancelled' && 'bg-ds-error-subtle text-ds-error-pressed'}
