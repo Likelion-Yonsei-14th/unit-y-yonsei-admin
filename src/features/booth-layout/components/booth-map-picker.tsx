@@ -37,12 +37,15 @@ export function BoothMapPicker({
     initialFocusBoothId ?? booths[0]?.placement.boothId ?? null,
   );
 
-  // 날짜 변경 시 포커스 리셋 — 이전 날짜의 booth 가 새 날짜에 없을 수 있음
+  // booths 가 바뀔 때마다 현재 포커스의 유효성 재확인.
+  // 유효하면 유지(사용자 스크롤/포커스 위치 보존), 무효면 initialFocus 혹은 booths[0] 로 리셋.
+  // selectedDate 변경은 간접적으로 booths 를 바꿔 이 로직을 자연스레 트리거함.
   useEffect(() => {
+    if (focusedBoothId != null && booths.some((b) => b.placement.boothId === focusedBoothId)) {
+      return;
+    }
     setFocusedBoothId(initialFocusBoothId ?? booths[0]?.placement.boothId ?? null);
-    // selectedDate 만 dep — booths 는 selectedDate 에 의해 교체되므로 중복 트리거 회피
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedDate]);
+  }, [booths, initialFocusBoothId, focusedBoothId]);
 
   const focusedBooth = booths.find((b) => b.placement.boothId === focusedBoothId) ?? null;
   const activeSection = focusedBooth
