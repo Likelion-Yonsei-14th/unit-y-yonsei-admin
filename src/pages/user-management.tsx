@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router";
-import { UserPlus, Users } from "lucide-react";
+import { ArrowDown, ArrowUp, ArrowUpDown, UserPlus, Users } from "lucide-react";
 import { mockUsers, type MockUser as User } from "@/mocks/users";
 import { PageHeaderAction } from "@/components/common/page-header-action";
 import { useAuth } from "@/features/auth/hooks";
@@ -47,9 +47,24 @@ interface PendingRoleChange {
   tier: 1 | 2;
 }
 
+/**
+ * 상태 컬럼 정렬 상태. 스프레드시트 관행을 따른다:
+ * - 'none': 원본 순서 유지
+ * - 'asc': 오름차순 = false(비활성) 먼저 — ArrowUp
+ * - 'desc': 내림차순 = true(활성) 먼저 — ArrowDown
+ */
+type SortDir = "none" | "asc" | "desc";
+
+const nextSortDir: Record<SortDir, SortDir> = {
+  none: "asc",
+  asc: "desc",
+  desc: "none",
+};
+
 export function UserManagement() {
   const [users, setUsers] = useState<User[]>(mockUsers);
   const [selectedRole, setSelectedRole] = useState<RoleFilter>("전체");
+  const [statusSort, setStatusSort] = useState<SortDir>("none");
   const [pendingDeactivate, setPendingDeactivate] = useState<User | null>(null);
   const [pendingRoleChange, setPendingRoleChange] = useState<PendingRoleChange | null>(null);
   const [reason, setReason] = useState("");
@@ -62,6 +77,21 @@ export function UserManagement() {
 
   const filteredUsers =
     selectedRole === "전체" ? users : users.filter((u) => u.role === selectedRole);
+
+  const visibleUsers = useMemo(() => {
+    if (statusSort === "none") return filteredUsers;
+    const copy = [...filteredUsers];
+    copy.sort((a, b) => {
+      if (a.active === b.active) return 0;
+      if (statusSort === "desc") return a.active ? -1 : 1; // 활성 먼저
+      return a.active ? 1 : -1; // 비활성 먼저
+    });
+    return copy;
+  }, [filteredUsers, statusSort]);
+
+  const SortIcon = statusSort === "asc" ? ArrowUp : statusSort === "desc" ? ArrowDown : ArrowUpDown;
+  const sortLabel =
+    statusSort === "asc" ? "비활성 먼저" : statusSort === "desc" ? "활성 먼저" : "정렬 없음";
 
   const applyStatus = (id: number, active: boolean) => {
     setUsers((prev) => prev.map((u) => (u.id === id ? { ...u, active } : u)));
@@ -161,11 +191,25 @@ export function UserManagement() {
               <th className="px-6 py-4 text-left text-sm font-semibold text-foreground">이름</th>
               <th className="px-6 py-4 text-left text-sm font-semibold text-foreground">전화번호</th>
               <th className="px-6 py-4 text-center text-sm font-semibold text-foreground">정보작성여부</th>
-              <th className="px-6 py-4 text-center text-sm font-semibold text-foreground">상태</th>
+              <th className="px-6 py-4 text-center text-sm font-semibold text-foreground">
+                <button
+                  type="button"
+                  onClick={() => setStatusSort((d) => nextSortDir[d])}
+                  className="inline-flex items-center gap-1 mx-auto hover:text-primary transition-colors"
+                  title={`상태 정렬: ${sortLabel} (클릭하여 전환)`}
+                  aria-label={`상태 정렬 — 현재: ${sortLabel}`}
+                >
+                  상태
+                  <SortIcon
+                    size={14}
+                    className={statusSort === "none" ? "text-muted-foreground" : "text-primary"}
+                  />
+                </button>
+              </th>
             </tr>
           </thead>
           <tbody>
-            {filteredUsers.map((user, index) => {
+            {visibleUsers.map((user, index) => {
               const isSelf = currentUser?.userId === user.userId;
               const rowDimmed = !user.active ? "opacity-60" : "";
               return (
