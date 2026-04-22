@@ -266,7 +266,7 @@ export function PerformanceReviewPage() {
           <h3 className="font-bold text-foreground mb-4">공연팀별 후기 수</h3>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {stats.byTeam.map(({ team, count }) => (
-              <div key={team} className="p-4 border border-border rounded-lg">
+              <div key={team} className="p-4 rounded-lg bg-muted">
                 <p className="text-sm text-muted-foreground mb-1">{team}</p>
                 <p className="text-2xl font-bold text-foreground">{count}</p>
               </div>
