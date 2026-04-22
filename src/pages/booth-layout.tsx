@@ -20,12 +20,13 @@ export function BoothLayoutPage() {
     return [];
   };
 
-  const handleSubmit = () => {
-    if (!selectedDate || !selectedLocation || !boothNumber || !boothName || !organizationName) {
-      alert("모든 필드를 입력해주세요.");
-      return;
-    }
+  // 제출 버튼은 isFormComplete 일 때만 활성화되므로 handleSubmit 내부에서
+  // 중복 유효성 검사를 하지 않는다. 버튼이 `selectedLocation` 조건 안에서만
+  // 렌더링되어 date/location 은 이미 보장된 상태.
+  const isFormComplete =
+    !!boothNumber.trim() && !!boothName.trim() && !!organizationName.trim();
 
+  const handleSubmit = () => {
     const newMapping: BoothMapping = {
       id: mappings.length + 1,
       date: selectedDate,
@@ -36,7 +37,7 @@ export function BoothLayoutPage() {
     };
 
     setMappings([...mappings, newMapping]);
-    
+
     // 폼 초기화
     setBoothNumber("");
     setBoothName("");
@@ -179,9 +180,11 @@ export function BoothLayoutPage() {
           {/* 등록 버튼 */}
           {selectedLocation && (
             <div className="flex justify-end pt-4">
-              <button 
+              <button
                 onClick={handleSubmit}
-                className="px-6 py-3 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-lg hover:shadow-lg hover:shadow-blue-200 transition-all duration-200"
+                disabled={!isFormComplete}
+                title={!isFormComplete ? "부스 번호·부스명·단체명을 모두 입력해주세요" : undefined}
+                className="px-6 py-3 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-lg hover:shadow-lg hover:shadow-blue-200 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-none"
               >
                 매칭 정보 저장
               </button>
