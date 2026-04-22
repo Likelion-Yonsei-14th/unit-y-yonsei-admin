@@ -94,10 +94,13 @@ export function UserManagement() {
     });
   }, [users, normalizedQuery]);
 
-  const filteredUsers =
-    selectedRole === "전체"
-      ? searchedUsers
-      : searchedUsers.filter((u) => u.role === selectedRole);
+  const filteredUsers = useMemo(
+    () =>
+      selectedRole === "전체"
+        ? searchedUsers
+        : searchedUsers.filter((u) => u.role === selectedRole),
+    [searchedUsers, selectedRole],
+  );
 
   const visibleUsers = useMemo(() => {
     if (statusSort === "none") return filteredUsers;
