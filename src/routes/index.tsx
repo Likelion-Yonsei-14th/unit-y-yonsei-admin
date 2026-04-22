@@ -1,4 +1,4 @@
-import { createBrowserRouter, Navigate } from 'react-router';
+import { createBrowserRouter, Navigate, useParams } from 'react-router';
 import { RequireAuth, RequireGuest, RequirePermission } from '@/features/auth/guard';
 import { useAuth } from '@/features/auth/hooks';
 import { AppLayout } from '@/components/layout/app-layout';
@@ -21,9 +21,42 @@ function DefaultLanding() {
   }
 }
 
+/**
+ * `/reservations` 진입 분기.
+ * - Booth 계정: 자기 부스로 바로 이동 (picker 스킵)
+ * - Super/Master: 부스 선택 picker 로 진입
+ * 실제 예약 관리 화면은 항상 `/reservations/:boothId` 경로에서 렌더된다.
+ */
+function ReservationsEntry() {
+  const { user } = useAuth();
+  if (user?.role === 'Booth') {
+    if (user.boothId != null) {
+      return <Navigate to={`/reservations/${user.boothId}`} replace />;
+    }
+    // 소속 부스가 아직 없는 Booth 계정 — 이론상 생성 직후 edge case.
+    return (
+      <div className="p-8 text-sm text-muted-foreground">
+        소속 부스 정보가 아직 설정되지 않았습니다. 관리자에게 문의해 주세요.
+      </div>
+    );
+  }
+  return <ReservationBoothPicker />;
+}
+
+/**
+ * boothId 가 바뀌면 ReservationManagement 를 강제 remount.
+ * 같은 라우트 패턴 간 이동(`/reservations/1` → `/reservations/3`) 시
+ * 내부 상태(필터·선택·토글 등) 가 전 부스 값을 끌고 오지 않도록 차단.
+ */
+function ReservationManagementRoute() {
+  const { boothId } = useParams<{ boothId: string }>();
+  return <ReservationManagement key={boothId ?? ''} />;
+}
+
 import { UserManagement } from '@/pages/user-management';
 import { BoothManagement } from '@/pages/booth-management';
 import { ReservationManagement } from '@/pages/reservation-management';
+import { ReservationBoothPicker } from '@/pages/reservation-booth-picker';
 import { PerformanceManagement } from '@/pages/performance-management';
 import { NoticePage } from '@/pages/notice';
 import { LostFoundPage } from '@/pages/lost-found';
@@ -86,7 +119,15 @@ export const router = createBrowserRouter([
         path: 'reservations',
         element: (
           <RequirePermission permission="reservation.read">
-            <ReservationManagement />
+            <ReservationsEntry />
+          </RequirePermission>
+        ),
+      },
+      {
+        path: 'reservations/:boothId',
+        element: (
+          <RequirePermission permission="reservation.read">
+            <ReservationManagementRoute />
           </RequirePermission>
         ),
       },

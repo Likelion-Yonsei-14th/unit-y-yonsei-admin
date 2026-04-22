@@ -57,14 +57,18 @@ export function AppLayout() {
   const navItems = filterNav(MAIN_NAV);
   const footerItems = filterNav(FOOTER_NAV);
 
+  // `/a` 로 `/a/b` 도 활성화로 보되, `/a-other` 같은 우연 매칭은 배제.
+  const pathMatches = (pathname: string, path: string) =>
+    pathname === path || pathname.startsWith(path + '/');
+
   const isMenuActive = (item: NavItem): boolean => {
     if (item.children?.length) {
       return (
-        item.children.some(child => location.pathname === child.path) ||
-        location.pathname === item.path
+        item.children.some(child => pathMatches(location.pathname, child.path)) ||
+        pathMatches(location.pathname, item.path)
       );
     }
-    return location.pathname === item.path;
+    return pathMatches(location.pathname, item.path);
   };
 
   return (

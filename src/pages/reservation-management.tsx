@@ -1,20 +1,65 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { Navigate, useParams } from "react-router";
 import { Phone, MessageSquare, Check, X, Calendar } from "lucide-react";
 import { mockReservations, type Reservation } from "@/mocks/reservations";
+import { mockBoothsById } from "@/mocks/booth-profile";
 import { PageHeaderAction } from "@/components/common/page-header-action";
+import { useAuth } from "@/features/auth/hooks";
 
 type ReservationStatus = "전체 목록" | "대기자 목록" | "취소 목록" | "완료 목록";
 
 export function ReservationManagement() {
+  const { boothId: boothIdParam } = useParams<{ boothId: string }>();
+  const boothId = Number(boothIdParam);
+  const booth = Number.isFinite(boothId) ? mockBoothsById[boothId] : undefined;
+  const { user } = useAuth();
+
   const [selectedStatus, setSelectedStatus] = useState<ReservationStatus>("전체 목록");
-  const [reservationEnabled, setReservationEnabled] = useState(true);
+  const [reservationEnabled, setReservationEnabled] = useState(booth?.reservationEnabled ?? true);
   const [selectedReservation, setSelectedReservation] = useState<Reservation | null>(null);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [showStatusChangeModal, setShowStatusChangeModal] = useState(false);
 
+  const boothReservations = useMemo(
+    () => mockReservations.filter((r) => r.boothId === boothId),
+    [boothId],
+  );
+
+  // 대기 순번은 시간 오름차순 기준 고정이라 boothReservations 가 바뀔 때만
+  // 다시 계산한다. 렌더마다 getWaitingNumber 에서 filter+sort 를 돌리면
+  // 행 렌더 횟수에 비례해 O(n² log n) 까지 악화되므로 Map 으로 O(1) 조회.
+  const waitingNumberById = useMemo(() => {
+    const sorted = boothReservations
+      .filter((r) => r.status === "waiting")
+      .sort((a, b) => a.time.localeCompare(b.time));
+    const map = new Map<string, number>();
+    sorted.forEach((r, i) => map.set(r.id, i + 1));
+    return map;
+  }, [boothReservations]);
+
   const statuses: ReservationStatus[] = ["전체 목록", "대기자 목록", "취소 목록", "완료 목록"];
 
-  const filteredReservations = mockReservations.filter(res => {
+  // 훅 호출 이후에 조건부 리턴 — Rules of Hooks 위반 방지.
+  // Booth 계정이 본인 소속이 아닌 부스 URL 을 직접 입력한 경우 자기 부스로 튕김.
+  // boothId 미할당(이론상 엣지) 계정은 `/reservations` 의 entry 로 보내
+  // "소속 부스 미설정" 안내를 보여준다. 이 가드가 없으면 `/reservations/undefined`
+  // 로 보내 NaN 매칭 → 재리다이렉트 무한 루프에 빠진다.
+  // Super/Master 는 모든 부스 열람 가능하므로 그대로 진행.
+  if (user?.role === "Booth") {
+    if (user.boothId == null) {
+      return <Navigate to="/reservations" replace />;
+    }
+    if (user.boothId !== boothId) {
+      return <Navigate to={`/reservations/${user.boothId}`} replace />;
+    }
+  }
+
+  // 유효하지 않은 boothId (없는 부스 · 숫자 아님) → picker 로 복귀.
+  if (!booth) {
+    return <Navigate to="/reservations" replace />;
+  }
+
+  const filteredReservations = boothReservations.filter((res) => {
     if (selectedStatus === "전체 목록") return true;
     if (selectedStatus === "대기자 목록") return res.status === "waiting";
     if (selectedStatus === "취소 목록") return res.status === "cancelled";
@@ -22,14 +67,7 @@ export function ReservationManagement() {
     return true;
   });
 
-  // 대기 순번 계산
-  const getWaitingNumber = (reservation: Reservation) => {
-    if (reservation.status !== "waiting") return null;
-    const waitingReservations = mockReservations
-      .filter(r => r.status === "waiting")
-      .sort((a, b) => a.time.localeCompare(b.time));
-    return waitingReservations.findIndex(r => r.id === reservation.id) + 1;
-  };
+  const boothHeaderLabel = booth.name || "이름 미입력 부스";
 
   // 체크박스 토글
   const toggleSelectId = (id: string) => {
@@ -60,7 +98,7 @@ export function ReservationManagement() {
     <div className="p-8">
       <div className="flex items-center justify-between mb-8">
         <div>
-          <div className="text-sm text-muted-foreground mb-1">문헌정보학과 부스 예약 현황</div>
+          <div className="text-sm text-muted-foreground mb-1">{boothHeaderLabel} 예약 현황</div>
           <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
             <Calendar size={32} />
             예약 관리
@@ -171,7 +209,7 @@ export function ReservationManagement() {
                     ${reservation.status === 'completed' && 'bg-ds-success-subtle text-ds-success-pressed'}
                     ${reservation.status === 'cancelled' && 'bg-ds-error-subtle text-ds-error-pressed'}
                   `}>
-                    {reservation.status === 'waiting' && `대기 ${getWaitingNumber(reservation)}번`}
+                    {reservation.status === 'waiting' && `대기 ${waitingNumberById.get(reservation.id) ?? ''}번`}
                     {reservation.status === 'completed' && '완료'}
                     {reservation.status === 'cancelled' && '취소'}
                   </span>
