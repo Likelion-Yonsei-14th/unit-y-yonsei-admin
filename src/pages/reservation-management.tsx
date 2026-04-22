@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Navigate, useParams } from "react-router";
-import { Phone, MessageSquare, Check, X, Calendar, RotateCcw } from "lucide-react";
+import { Phone, MessageSquare, Check, X, Calendar, RotateCcw, Search } from "lucide-react";
 import { mockReservations, type Reservation, type ReservationState } from "@/mocks/reservations";
 import { mockBoothsById } from "@/mocks/booth-profile";
 import { PageHeaderAction } from "@/components/common/page-header-action";
@@ -26,6 +26,7 @@ export function ReservationManagement() {
 
   const [reservations, setReservations] = useState<Reservation[]>(mockReservations);
   const [selectedStatus, setSelectedStatus] = useState<ReservationStatus>("대기자 목록");
+  const [searchQuery, setSearchQuery] = useState("");
   const [reservationEnabled, setReservationEnabled] = useState(booth?.reservationEnabled ?? true);
   const [selectedReservation, setSelectedReservation] = useState<Reservation | null>(null);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -38,6 +39,19 @@ export function ReservationManagement() {
     () => reservations.filter((r) => r.boothId === boothId),
     [reservations, boothId],
   );
+
+  // 파이프: boothReservations → 검색 → 상태 필터 → filteredReservations.
+  // 연락처/시간/인원수는 검색 대상 제외(user-management 와 동일한 이유: 값 형태가 잡다).
+  const normalizedQuery = searchQuery.trim().toLowerCase();
+  const searchedReservations = useMemo(() => {
+    if (!normalizedQuery) return boothReservations;
+    return boothReservations.filter((r) => {
+      return (
+        r.id.toLowerCase().includes(normalizedQuery) ||
+        r.name.toLowerCase().includes(normalizedQuery)
+      );
+    });
+  }, [boothReservations, normalizedQuery]);
 
   const applyStatus = (id: string, status: ReservationState) => {
     setReservations((prev) => prev.map((r) => (r.id === id ? { ...r, status } : r)));
@@ -79,7 +93,7 @@ export function ReservationManagement() {
     return <Navigate to="/reservations" replace />;
   }
 
-  const filteredReservations = boothReservations.filter((res) => {
+  const filteredReservations = searchedReservations.filter((res) => {
     if (selectedStatus === "대기자 목록") return res.status === "waiting";
     if (selectedStatus === "완료 목록") return res.status === "completed";
     if (selectedStatus === "취소 목록") return res.status === "cancelled";
@@ -182,23 +196,54 @@ export function ReservationManagement() {
         </div>
       </div>
 
-      {/* Status Filter */}
-      <div className="flex gap-3 mb-6">
-        {statuses.map((status) => (
-          <button
-            key={status}
-            onClick={() => setSelectedStatus(status)}
-            className={`
-              px-5 py-2 rounded-full text-sm font-medium transition-all duration-200
-              ${selectedStatus === status
-                ? 'bg-foreground text-primary-foreground shadow-lg'
-                : 'bg-background text-muted-foreground border border-border hover:border-ds-border-strong'
-              }
-            `}
-          >
-            {status}
-          </button>
-        ))}
+      {/*
+        Status Filter + 검색 — 한 줄에 좌측 pill, 우측 inline search.
+        user-management 와 동일 패턴. 계정/예약 수가 수백 단위라 서버 검색 없이
+        프론트에서 .includes() 로 충분.
+      */}
+      <div className="flex items-center justify-between gap-4 mb-6">
+        <div className="flex gap-3">
+          {statuses.map((status) => (
+            <button
+              key={status}
+              onClick={() => setSelectedStatus(status)}
+              className={`
+                px-5 py-2 rounded-full text-sm font-medium transition-all duration-200
+                ${selectedStatus === status
+                  ? 'bg-foreground text-primary-foreground shadow-lg'
+                  : 'bg-background text-muted-foreground border border-border hover:border-ds-border-strong'
+                }
+              `}
+            >
+              {status}
+            </button>
+          ))}
+        </div>
+
+        <div className="relative w-72">
+          <Search
+            size={16}
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-ds-text-disabled pointer-events-none"
+          />
+          <input
+            type="search"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="예약 ID·신청자명 검색"
+            aria-label="예약 검색"
+            className="w-full h-10 pl-9 pr-9 text-sm bg-background border border-border rounded-full focus:outline-none focus:ring-2 focus:ring-ring placeholder:text-ds-text-disabled"
+          />
+          {searchQuery && (
+            <button
+              type="button"
+              onClick={() => setSearchQuery("")}
+              aria-label="검색어 지우기"
+              className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+            >
+              <X size={14} />
+            </button>
+          )}
+        </div>
       </div>
 
       {/*
