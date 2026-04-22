@@ -290,6 +290,13 @@ export function UserManagement() {
             {visibleUsers.map((user, index) => {
               const isSelf = currentUser?.userId === user.userId;
               const rowDimmed = !user.active ? "opacity-60" : "";
+              // 역할에 따라 상호 배타적 — 한 컬럼에 병합해서 렌더.
+              const boothOrTeamName =
+                user.role === "Booth"
+                  ? user.boothName
+                  : user.role === "Performer"
+                    ? user.performanceTeamName
+                    : "-";
               return (
                 <tr
                   key={user.id}
@@ -329,20 +336,7 @@ export function UserManagement() {
                     )}
                   </td>
                   <td className="px-6 py-4 text-sm text-muted-foreground truncate" title={user.affiliation}>{user.affiliation}</td>
-                  {(() => {
-                    // 역할에 따라 상호 배타적이므로 한 컬럼에 병합.
-                    const boothOrTeamName =
-                      user.role === "Booth"
-                        ? user.boothName
-                        : user.role === "Performer"
-                          ? user.performanceTeamName
-                          : "-";
-                    return (
-                      <td className="px-6 py-4 text-sm text-muted-foreground truncate" title={boothOrTeamName}>
-                        {boothOrTeamName}
-                      </td>
-                    );
-                  })()}
+                  <td className="px-6 py-4 text-sm text-muted-foreground truncate" title={boothOrTeamName}>{boothOrTeamName}</td>
                   <td className="px-6 py-4 text-sm text-muted-foreground truncate" title={user.representative}>{user.representative}</td>
                   <td className="px-6 py-4 text-sm text-muted-foreground truncate" title={user.phone}>{user.phone}</td>
                   <td className="px-6 py-4 text-center">
