@@ -137,8 +137,9 @@ export function UserManagement() {
       ? "bg-ds-primary-subtle text-ds-primary-pressed"
       : "bg-ds-secondary-a-subtle text-ds-secondary-a-pressed";
 
-  // 역할 변경 시 가장 긴 라벨("Performer") 기준으로 폭을 고정해 시각적 지터를 막는다.
-  const roleBadgeSize = "h-7 w-28 rounded-full text-xs font-medium";
+  // 역할 배지는 table-fixed 로 폭이 고정된 컬럼(w-[10%]) 을 그대로 채운다.
+  // 배지에 절대 폭을 박으면 좁은 뷰포트에서 컬럼 경계를 넘어 인접 셀을 침범할 수 있어 w-full 로 붙인다.
+  const roleBadgeSize = "h-7 rounded-full text-xs font-medium";
 
   return (
     <div className="p-8">
@@ -236,7 +237,7 @@ export function UserManagement() {
                       >
                         <SelectTrigger
                           size="sm"
-                          className={`${roleBadgeSize} border-0 shadow-none px-3 ${roleBadgeClass(user.role)}`}
+                          className={`${roleBadgeSize} w-full border-0 shadow-none px-3 ${roleBadgeClass(user.role)}`}
                         >
                           <SelectValue />
                         </SelectTrigger>
@@ -250,7 +251,7 @@ export function UserManagement() {
                       </Select>
                     ) : (
                       <span
-                        className={`${roleBadgeSize} inline-flex items-center justify-center px-3 ${roleBadgeClass(user.role)}`}
+                        className={`${roleBadgeSize} w-full inline-flex items-center justify-center px-3 ${roleBadgeClass(user.role)}`}
                         title={isSelf ? "자신의 권한은 변경할 수 없습니다" : undefined}
                       >
                         {user.role}
