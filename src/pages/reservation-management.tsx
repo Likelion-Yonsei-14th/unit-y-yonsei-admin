@@ -130,7 +130,13 @@ export function ReservationManagement() {
     }
   }, [someFilteredSelected]);
 
-  const hasActiveFilter = !!normalizedQuery || selectedStatus !== "전체 목록";
+  // 빈 상태 메시지는 두 가지 원인이 다르다:
+  //  - 부스에 예약 자체가 없음 → "아직 예약이 없습니다."
+  //  - 예약은 있는데 현재 필터에 걸려서 없음 → "조건에 맞는 예약이 없습니다."
+  // 기본 탭이 "대기자 목록" 이라 selectedStatus 기반의 hasActiveFilter 는
+  // 진입 순간에도 true 가 되어 두 상태가 구분되지 않음. 따라서 boothReservations
+  // 원본 데이터 수를 먼저 기준 삼는다.
+  const hasUnderlyingData = boothReservations.length > 0;
 
   // 현재 필터 범위의 행만 대상으로 union/diff. 다른 필터에서 선택한 id 는 보존.
   const toggleSelectAll = () => {
@@ -285,9 +291,9 @@ export function ReservationManagement() {
                   colSpan={8}
                   className="px-6 py-12 text-center text-sm text-muted-foreground"
                 >
-                  {hasActiveFilter
+                  {hasUnderlyingData
                     ? "조건에 맞는 예약이 없습니다."
-                    : "표시할 예약이 없습니다."}
+                    : "아직 예약이 없습니다."}
                 </td>
               </tr>
             )}
