@@ -50,8 +50,6 @@ export function BoothMapCanvas({
           aspectRatio: section.imageAspectRatio,
           maxWidth: '100%',
           maxHeight: '100%',
-          width: '100%',
-          height: '100%',
         }}
       >
         {layers.map((s) => (
@@ -60,7 +58,7 @@ export function BoothMapCanvas({
             src={s.imageUrl}
             alt={s.label}
             aria-hidden={s.id !== section.id}
-            className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-300 ${
+            className={`absolute inset-0 h-full w-full object-contain transition-opacity duration-300 ${
               s.id === section.id ? 'opacity-100' : 'opacity-0'
             }`}
           />
