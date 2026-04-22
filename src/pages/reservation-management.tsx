@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Navigate, useParams } from "react-router";
 import { Phone, MessageSquare, Check, X, Calendar, RotateCcw } from "lucide-react";
 import { mockReservations, type Reservation, type ReservationState } from "@/mocks/reservations";
@@ -90,17 +90,40 @@ export function ReservationManagement() {
 
   // 체크박스 토글
   const toggleSelectId = (id: string) => {
-    setSelectedIds(prev => 
+    setSelectedIds(prev =>
       prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
     );
   };
 
-  // 전체 선택/해제
+  // "현재 필터 뷰의 전체 행이 선택돼 있는가" 를 실제 membership 으로 판정.
+  // 단순 length 비교는 (a) 0 === 0 으로 빈 목록이 '전체 선택'처럼 보이거나
+  // (b) 필터 전환 시 다른 필터 선택분과 길이가 우연히 같아질 때 거짓 양성.
+  const filteredSelectedCount = filteredReservations.reduce(
+    (n, r) => (selectedIds.includes(r.id) ? n + 1 : n),
+    0,
+  );
+  const allFilteredSelected =
+    filteredReservations.length > 0 &&
+    filteredSelectedCount === filteredReservations.length;
+  const someFilteredSelected =
+    filteredSelectedCount > 0 && !allFilteredSelected;
+
+  // indeterminate 는 checked 와 별개 프로퍼티라 ref 로 직접 세팅.
+  const selectAllRef = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    if (selectAllRef.current) {
+      selectAllRef.current.indeterminate = someFilteredSelected;
+    }
+  }, [someFilteredSelected]);
+
+  // 현재 필터 범위의 행만 대상으로 union/diff. 다른 필터에서 선택한 id 는 보존.
   const toggleSelectAll = () => {
-    if (selectedIds.length === filteredReservations.length) {
-      setSelectedIds([]);
+    const filteredIds = filteredReservations.map((r) => r.id);
+    const filteredIdSet = new Set(filteredIds);
+    if (allFilteredSelected) {
+      setSelectedIds((prev) => prev.filter((id) => !filteredIdSet.has(id)));
     } else {
-      setSelectedIds(filteredReservations.map(r => r.id));
+      setSelectedIds((prev) => Array.from(new Set([...prev, ...filteredIds])));
     }
   };
 
@@ -191,10 +214,12 @@ export function ReservationManagement() {
             <tr>
               <th className="w-[4%] py-4 text-center">
                 <input
+                  ref={selectAllRef}
                   type="checkbox"
                   className="w-4 h-4 rounded accent-primary"
-                  checked={selectedIds.length === filteredReservations.length}
+                  checked={allFilteredSelected}
                   onChange={toggleSelectAll}
+                  aria-label={allFilteredSelected ? "현재 목록 전체 선택 해제" : "현재 목록 전체 선택"}
                 />
               </th>
               <th className="w-[10%] px-6 py-4 text-left text-sm font-semibold text-foreground">예약 ID</th>
