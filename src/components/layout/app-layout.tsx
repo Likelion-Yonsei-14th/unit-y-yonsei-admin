@@ -159,7 +159,7 @@ export function AppLayout() {
                       <Icon size={18} />
                       {!isCollapsed && (
                         <>
-                          <span className="ds-body-2 flex-1">{item.label}</span>
+                          <span className="ds-body-2 flex-1 min-w-0 truncate">{item.label}</span>
                           <ChevronDown
                             size={16}
                             className={`transition-transform ${isExpanded ? 'rotate-180' : ''}`}
@@ -182,7 +182,7 @@ export function AppLayout() {
                       <Icon size={18} />
                       {!isCollapsed && (
                         <>
-                          <span className="ds-body-2 flex-1 text-left">{item.label}</span>
+                          <span className="ds-body-2 flex-1 min-w-0 truncate text-left">{item.label}</span>
                           <ChevronDown
                             size={16}
                             className={`transition-transform ${isExpanded ? 'rotate-180' : ''}`}
