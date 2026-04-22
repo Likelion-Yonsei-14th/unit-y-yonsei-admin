@@ -135,7 +135,17 @@ export function AppLayout() {
                   item.requires && can(item.requires) ? (
                     <Link
                       to={item.path}
-                      onClick={() => toggleMenu(item.path)}
+                      onClick={(e) => {
+                        /**
+                         * 현재 탭에서 실제로 네비게이션이 일어나는 경우에만 토글.
+                         * Cmd/Ctrl/Shift/Alt-클릭(새 탭·새 창)이나 가운데 클릭은
+                         * 현재 탭 상태를 건드리지 않는다.
+                         */
+                        if (e.defaultPrevented) return;
+                        if (e.button !== 0) return;
+                        if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+                        toggleMenu(item.path);
+                      }}
                       className={`
                         flex items-center gap-3 rounded-lg transition-colors
                         ${isCollapsed ? 'justify-center px-3 py-3' : 'px-4 py-2.5'}
