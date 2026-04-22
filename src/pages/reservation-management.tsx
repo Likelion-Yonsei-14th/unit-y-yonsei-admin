@@ -25,7 +25,7 @@ export function ReservationManagement() {
   const { user } = useAuth();
 
   const [reservations, setReservations] = useState<Reservation[]>(mockReservations);
-  const [selectedStatus, setSelectedStatus] = useState<ReservationStatus>("전체 목록");
+  const [selectedStatus, setSelectedStatus] = useState<ReservationStatus>("대기자 목록");
   const [reservationEnabled, setReservationEnabled] = useState(booth?.reservationEnabled ?? true);
   const [selectedReservation, setSelectedReservation] = useState<Reservation | null>(null);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
