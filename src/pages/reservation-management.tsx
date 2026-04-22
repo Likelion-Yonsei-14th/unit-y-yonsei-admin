@@ -278,7 +278,17 @@ export function ReservationManagement() {
             className="bg-background rounded-2xl p-8 max-w-md w-full mx-4 shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <h3 className="text-2xl font-bold text-foreground mb-6">예약 상세 정보</h3>
+            <div className="flex items-start justify-between mb-6">
+              <h3 className="text-2xl font-bold text-foreground">예약 상세 정보</h3>
+              <button
+                type="button"
+                onClick={() => setSelectedReservation(null)}
+                aria-label="닫기"
+                className="-m-1 p-1 rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+              >
+                <X size={20} />
+              </button>
+            </div>
 
             <div className="space-y-4 mb-8">
               <div>
