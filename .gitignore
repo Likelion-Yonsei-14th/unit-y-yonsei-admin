@@ -32,3 +32,4 @@ dist-types/
 src/**/*.js
 src/**/*.d.ts
 .gstack/
+.superpowers/
