@@ -147,7 +147,7 @@ export function PerformanceManagement() {
       </div>
 
       {/* Performance Team Profile */}
-      <div className="bg-background rounded-2xl border border p-8 mb-6 shadow-sm">
+      <div className="bg-background rounded-2xl p-8 mb-6 shadow-sm">
         <h2 className="text-xl font-bold text-foreground mb-6">공연팀 프로필</h2>
 
         <div className="space-y-6">
@@ -168,7 +168,7 @@ export function PerformanceManagement() {
             <textarea
               rows={5}
               placeholder="동아리 소개, 구성원 소개 등을 작성하세요"
-              className="w-full px-4 py-3 border border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all resize-none"
+              className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all resize-none"
               value={editingData.description}
               onChange={(e) => setEditingData({ ...editingData, description: e.target.value })}
               disabled={!isEditMode}
@@ -185,7 +185,7 @@ export function PerformanceManagement() {
                 <input
                   type="text"
                   placeholder="인스타그램 URL"
-                  className="flex-1 px-4 py-3 border border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
+                  className="flex-1 px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
                   value={editingData.instagramUrl}
                   onChange={(e) => setEditingData({ ...editingData, instagramUrl: e.target.value })}
                   disabled={!isEditMode}
@@ -198,7 +198,7 @@ export function PerformanceManagement() {
                 <input
                   type="text"
                   placeholder="유튜브 URL"
-                  className="flex-1 px-4 py-3 border border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
+                  className="flex-1 px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
                   value={editingData.youtubeUrl}
                   onChange={(e) => setEditingData({ ...editingData, youtubeUrl: e.target.value })}
                   disabled={!isEditMode}
@@ -275,7 +275,7 @@ export function PerformanceManagement() {
             
             {/* Empty State - View Mode */}
             {!isEditMode && performanceImages.length === 0 && (
-              <div className="border border rounded-lg p-8 text-center bg-muted">
+              <div className="rounded-lg p-8 text-center bg-muted">
                 <Upload className="mx-auto mb-3 text-ds-text-disabled" size={32} />
                 <p className="text-sm text-ds-text-disabled">등록된 이미지가 없습니다</p>
               </div>
@@ -285,7 +285,7 @@ export function PerformanceManagement() {
       </div>
 
       {/* Performance Timetable */}
-      <div className="bg-background rounded-2xl border border p-8 mb-6 shadow-sm">
+      <div className="bg-background rounded-2xl p-8 mb-6 shadow-sm">
         <h2 className="text-xl font-bold text-foreground mb-6">공연 타임테이블</h2>
 
         <div className="grid grid-cols-2 gap-6">
@@ -313,7 +313,7 @@ export function PerformanceManagement() {
       </div>
 
       {/* Setlist Management */}
-      <div className="bg-background rounded-2xl border border p-8 shadow-sm">
+      <div className="bg-background rounded-2xl p-8 shadow-sm">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-bold text-foreground">공연 셋리스트</h2>
           {isEditMode && (
@@ -329,7 +329,7 @@ export function PerformanceManagement() {
 
         <div className="space-y-3">
           {(isEditMode ? editingSetlist : setlist).map((item, index) => (
-            <div key={item.id} className="flex items-center gap-4 p-4 border border rounded-lg hover:border-primary transition-colors">
+            <div key={item.id} className="flex items-center gap-4 p-4 border border-border rounded-lg hover:border-primary transition-colors">
               <div className="flex items-center justify-center w-10 h-10 bg-gradient-to-br from-blue-500 to-cyan-500 text-white font-bold rounded-lg">
                 {index + 1}
               </div>
@@ -338,7 +338,7 @@ export function PerformanceManagement() {
                   type="text"
                   placeholder="곡명"
                   value={item.songName}
-                  className="px-3 py-2 border border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring disabled:bg-muted disabled:text-foreground"
+                  className="px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring disabled:bg-muted disabled:text-foreground"
                   onChange={(e) => updateSetlistItem(item.id, 'songName', e.target.value)}
                   disabled={!isEditMode}
                 />
@@ -346,7 +346,7 @@ export function PerformanceManagement() {
                   type="text"
                   placeholder="원곡자"
                   value={item.artist}
-                  className="px-3 py-2 border border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring disabled:bg-muted disabled:text-foreground"
+                  className="px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring disabled:bg-muted disabled:text-foreground"
                   onChange={(e) => updateSetlistItem(item.id, 'artist', e.target.value)}
                   disabled={!isEditMode}
                 />

@@ -59,7 +59,7 @@ export function BoothLayoutPage() {
         부스 배치도 매칭
       </h1>
 
-      <div className="bg-background rounded-2xl border border p-8 shadow-sm mb-8">
+      <div className="bg-background rounded-2xl p-8 shadow-sm mb-8">
         <h2 className="text-lg font-semibold text-foreground mb-6">부스 정보 등록</h2>
         
         <div className="space-y-6">
@@ -137,7 +137,7 @@ export function BoothLayoutPage() {
 
           {/* Step 3: 부스 정보 입력 */}
           {selectedLocation && (
-            <div className="border-t border pt-6">
+            <div className="pt-6">
               <label className="block text-sm font-semibold text-foreground mb-3">
                 Step 3. 부스 정보 입력
               </label>
@@ -149,7 +149,7 @@ export function BoothLayoutPage() {
                     placeholder="예: 1"
                     value={boothNumber}
                     onChange={(e) => setBoothNumber(e.target.value)}
-                    className="w-full px-4 py-3 border border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
+                    className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
                   />
                 </div>
                 <div>
@@ -159,7 +159,7 @@ export function BoothLayoutPage() {
                     placeholder="부스 이름"
                     value={boothName}
                     onChange={(e) => setBoothName(e.target.value)}
-                    className="w-full px-4 py-3 border border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
+                    className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
                   />
                 </div>
                 <div>
@@ -169,7 +169,7 @@ export function BoothLayoutPage() {
                     placeholder="단체 이름"
                     value={organizationName}
                     onChange={(e) => setOrganizationName(e.target.value)}
-                    className="w-full px-4 py-3 border border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
+                    className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
                   />
                 </div>
               </div>
@@ -191,14 +191,14 @@ export function BoothLayoutPage() {
       </div>
 
       {/* 아카이브: 등록된 매칭 정보 */}
-      <div className="bg-background rounded-2xl border border overflow-hidden shadow-sm">
-        <div className="px-8 py-6 border-b border">
+      <div className="bg-background rounded-2xl overflow-hidden shadow-sm">
+        <div className="px-8 py-6 ">
           <h2 className="text-lg font-semibold text-foreground">등록된 부스 배치 정보</h2>
         </div>
         
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-muted border-b border">
+            <thead className="bg-muted">
               <tr>
                 <th className="px-6 py-4 text-left text-sm font-semibold text-foreground">일자</th>
                 <th className="px-6 py-4 text-left text-sm font-semibold text-foreground">위치</th>
@@ -217,7 +217,7 @@ export function BoothLayoutPage() {
                 </tr>
               ) : (
                 mappings.map((mapping) => (
-                  <tr key={mapping.id} className="border-b border hover:bg-muted transition-colors">
+                  <tr key={mapping.id} className="hover:bg-muted transition-colors">
                     <td className="px-6 py-4 text-sm text-foreground">{formatDate(mapping.date)}</td>
                     <td className="px-6 py-4">
                       <span className="inline-block px-3 py-1 bg-ds-primary-subtle text-ds-primary-pressed rounded-full text-xs font-medium">

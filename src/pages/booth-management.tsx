@@ -40,7 +40,7 @@ function DraggableMenuItem({ item, index, moveItem, onUpdate, onDelete }: Dragga
   return (
     <div
       ref={(node) => preview(drop(node))}
-      className={`flex items-center gap-4 p-4 border border rounded-lg transition-all ${
+      className={`flex items-center gap-4 p-4 border border-border rounded-lg transition-all ${
         isDragging ? "opacity-50" : "opacity-100"
       } hover:border-primary`}
     >
@@ -69,21 +69,21 @@ function DraggableMenuItem({ item, index, moveItem, onUpdate, onDelete }: Dragga
           placeholder="메뉴명"
           value={item.name}
           onChange={(e) => onUpdate(item.id, "name", e.target.value)}
-          className="w-full px-3 py-2 border border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
+          className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
         />
         <input
           type="text"
           placeholder="메뉴 설명"
           value={item.description}
           onChange={(e) => onUpdate(item.id, "description", e.target.value)}
-          className="w-full px-3 py-2 border border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
+          className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
         />
         <input
           type="text"
           placeholder="가격 (예: 5,000원)"
           value={item.price}
           onChange={(e) => onUpdate(item.id, "price", e.target.value)}
-          className="w-full px-3 py-2 border border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
+          className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
         />
       </div>
 
@@ -367,7 +367,7 @@ export function BoothManagement() {
 
       {/* Booth Details - View/Edit Mode */}
       {showBoothInfoForm && (
-        <div className="bg-background rounded-2xl border border p-8 mb-6 shadow-sm">
+        <div className="bg-background rounded-2xl p-8 mb-6 shadow-sm">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-bold text-foreground">부스 상세 정보</h2>
             <div className="flex items-center gap-3">
@@ -410,10 +410,10 @@ export function BoothManagement() {
                     placeholder="부스 이름을 입력하세요"
                     value={boothName}
                     onChange={(e) => setBoothName(e.target.value)}
-                    className="w-full px-4 py-3 border border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
+                    className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
                   />
                 ) : (
-                  <div className="w-full px-4 py-3 border border rounded-lg bg-muted text-foreground">
+                  <div className="w-full px-4 py-3 border border-border rounded-lg bg-muted text-foreground">
                     {boothName}
                   </div>
                 )}
@@ -426,10 +426,10 @@ export function BoothManagement() {
                     placeholder="단체 이름을 입력하세요"
                     value={organizationName}
                     onChange={(e) => setOrganizationName(e.target.value)}
-                    className="w-full px-4 py-3 border border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
+                    className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
                   />
                 ) : (
-                  <div className="w-full px-4 py-3 border border rounded-lg bg-muted text-foreground">
+                  <div className="w-full px-4 py-3 border border-border rounded-lg bg-muted text-foreground">
                     {organizationName}
                   </div>
                 )}
@@ -444,10 +444,10 @@ export function BoothManagement() {
                   placeholder="부스를 소개하는 내용을 작성하세요"
                   value={boothDescription}
                   onChange={(e) => setBoothDescription(e.target.value)}
-                  className="w-full px-4 py-3 border border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all resize-none"
+                  className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all resize-none"
                 />
               ) : (
-                <div className="w-full px-4 py-3 border border rounded-lg bg-muted text-foreground min-h-[112px]">
+                <div className="w-full px-4 py-3 border border-border rounded-lg bg-muted text-foreground min-h-[112px]">
                   {boothDescription}
                 </div>
               )}
@@ -523,10 +523,10 @@ export function BoothManagement() {
                     placeholder="대표 메뉴명"
                     value={signatureMenu}
                     onChange={(e) => setSignatureMenu(e.target.value)}
-                    className="w-full px-4 py-3 border border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
+                    className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
                   />
                 ) : (
-                  <div className="w-full px-4 py-3 border border rounded-lg bg-muted text-foreground">
+                  <div className="w-full px-4 py-3 border border-border rounded-lg bg-muted text-foreground">
                     {signatureMenu}
                   </div>
                 )}
@@ -539,10 +539,10 @@ export function BoothManagement() {
                     placeholder="예: 10:00 - 18:00"
                     value={operatingHours}
                     onChange={(e) => setOperatingHours(e.target.value)}
-                    className="w-full px-4 py-3 border border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
+                    className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
                   />
                 ) : (
-                  <div className="w-full px-4 py-3 border border rounded-lg bg-muted text-foreground">
+                  <div className="w-full px-4 py-3 border border-border rounded-lg bg-muted text-foreground">
                     {operatingHours}
                   </div>
                 )}
@@ -575,7 +575,7 @@ export function BoothManagement() {
 
       {/* Menu List - View/Edit Mode */}
       {showMenuListForm && (
-        <div className="bg-background rounded-2xl border border p-8 shadow-sm">
+        <div className="bg-background rounded-2xl p-8 shadow-sm">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-bold text-foreground">메뉴 리스트</h2>
             <div className="flex items-center gap-3">
@@ -624,10 +624,10 @@ export function BoothManagement() {
                 placeholder="예: 테이블 이용 시 메인 메뉴를 하나 이상 주문해주셔야 합니다."
                 value={orderNotice}
                 onChange={(e) => setOrderNotice(e.target.value)}
-                className="w-full px-4 py-3 border border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all resize-none"
+                className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all resize-none"
               />
             ) : (
-              <div className="w-full px-4 py-3 border border rounded-lg bg-muted text-foreground">
+              <div className="w-full px-4 py-3 border border-border rounded-lg bg-muted text-foreground">
                 {orderNotice}
               </div>
             )}
@@ -652,7 +652,7 @@ export function BoothManagement() {
           ) : (
             <div className="space-y-4">
               {menuItems.map((item) => (
-                <div key={item.id} className="flex items-center gap-4 p-4 border border rounded-lg bg-muted">
+                <div key={item.id} className="flex items-center gap-4 p-4 rounded-lg bg-muted">
                   <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-cyan-500 text-white flex items-center justify-center font-semibold text-sm flex-shrink-0">
                     {item.order}
                   </div>

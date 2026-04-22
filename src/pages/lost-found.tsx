@@ -43,9 +43,9 @@ export function LostFoundPage() {
 
       {/* Lost Items List */}
       {!showForm && (
-        <div className="bg-background rounded-2xl border border-border overflow-hidden shadow-sm">
+        <div className="bg-background rounded-2xl overflow-hidden shadow-sm">
           <table className="w-full">
-            <thead className="bg-muted border-b border-border">
+            <thead className="bg-muted">
               <tr>
                 <th className="px-6 py-4 text-left text-sm font-semibold text-foreground">분실물명</th>
                 <th className="px-6 py-4 text-left text-sm font-semibold text-foreground">발견 위치</th>
@@ -56,7 +56,7 @@ export function LostFoundPage() {
             </thead>
             <tbody>
               {lostItems.map((item) => (
-                <tr key={item.id} className="border-b border hover:bg-muted transition-colors">
+                <tr key={item.id} className="hover:bg-muted transition-colors">
                   <td className="px-6 py-4">
                     <div className="text-sm font-medium text-foreground">{item.name}</div>
                     {item.description && (
@@ -106,7 +106,7 @@ export function LostFoundPage() {
 
       {/* Lost Item Form */}
       {showForm && (
-        <div className="bg-background rounded-2xl border border p-8 shadow-sm">
+        <div className="bg-background rounded-2xl p-8 shadow-sm">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-bold text-foreground">
               {editingItem ? "분실물 수정" : "분실물 등록"}
@@ -127,7 +127,7 @@ export function LostFoundPage() {
                   type="text"
                   placeholder="분실물 이름을 입력하세요"
                   defaultValue={editingItem?.name || ""}
-                  className="w-full px-4 py-3 border border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
+                  className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
                 />
               </div>
               <div>
@@ -136,7 +136,7 @@ export function LostFoundPage() {
                   type="text"
                   placeholder="발견 위치를 입력하세요"
                   defaultValue={editingItem?.location || ""}
-                  className="w-full px-4 py-3 border border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
+                  className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
                 />
               </div>
             </div>
@@ -147,7 +147,7 @@ export function LostFoundPage() {
                 rows={4}
                 placeholder="분실물에 대한 상세 설명을 입력하세요"
                 defaultValue={editingItem?.description || ""}
-                className="w-full px-4 py-3 border border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all resize-none"
+                className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all resize-none"
               />
             </div>
 
@@ -159,10 +159,10 @@ export function LostFoundPage() {
               </div>
             </div>
 
-            <div className="flex justify-end gap-3 pt-4 border-t border">
+            <div className="flex justify-end gap-3 pt-4 ">
               <button 
                 onClick={handleCancel}
-                className="px-6 py-3 border border text-foreground rounded-lg hover:bg-muted transition-colors"
+                className="px-6 py-3 border border-border text-foreground rounded-lg hover:bg-muted transition-colors"
               >
                 취소
               </button>
