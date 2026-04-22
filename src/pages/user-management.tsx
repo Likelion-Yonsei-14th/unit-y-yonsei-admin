@@ -139,7 +139,9 @@ export function UserManagement() {
 
   // 역할 배지는 table-fixed 로 폭이 고정된 컬럼(w-[10%]) 을 그대로 채운다.
   // 배지에 절대 폭을 박으면 좁은 뷰포트에서 컬럼 경계를 넘어 인접 셀을 침범할 수 있어 w-full 로 붙인다.
-  const roleBadgeSize = "h-7 rounded-full text-xs font-medium";
+  // SelectTrigger 기본 클래스에 `data-[size=sm]:h-8` 이 포함돼 있어
+  // 같은 특이도의 `h-7` 로는 덮어써지지 않는다. data-variant 로 맞춰 높이를 통일.
+  const roleBadgeSize = "h-7 data-[size=sm]:h-7 rounded-full text-xs font-medium";
 
   return (
     <div className="p-8">
