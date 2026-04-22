@@ -28,7 +28,6 @@ export function BoothMapCanvas({
   const [layers, setLayers] = useState<MapSection[]>([section]);
   const prev = usePrevious(section);
 
-  // 섹션 스왑: 이전 + 현재 이미지 동시 렌더 후 크로스페이드, 전환 후 이전 제거
   useEffect(() => {
     if (prev && prev.id !== section.id) {
       setLayers([prev, section]);
@@ -43,44 +42,56 @@ export function BoothMapCanvas({
   const translateY = focused ? 50 - focused.placement.y : 0;
 
   return (
-    <div className="relative h-full w-full overflow-hidden bg-muted">
-      {layers.map((s) => (
-        <img
-          key={s.id}
-          src={s.imageUrl}
-          alt={s.label}
-          aria-hidden={s.id !== section.id}
-          className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-300 ${
-            s.id === section.id ? 'opacity-100' : 'opacity-0'
-          }`}
-        />
-      ))}
+    <div className="relative flex h-full w-full items-center justify-center overflow-hidden bg-muted">
+      {/* 이미지의 원본 종횡비를 보존해 letterbox — 0-100% 좌표계가 이미지 좌표계와 정확히 일치 */}
       <div
-        className="absolute inset-0 transition-transform duration-300 ease-out"
-        style={{ transform: `translate(${translateX}%, ${translateY}%)` }}
+        className="relative overflow-hidden"
+        style={{
+          aspectRatio: section.imageAspectRatio,
+          maxWidth: '100%',
+          maxHeight: '100%',
+          width: '100%',
+          height: '100%',
+        }}
       >
-        {boothsInSection.map((b) => {
-          const isFocused = b.placement.boothId === focusedBoothId;
-          const isMine = b.placement.boothId === myBoothId;
-          return (
-            <button
-              key={b.placement.boothId}
-              type="button"
-              onClick={() => onPinClick(b.placement.boothId)}
-              style={{ left: `${b.placement.x}%`, top: `${b.placement.y}%` }}
-              className={`absolute -translate-x-1/2 -translate-y-1/2 flex items-center justify-center rounded-full text-xs font-semibold shadow-md transition-all ${
-                isFocused
-                  ? 'h-10 w-10 scale-110 bg-primary text-primary-foreground ring-4 ring-primary/20'
-                  : isMine
-                  ? 'h-8 w-8 bg-ds-success-pressed text-background'
-                  : 'h-7 w-7 border border-border bg-background text-foreground hover:border-ds-border-strong'
-              }`}
-              aria-label={`부스 ${b.placement.boothNumber}`}
-            >
-              {b.placement.boothNumber}
-            </button>
-          );
-        })}
+        {layers.map((s) => (
+          <img
+            key={s.id}
+            src={s.imageUrl}
+            alt={s.label}
+            aria-hidden={s.id !== section.id}
+            className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-300 ${
+              s.id === section.id ? 'opacity-100' : 'opacity-0'
+            }`}
+          />
+        ))}
+        <div
+          className="absolute inset-0 transition-transform duration-300 ease-out"
+          style={{ transform: `translate(${translateX}%, ${translateY}%)` }}
+        >
+          {boothsInSection.map((b) => {
+            const isFocused = b.placement.boothId === focusedBoothId;
+            const isMine = b.placement.boothId === myBoothId;
+            return (
+              <button
+                key={b.placement.boothId}
+                type="button"
+                onClick={() => onPinClick(b.placement.boothId)}
+                style={{ left: `${b.placement.x}%`, top: `${b.placement.y}%` }}
+                className={`absolute -translate-x-1/2 -translate-y-1/2 flex items-center justify-center rounded-full text-xs font-semibold shadow-md transition-all ${
+                  isFocused
+                    ? 'h-10 w-10 scale-110 bg-primary text-primary-foreground ring-4 ring-primary/20'
+                    : isMine
+                    ? 'h-8 w-8 bg-ds-success-pressed text-background'
+                    : 'h-7 w-7 border border-border bg-background text-foreground hover:border-ds-border-strong'
+                }`}
+                aria-label={`부스 ${b.placement.boothNumber}`}
+              >
+                {b.placement.boothNumber}
+              </button>
+            );
+          })}
+        </div>
       </div>
     </div>
   );

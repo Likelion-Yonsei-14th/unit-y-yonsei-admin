@@ -4,9 +4,9 @@ import hangeulImg from '@/assets/map/hangeul-section.jpg';
 import type { MapSection, MapSectionId } from './types';
 
 export const MAP_SECTIONS: Record<MapSectionId, MapSection> = {
-  global:   { id: 'global',   label: '국제캠', imageUrl: globalImg,   validDates: ['2026-05-27'] },
-  baekyang: { id: 'baekyang', label: '백양로', imageUrl: baekyangImg, validDates: ['2026-05-28', '2026-05-29'] },
-  hangeul:  { id: 'hangeul',  label: '한글탑', imageUrl: hangeulImg,  validDates: ['2026-05-28', '2026-05-29'] },
+  global:   { id: 'global',   label: '국제캠', imageUrl: globalImg,   validDates: ['2026-05-27'], imageAspectRatio: 3420 / 2728 },
+  baekyang: { id: 'baekyang', label: '백양로', imageUrl: baekyangImg, validDates: ['2026-05-28', '2026-05-29'], imageAspectRatio: 1272 / 4524 },
+  hangeul:  { id: 'hangeul',  label: '한글탑', imageUrl: hangeulImg,  validDates: ['2026-05-28', '2026-05-29'], imageAspectRatio: 1272 / 1016 },
 };
 
 /** 축제 운영일. 순서 = 사용자 기본 선택 우선순위 (첫 요소가 default). */

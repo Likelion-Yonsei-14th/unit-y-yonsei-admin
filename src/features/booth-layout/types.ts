@@ -11,6 +11,7 @@ export interface MapSection {
   label: string;
   imageUrl: string;
   validDates: string[];
+  imageAspectRatio: number;
 }
 
 /**
