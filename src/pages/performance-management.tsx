@@ -97,7 +97,7 @@ export function PerformanceManagement() {
   return (
     <div className="p-8">
       <div className="flex items-center justify-between mb-8">
-        <h1 className="text-3xl font-bold text-slate-800 flex items-center gap-3">
+        <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
           <Music size={32} />
           공연 정보 관리
         </h1>
@@ -119,7 +119,7 @@ export function PerformanceManagement() {
             <>
               <button
                 onClick={handleCancel}
-                className="px-6 py-3 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-all duration-200 flex items-center gap-2"
+                className="px-6 py-3 border border-ds-border-strong text-foreground rounded-lg hover:bg-muted transition-all duration-200 flex items-center gap-2"
               >
                 <X size={18} />
                 <span>취소</span>
@@ -136,8 +136,8 @@ export function PerformanceManagement() {
           
           {/* Save Success Toast */}
           {saveSuccess && (
-            <div className="flex items-center gap-2 px-4 py-3 bg-green-50 border border-green-200 text-green-700 rounded-lg shadow-lg animate-fade-in">
-              <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
+            <div className="flex items-center gap-2 px-4 py-3 bg-ds-success-subtle border border-ds-success text-ds-success-pressed rounded-lg shadow-lg animate-fade-in">
+              <div className="w-6 h-6 bg-ds-success rounded-full flex items-center justify-center">
                 <Check size={14} className="text-white" />
               </div>
               <span className="font-medium">저장이 완료되었습니다!</span>
@@ -147,16 +147,16 @@ export function PerformanceManagement() {
       </div>
 
       {/* Performance Team Profile */}
-      <div className="bg-white rounded-2xl border border-slate-200 p-8 mb-6 shadow-sm">
-        <h2 className="text-xl font-bold text-slate-800 mb-6">공연팀 프로필</h2>
+      <div className="bg-background rounded-2xl border border p-8 mb-6 shadow-sm">
+        <h2 className="text-xl font-bold text-foreground mb-6">공연팀 프로필</h2>
 
         <div className="space-y-6">
           <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-2">공연팀명</label>
+            <label className="block text-sm font-semibold text-foreground mb-2">공연팀명</label>
             <input
               type="text"
               placeholder="공연팀 이름을 입력하세요"
-              className="w-full px-4 py-3 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+              className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
               value={editingData.teamName}
               onChange={(e) => setEditingData({ ...editingData, teamName: e.target.value })}
               disabled={!isEditMode}
@@ -164,11 +164,11 @@ export function PerformanceManagement() {
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-2">공연팀 소개글</label>
+            <label className="block text-sm font-semibold text-foreground mb-2">공연팀 소개글</label>
             <textarea
               rows={5}
               placeholder="동아리 소개, 구성원 소개 등을 작성하세요"
-              className="w-full px-4 py-3 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none"
+              className="w-full px-4 py-3 border border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all resize-none"
               value={editingData.description}
               onChange={(e) => setEditingData({ ...editingData, description: e.target.value })}
               disabled={!isEditMode}
@@ -176,7 +176,7 @@ export function PerformanceManagement() {
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-2">SNS 링크 (선택)</label>
+            <label className="block text-sm font-semibold text-foreground mb-2">SNS 링크 (선택)</label>
             <div className="space-y-3">
               <div className="flex items-center gap-3">
                 <div className="flex items-center justify-center w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg">
@@ -185,7 +185,7 @@ export function PerformanceManagement() {
                 <input
                   type="text"
                   placeholder="인스타그램 URL"
-                  className="flex-1 px-4 py-3 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                  className="flex-1 px-4 py-3 border border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
                   value={editingData.instagramUrl}
                   onChange={(e) => setEditingData({ ...editingData, instagramUrl: e.target.value })}
                   disabled={!isEditMode}
@@ -198,7 +198,7 @@ export function PerformanceManagement() {
                 <input
                   type="text"
                   placeholder="유튜브 URL"
-                  className="flex-1 px-4 py-3 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                  className="flex-1 px-4 py-3 border border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
                   value={editingData.youtubeUrl}
                   onChange={(e) => setEditingData({ ...editingData, youtubeUrl: e.target.value })}
                   disabled={!isEditMode}
@@ -208,11 +208,11 @@ export function PerformanceManagement() {
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-2">공연팀 이미지</label>
+            <label className="block text-sm font-semibold text-foreground mb-2">공연팀 이미지</label>
             
             {/* Upload Area - Only in Edit Mode */}
             {isEditMode && (
-              <label className="block border-2 border-dashed border-slate-300 rounded-lg p-8 text-center hover:border-blue-400 transition-colors cursor-pointer">
+              <label className="block border-2 border-dashed border-ds-border-strong rounded-lg p-8 text-center hover:border-primary transition-colors cursor-pointer">
                 <input 
                   type="file" 
                   multiple 
@@ -220,9 +220,9 @@ export function PerformanceManagement() {
                   onChange={handleImageUpload}
                   className="hidden"
                 />
-                <Upload className="mx-auto mb-3 text-slate-400" size={32} />
-                <p className="text-sm text-slate-600 mb-1">이미지를 드래그하거나 클릭하여 업로드</p>
-                <p className="text-xs text-slate-500">여러 장의 이미지를 선택할 수 있습니다</p>
+                <Upload className="mx-auto mb-3 text-ds-text-disabled" size={32} />
+                <p className="text-sm text-muted-foreground mb-1">이미지를 드래그하거나 클릭하여 업로드</p>
+                <p className="text-xs text-muted-foreground">여러 장의 이미지를 선택할 수 있습니다</p>
               </label>
             )}
             
@@ -243,7 +243,7 @@ export function PerformanceManagement() {
                     
                     {/* Main Badge */}
                     {image.isMain && (
-                      <div className="absolute top-2 left-2 px-2 py-1 bg-blue-500 text-white text-xs font-semibold rounded-full flex items-center gap-1 shadow-lg">
+                      <div className="absolute top-2 left-2 px-2 py-1 bg-primary text-primary-foreground text-xs font-semibold rounded-full flex items-center gap-1 shadow-lg">
                         <Star size={12} fill="white" />
                         대표
                       </div>
@@ -255,14 +255,14 @@ export function PerformanceManagement() {
                         {!image.isMain && (
                           <button
                             onClick={() => setMainImage(image.id)}
-                            className="opacity-0 group-hover:opacity-100 px-3 py-1.5 bg-white text-slate-700 rounded-lg text-xs font-medium hover:bg-blue-500 hover:text-white transition-all"
+                            className="opacity-0 group-hover:opacity-100 px-3 py-1.5 bg-background text-foreground rounded-lg text-xs font-medium hover:bg-primary hover:text-primary-foreground transition-all"
                           >
                             대표로 설정
                           </button>
                         )}
                         <button
                           onClick={() => removeImage(image.id)}
-                          className="opacity-0 group-hover:opacity-100 p-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-all"
+                          className="opacity-0 group-hover:opacity-100 p-2 bg-destructive text-destructive-foreground rounded-lg hover:bg-ds-error-pressed transition-all"
                         >
                           <Trash2 size={14} />
                         </button>
@@ -275,9 +275,9 @@ export function PerformanceManagement() {
             
             {/* Empty State - View Mode */}
             {!isEditMode && performanceImages.length === 0 && (
-              <div className="border border-slate-200 rounded-lg p-8 text-center bg-slate-50">
-                <Upload className="mx-auto mb-3 text-slate-300" size={32} />
-                <p className="text-sm text-slate-400">등록된 이미지가 없습니다</p>
+              <div className="border border rounded-lg p-8 text-center bg-muted">
+                <Upload className="mx-auto mb-3 text-ds-text-disabled" size={32} />
+                <p className="text-sm text-ds-text-disabled">등록된 이미지가 없습니다</p>
               </div>
             )}
           </div>
@@ -285,25 +285,25 @@ export function PerformanceManagement() {
       </div>
 
       {/* Performance Timetable */}
-      <div className="bg-white rounded-2xl border border-slate-200 p-8 mb-6 shadow-sm">
-        <h2 className="text-xl font-bold text-slate-800 mb-6">공연 타임테이블</h2>
+      <div className="bg-background rounded-2xl border border p-8 mb-6 shadow-sm">
+        <h2 className="text-xl font-bold text-foreground mb-6">공연 타임테이블</h2>
 
         <div className="grid grid-cols-2 gap-6">
           <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-2">공연 시작 시간</label>
+            <label className="block text-sm font-semibold text-foreground mb-2">공연 시작 시간</label>
             <input
               type="time"
-              className="w-full px-4 py-3 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+              className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
               value={editingData.startTime}
               onChange={(e) => setEditingData({ ...editingData, startTime: e.target.value })}
               disabled={!isEditMode}
             />
           </div>
           <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-2">공연 종료 시간</label>
+            <label className="block text-sm font-semibold text-foreground mb-2">공연 종료 시간</label>
             <input
               type="time"
-              className="w-full px-4 py-3 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+              className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
               value={editingData.endTime}
               onChange={(e) => setEditingData({ ...editingData, endTime: e.target.value })}
               disabled={!isEditMode}
@@ -313,9 +313,9 @@ export function PerformanceManagement() {
       </div>
 
       {/* Setlist Management */}
-      <div className="bg-white rounded-2xl border border-slate-200 p-8 shadow-sm">
+      <div className="bg-background rounded-2xl border border p-8 shadow-sm">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-bold text-slate-800">공연 셋리스트</h2>
+          <h2 className="text-xl font-bold text-foreground">공연 셋리스트</h2>
           {isEditMode && (
             <button
               onClick={addSetlistItem}
@@ -329,7 +329,7 @@ export function PerformanceManagement() {
 
         <div className="space-y-3">
           {(isEditMode ? editingSetlist : setlist).map((item, index) => (
-            <div key={item.id} className="flex items-center gap-4 p-4 border border-slate-200 rounded-lg hover:border-blue-300 transition-colors">
+            <div key={item.id} className="flex items-center gap-4 p-4 border border rounded-lg hover:border-primary transition-colors">
               <div className="flex items-center justify-center w-10 h-10 bg-gradient-to-br from-blue-500 to-cyan-500 text-white font-bold rounded-lg">
                 {index + 1}
               </div>
@@ -338,7 +338,7 @@ export function PerformanceManagement() {
                   type="text"
                   placeholder="곡명"
                   value={item.songName}
-                  className="px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-slate-50 disabled:text-slate-700"
+                  className="px-3 py-2 border border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring disabled:bg-muted disabled:text-foreground"
                   onChange={(e) => updateSetlistItem(item.id, 'songName', e.target.value)}
                   disabled={!isEditMode}
                 />
@@ -346,7 +346,7 @@ export function PerformanceManagement() {
                   type="text"
                   placeholder="원곡자"
                   value={item.artist}
-                  className="px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-slate-50 disabled:text-slate-700"
+                  className="px-3 py-2 border border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring disabled:bg-muted disabled:text-foreground"
                   onChange={(e) => updateSetlistItem(item.id, 'artist', e.target.value)}
                   disabled={!isEditMode}
                 />
@@ -354,7 +354,7 @@ export function PerformanceManagement() {
               {isEditMode && (
                 <button
                   onClick={() => removeSetlistItem(item.id)}
-                  className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                  className="p-2 text-destructive hover:bg-ds-error-subtle rounded-lg transition-colors"
                 >
                   <Trash2 size={18} />
                 </button>
@@ -364,7 +364,7 @@ export function PerformanceManagement() {
         </div>
 
         {(isEditMode ? editingSetlist : setlist).length === 0 && (
-          <div className="text-center py-12 text-slate-400">
+          <div className="text-center py-12 text-ds-text-disabled">
             <Music size={48} className="mx-auto mb-4 opacity-50" />
             <p>셋리스트가 비어있습니다. {isEditMode && '곡을 추가해주세요.'}</p>
           </div>

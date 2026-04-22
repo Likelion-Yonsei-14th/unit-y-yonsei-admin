@@ -65,7 +65,7 @@ export function UserManagement() {
   return (
     <div className="p-8">
       <div className="flex items-center justify-between mb-8">
-        <h1 className="text-3xl font-bold text-slate-800 flex items-center gap-3">
+        <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
           <Users size={32} />
           유저 관리
         </h1>
@@ -88,8 +88,8 @@ export function UserManagement() {
             className={`
               px-5 py-2 rounded-full text-sm font-medium transition-all duration-200
               ${selectedRole === role
-                ? 'bg-slate-800 text-white shadow-lg'
-                : 'bg-white text-slate-600 border border-slate-200 hover:border-slate-300'
+                ? 'bg-foreground text-primary-foreground shadow-lg'
+                : 'bg-background text-muted-foreground border border-border hover:border-ds-border-strong'
               }
             `}
           >
@@ -99,64 +99,64 @@ export function UserManagement() {
       </div>
 
       {/* Users Table */}
-      <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
+      <div className="bg-background rounded-xl border border overflow-hidden shadow-sm">
         <table className="w-full">
-          <thead className="bg-slate-100 border-b border-slate-200">
+          <thead className="bg-muted border-b border">
             <tr>
               <th className="w-12 py-4 text-center">
                 <input
                   type="checkbox"
-                  className="w-4 h-4 rounded accent-blue-500"
+                  className="w-4 h-4 rounded accent-primary"
                 />
               </th>
-              <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">No.</th>
-              <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">유저 ID</th>
-              <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">권한</th>
-              <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">소속</th>
-              <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">부스명</th>
-              <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">공연팀명</th>
-              <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">이름</th>
-              <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">전화번호</th>
-              <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">정보작성여부</th>
+              <th className="px-6 py-4 text-left text-sm font-semibold text-foreground">No.</th>
+              <th className="px-6 py-4 text-left text-sm font-semibold text-foreground">유저 ID</th>
+              <th className="px-6 py-4 text-left text-sm font-semibold text-foreground">권한</th>
+              <th className="px-6 py-4 text-left text-sm font-semibold text-foreground">소속</th>
+              <th className="px-6 py-4 text-left text-sm font-semibold text-foreground">부스명</th>
+              <th className="px-6 py-4 text-left text-sm font-semibold text-foreground">공연팀명</th>
+              <th className="px-6 py-4 text-left text-sm font-semibold text-foreground">이름</th>
+              <th className="px-6 py-4 text-left text-sm font-semibold text-foreground">전화번호</th>
+              <th className="px-6 py-4 text-left text-sm font-semibold text-foreground">정보작성여부</th>
             </tr>
           </thead>
           <tbody>
             {filteredUsers.map((user, index) => (
               <tr
                 key={user.id}
-                className="border-b border-slate-100 hover:bg-slate-50 transition-colors"
+                className="border-b border hover:bg-muted transition-colors"
               >
                 <td className="py-4 text-center">
                   <input
                     type="checkbox"
                     checked={selectedUsers.has(user.id)}
                     onChange={() => toggleUser(user.id)}
-                    className="w-4 h-4 rounded accent-blue-500"
+                    className="w-4 h-4 rounded accent-primary"
                   />
                 </td>
-                <td className="px-6 py-4 text-sm text-slate-600">
+                <td className="px-6 py-4 text-sm text-muted-foreground">
                   {String(index + 1).padStart(2, '0')}
                 </td>
-                <td className="px-6 py-4 text-sm text-slate-800">{user.userId}</td>
+                <td className="px-6 py-4 text-sm text-foreground">{user.userId}</td>
                 <td className="px-6 py-4">
                   <span className={`
                     inline-block px-3 py-1 rounded-full text-xs font-medium
-                    ${user.role === 'Booth' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'}
+                    ${user.role === 'Booth' ? 'bg-ds-primary-subtle text-ds-primary-pressed' : 'bg-ds-secondary-a-subtle text-ds-secondary-a-pressed'}
                   `}>
                     {user.role}
                   </span>
                 </td>
-                <td className="px-6 py-4 text-sm text-slate-600">{user.affiliation}</td>
-                <td className="px-6 py-4 text-sm text-slate-600">{user.boothName}</td>
-                <td className="px-6 py-4 text-sm text-slate-600">{user.performanceTeamName}</td>
-                <td className="px-6 py-4 text-sm text-slate-600">{user.representative}</td>
-                <td className="px-6 py-4 text-sm text-slate-600">{user.phone}</td>
+                <td className="px-6 py-4 text-sm text-muted-foreground">{user.affiliation}</td>
+                <td className="px-6 py-4 text-sm text-muted-foreground">{user.boothName}</td>
+                <td className="px-6 py-4 text-sm text-muted-foreground">{user.performanceTeamName}</td>
+                <td className="px-6 py-4 text-sm text-muted-foreground">{user.representative}</td>
+                <td className="px-6 py-4 text-sm text-muted-foreground">{user.phone}</td>
                 <td className="px-6 py-4 text-center">
                   <span className={`
                     inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold
                     ${user.infoCompleted
-                      ? 'bg-green-500 text-white'
-                      : 'bg-red-500 text-white'
+                      ? 'bg-ds-success text-white'
+                      : 'bg-destructive text-destructive-foreground'
                     }
                   `}>
                     {user.infoCompleted ? 'O' : 'X'}
@@ -171,9 +171,9 @@ export function UserManagement() {
       {/* Status Change Modal */}
       {showStatusModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl p-8 max-w-md w-full mx-4 shadow-2xl">
-            <h3 className="text-xl font-bold text-slate-800 mb-4">유저 상태 변경</h3>
-            <p className="text-sm text-slate-600 mb-6">
+          <div className="bg-background rounded-2xl p-8 max-w-md w-full mx-4 shadow-2xl">
+            <h3 className="text-xl font-bold text-foreground mb-4">유저 상태 변경</h3>
+            <p className="text-sm text-muted-foreground mb-6">
               선택된 {selectedUsers.size}명의 유저 상태를 변경합니다.
             </p>
             <div className="flex flex-col gap-3">
@@ -191,7 +191,7 @@ export function UserManagement() {
               </button>
               <button
                 onClick={() => setShowStatusModal(false)}
-                className="w-full px-6 py-3 border border-slate-200 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors"
+                className="w-full px-6 py-3 border border text-foreground rounded-lg hover:bg-muted transition-colors"
               >
                 취소
               </button>
@@ -203,9 +203,9 @@ export function UserManagement() {
       {/* Role Change Modal */}
       {showRoleModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl p-8 max-w-md w-full mx-4 shadow-2xl">
-            <h3 className="text-xl font-bold text-slate-800 mb-4">권한 변경</h3>
-            <p className="text-sm text-slate-600 mb-6">
+          <div className="bg-background rounded-2xl p-8 max-w-md w-full mx-4 shadow-2xl">
+            <h3 className="text-xl font-bold text-foreground mb-4">권한 변경</h3>
+            <p className="text-sm text-muted-foreground mb-6">
               선택된 {selectedUsers.size}명의 유저 권한을 변경합니다.
             </p>
             <div className="flex flex-col gap-3">
@@ -235,7 +235,7 @@ export function UserManagement() {
               </button>
               <button
                 onClick={() => setShowRoleModal(false)}
-                className="w-full px-6 py-3 border border-slate-200 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors"
+                className="w-full px-6 py-3 border border text-foreground rounded-lg hover:bg-muted transition-colors"
               >
                 취소
               </button>
