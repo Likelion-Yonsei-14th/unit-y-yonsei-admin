@@ -252,11 +252,10 @@ export function UserManagement() {
               <th className="w-[5%] px-6 py-4 text-left text-sm font-semibold text-foreground">No.</th>
               <th className="w-[10%] px-6 py-4 text-left text-sm font-semibold text-foreground">유저 ID</th>
               <th className="w-[10%] px-6 py-4 text-left text-sm font-semibold text-foreground">권한</th>
-              <th className="w-[10%] px-6 py-4 text-left text-sm font-semibold text-foreground">소속</th>
-              <th className="w-[13%] px-6 py-4 text-left text-sm font-semibold text-foreground">부스명</th>
-              <th className="w-[13%] px-6 py-4 text-left text-sm font-semibold text-foreground">공연팀명</th>
-              <th className="w-[9%] px-6 py-4 text-left text-sm font-semibold text-foreground">이름</th>
-              <th className="w-[11%] px-6 py-4 text-left text-sm font-semibold text-foreground">전화번호</th>
+              <th className="w-[13%] px-6 py-4 text-left text-sm font-semibold text-foreground">소속</th>
+              <th className="w-[18%] px-6 py-4 text-left text-sm font-semibold text-foreground">부스/공연팀</th>
+              <th className="w-[12%] px-6 py-4 text-left text-sm font-semibold text-foreground">이름</th>
+              <th className="w-[13%] px-6 py-4 text-left text-sm font-semibold text-foreground">전화번호</th>
               <th className="w-[10%] px-6 py-4 text-center text-sm font-semibold text-foreground">정보작성여부</th>
               <th className="w-[9%] px-6 py-4 text-center text-sm font-semibold text-foreground">
                 <button
@@ -279,7 +278,7 @@ export function UserManagement() {
             {visibleUsers.length === 0 && (
               <tr>
                 <td
-                  colSpan={10}
+                  colSpan={9}
                   className="px-6 py-12 text-center text-sm text-muted-foreground"
                 >
                   {hasActiveFilter
@@ -330,8 +329,20 @@ export function UserManagement() {
                     )}
                   </td>
                   <td className="px-6 py-4 text-sm text-muted-foreground truncate" title={user.affiliation}>{user.affiliation}</td>
-                  <td className="px-6 py-4 text-sm text-muted-foreground truncate" title={user.boothName}>{user.boothName}</td>
-                  <td className="px-6 py-4 text-sm text-muted-foreground truncate" title={user.performanceTeamName}>{user.performanceTeamName}</td>
+                  {(() => {
+                    // 역할에 따라 상호 배타적이므로 한 컬럼에 병합.
+                    const boothOrTeamName =
+                      user.role === "Booth"
+                        ? user.boothName
+                        : user.role === "Performer"
+                          ? user.performanceTeamName
+                          : "-";
+                    return (
+                      <td className="px-6 py-4 text-sm text-muted-foreground truncate" title={boothOrTeamName}>
+                        {boothOrTeamName}
+                      </td>
+                    );
+                  })()}
                   <td className="px-6 py-4 text-sm text-muted-foreground truncate" title={user.representative}>{user.representative}</td>
                   <td className="px-6 py-4 text-sm text-muted-foreground truncate" title={user.phone}>{user.phone}</td>
                   <td className="px-6 py-4 text-center">
