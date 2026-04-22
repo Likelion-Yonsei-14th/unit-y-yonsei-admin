@@ -1,6 +1,6 @@
 import type { LucideIcon } from 'lucide-react';
 import {
-  Users, UserX, Store, Calendar, Music, Settings,
+  Users, Store, Calendar, Music, Settings,
   FileText, Package, Map, MessageCircle,
 } from 'lucide-react';
 import type { Permission } from './permissions';
@@ -25,9 +25,6 @@ export const MAIN_NAV: NavItem[] = [
     label: '유저 관리',
     icon: Users,
     requires: 'user.read',
-    children: [
-      { path: '/users/inactive', label: '비활성 유저 목록', icon: UserX, requires: 'user.read' },
-    ],
   },
   {
     path: '/booth',
