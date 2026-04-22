@@ -27,13 +27,15 @@ export function BoothLayoutPage() {
     !!boothNumber.trim() && !!boothName.trim() && !!organizationName.trim();
 
   const handleSubmit = () => {
+    // isFormComplete 가 trim 기준으로 유효성을 보기 때문에 저장 시점에도
+    // trim 해서 저장해야 일관됨. 안 그러면 "부스1   " 같은 값이 그대로 저장.
     const newMapping: BoothMapping = {
       id: mappings.length + 1,
       date: selectedDate,
       location: selectedLocation,
-      boothNumber,
-      boothName,
-      organizationName,
+      boothNumber: boothNumber.trim(),
+      boothName: boothName.trim(),
+      organizationName: organizationName.trim(),
     };
 
     setMappings([...mappings, newMapping]);
