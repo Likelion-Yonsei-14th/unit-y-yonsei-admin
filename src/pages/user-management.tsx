@@ -137,6 +137,10 @@ export function UserManagement() {
       ? "bg-ds-primary-subtle text-ds-primary-pressed"
       : "bg-ds-secondary-a-subtle text-ds-secondary-a-pressed";
 
+  // 역할 배지는 table-fixed 로 폭이 고정된 컬럼(w-[10%]) 을 그대로 채운다.
+  // 배지에 절대 폭을 박으면 좁은 뷰포트에서 컬럼 경계를 넘어 인접 셀을 침범할 수 있어 w-full 로 붙인다.
+  const roleBadgeSize = "h-7 rounded-full text-xs font-medium";
+
   return (
     <div className="p-8">
       <div className="flex items-center justify-between mb-8">
@@ -155,14 +159,14 @@ export function UserManagement() {
         )}
       </div>
 
-      {/* Role Filter */}
+      {/* Role Filter — 가장 긴 라벨("Performer") 기준으로 폭을 고정해 pill 크기 편차 제거 */}
       <div className="flex gap-3 mb-6">
         {roles.map((role) => (
           <button
             key={role}
             onClick={() => setSelectedRole(role)}
             className={`
-              px-5 py-2 rounded-full text-sm font-medium transition-all duration-200
+              min-w-28 px-5 py-2 rounded-full text-sm font-medium text-center transition-all duration-200
               ${
                 selectedRole === role
                   ? "bg-foreground text-primary-foreground shadow-lg"
@@ -175,21 +179,27 @@ export function UserManagement() {
         ))}
       </div>
 
-      {/* Users Table */}
+      {/*
+        Users Table
+
+        필터 전환 시 테이블 형태가 흔들리지 않도록 table-fixed + 명시적 컬럼 폭.
+        auto-layout 은 현재 보이는 행의 내용에 따라 컬럼 폭을 다시 계산하므로,
+        부스/공연팀처럼 특정 필터에서 전부 비게 되는 컬럼이 생기면 지터가 발생.
+      */}
       <div className="bg-background rounded-xl overflow-hidden shadow-sm">
-        <table className="w-full">
+        <table className="w-full table-fixed">
           <thead className="bg-muted">
             <tr>
-              <th className="px-6 py-4 text-left text-sm font-semibold text-foreground">No.</th>
-              <th className="px-6 py-4 text-left text-sm font-semibold text-foreground">유저 ID</th>
-              <th className="px-6 py-4 text-left text-sm font-semibold text-foreground">권한</th>
-              <th className="px-6 py-4 text-left text-sm font-semibold text-foreground">소속</th>
-              <th className="px-6 py-4 text-left text-sm font-semibold text-foreground">부스명</th>
-              <th className="px-6 py-4 text-left text-sm font-semibold text-foreground">공연팀명</th>
-              <th className="px-6 py-4 text-left text-sm font-semibold text-foreground">이름</th>
-              <th className="px-6 py-4 text-left text-sm font-semibold text-foreground">전화번호</th>
-              <th className="px-6 py-4 text-center text-sm font-semibold text-foreground">정보작성여부</th>
-              <th className="px-6 py-4 text-center text-sm font-semibold text-foreground">
+              <th className="w-[5%] px-6 py-4 text-left text-sm font-semibold text-foreground">No.</th>
+              <th className="w-[10%] px-6 py-4 text-left text-sm font-semibold text-foreground">유저 ID</th>
+              <th className="w-[10%] px-6 py-4 text-left text-sm font-semibold text-foreground">권한</th>
+              <th className="w-[10%] px-6 py-4 text-left text-sm font-semibold text-foreground">소속</th>
+              <th className="w-[13%] px-6 py-4 text-left text-sm font-semibold text-foreground">부스명</th>
+              <th className="w-[13%] px-6 py-4 text-left text-sm font-semibold text-foreground">공연팀명</th>
+              <th className="w-[9%] px-6 py-4 text-left text-sm font-semibold text-foreground">이름</th>
+              <th className="w-[11%] px-6 py-4 text-left text-sm font-semibold text-foreground">전화번호</th>
+              <th className="w-[10%] px-6 py-4 text-center text-sm font-semibold text-foreground">정보작성여부</th>
+              <th className="w-[9%] px-6 py-4 text-center text-sm font-semibold text-foreground">
                 <button
                   type="button"
                   onClick={() => setStatusSort((d) => nextSortDir[d])}
@@ -218,7 +228,7 @@ export function UserManagement() {
                   <td className="px-6 py-4 text-sm text-muted-foreground">
                     {String(index + 1).padStart(2, "0")}
                   </td>
-                  <td className="px-6 py-4 text-sm text-foreground">{user.userId}</td>
+                  <td className="px-6 py-4 text-sm text-foreground truncate" title={user.userId}>{user.userId}</td>
                   <td className="px-6 py-4">
                     {canEditRole && !isSelf ? (
                       <Select
@@ -227,7 +237,7 @@ export function UserManagement() {
                       >
                         <SelectTrigger
                           size="sm"
-                          className={`w-auto border-0 shadow-none px-3 h-7 rounded-full text-xs font-medium ${roleBadgeClass(user.role)}`}
+                          className={`${roleBadgeSize} w-full border-0 shadow-none px-3 ${roleBadgeClass(user.role)}`}
                         >
                           <SelectValue />
                         </SelectTrigger>
@@ -241,18 +251,18 @@ export function UserManagement() {
                       </Select>
                     ) : (
                       <span
-                        className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${roleBadgeClass(user.role)}`}
+                        className={`${roleBadgeSize} w-full inline-flex items-center justify-center px-3 ${roleBadgeClass(user.role)}`}
                         title={isSelf ? "자신의 권한은 변경할 수 없습니다" : undefined}
                       >
                         {user.role}
                       </span>
                     )}
                   </td>
-                  <td className="px-6 py-4 text-sm text-muted-foreground">{user.affiliation}</td>
-                  <td className="px-6 py-4 text-sm text-muted-foreground">{user.boothName}</td>
-                  <td className="px-6 py-4 text-sm text-muted-foreground">{user.performanceTeamName}</td>
-                  <td className="px-6 py-4 text-sm text-muted-foreground">{user.representative}</td>
-                  <td className="px-6 py-4 text-sm text-muted-foreground">{user.phone}</td>
+                  <td className="px-6 py-4 text-sm text-muted-foreground truncate" title={user.affiliation}>{user.affiliation}</td>
+                  <td className="px-6 py-4 text-sm text-muted-foreground truncate" title={user.boothName}>{user.boothName}</td>
+                  <td className="px-6 py-4 text-sm text-muted-foreground truncate" title={user.performanceTeamName}>{user.performanceTeamName}</td>
+                  <td className="px-6 py-4 text-sm text-muted-foreground truncate" title={user.representative}>{user.representative}</td>
+                  <td className="px-6 py-4 text-sm text-muted-foreground truncate" title={user.phone}>{user.phone}</td>
                   <td className="px-6 py-4 text-center">
                     <span
                       className={`
