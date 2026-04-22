@@ -147,7 +147,7 @@ export function CreateAdmin() {
                 onChange={(e) => setUserId(e.target.value)}
                 placeholder="example_user"
                 className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 transition-all ${
-                  errors.userId ? 'border-destructive focus:ring-destructive' : 'border focus:ring-ring'
+                  errors.userId ? 'border-destructive focus:ring-destructive' : 'border-border focus:ring-ring'
                 }`}
               />
               {errors.userId && <p className="text-destructive text-xs mt-1">{errors.userId}</p>}

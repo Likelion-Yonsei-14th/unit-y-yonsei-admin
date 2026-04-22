@@ -156,7 +156,7 @@ export function PerformanceManagement() {
             <input
               type="text"
               placeholder="공연팀 이름을 입력하세요"
-              className="w-full px-4 py-3 border border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
+              className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
               value={editingData.teamName}
               onChange={(e) => setEditingData({ ...editingData, teamName: e.target.value })}
               disabled={!isEditMode}
@@ -293,7 +293,7 @@ export function PerformanceManagement() {
             <label className="block text-sm font-semibold text-foreground mb-2">공연 시작 시간</label>
             <input
               type="time"
-              className="w-full px-4 py-3 border border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
+              className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
               value={editingData.startTime}
               onChange={(e) => setEditingData({ ...editingData, startTime: e.target.value })}
               disabled={!isEditMode}
@@ -303,7 +303,7 @@ export function PerformanceManagement() {
             <label className="block text-sm font-semibold text-foreground mb-2">공연 종료 시간</label>
             <input
               type="time"
-              className="w-full px-4 py-3 border border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
+              className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
               value={editingData.endTime}
               onChange={(e) => setEditingData({ ...editingData, endTime: e.target.value })}
               disabled={!isEditMode}

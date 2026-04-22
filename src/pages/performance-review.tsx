@@ -60,7 +60,7 @@ export function PerformanceReviewPage() {
 
       {/* 통계 카드 */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        <div className="bg-background rounded-xl border border p-5 shadow-sm">
+        <div className="bg-background rounded-xl border border-border p-5 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-muted-foreground">전체 후기</p>
@@ -72,7 +72,7 @@ export function PerformanceReviewPage() {
           </div>
         </div>
 
-        <div className="bg-background rounded-xl border border p-5 shadow-sm">
+        <div className="bg-background rounded-xl border border-border p-5 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-muted-foreground">숨김 처리</p>
@@ -84,7 +84,7 @@ export function PerformanceReviewPage() {
           </div>
         </div>
 
-        <div className="bg-background rounded-xl border border p-5 shadow-sm">
+        <div className="bg-background rounded-xl border border-border p-5 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-muted-foreground">평균 후기/팀</p>
@@ -98,7 +98,7 @@ export function PerformanceReviewPage() {
           </div>
         </div>
 
-        <div className="bg-background rounded-xl border border p-5 shadow-sm">
+        <div className="bg-background rounded-xl border border-border p-5 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-muted-foreground">인기 곡 1위</p>

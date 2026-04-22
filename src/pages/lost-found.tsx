@@ -43,9 +43,9 @@ export function LostFoundPage() {
 
       {/* Lost Items List */}
       {!showForm && (
-        <div className="bg-background rounded-2xl border border overflow-hidden shadow-sm">
+        <div className="bg-background rounded-2xl border border-border overflow-hidden shadow-sm">
           <table className="w-full">
-            <thead className="bg-muted border-b border">
+            <thead className="bg-muted border-b border-border">
               <tr>
                 <th className="px-6 py-4 text-left text-sm font-semibold text-foreground">분실물명</th>
                 <th className="px-6 py-4 text-left text-sm font-semibold text-foreground">발견 위치</th>

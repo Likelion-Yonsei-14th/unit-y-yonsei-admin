@@ -77,7 +77,7 @@ export function BoothLayoutPage() {
                 className={`flex-1 px-4 py-3 rounded-lg border-2 transition-all ${
                   selectedDate === "2026-05-27"
                     ? "border-primary bg-ds-primary-subtle text-ds-primary-pressed font-semibold"
-                    : "border text-muted-foreground hover:border-ds-border-strong"
+                    : "border-border text-muted-foreground hover:border-ds-border-strong"
                 }`}
               >
                 5/27 (화) - 국제캠
@@ -90,7 +90,7 @@ export function BoothLayoutPage() {
                 className={`flex-1 px-4 py-3 rounded-lg border-2 transition-all ${
                   selectedDate === "2026-05-28"
                     ? "border-primary bg-ds-primary-subtle text-ds-primary-pressed font-semibold"
-                    : "border text-muted-foreground hover:border-ds-border-strong"
+                    : "border-border text-muted-foreground hover:border-ds-border-strong"
                 }`}
               >
                 5/28 (수) - 신촌캠
@@ -103,7 +103,7 @@ export function BoothLayoutPage() {
                 className={`flex-1 px-4 py-3 rounded-lg border-2 transition-all ${
                   selectedDate === "2026-05-29"
                     ? "border-primary bg-ds-primary-subtle text-ds-primary-pressed font-semibold"
-                    : "border text-muted-foreground hover:border-ds-border-strong"
+                    : "border-border text-muted-foreground hover:border-ds-border-strong"
                 }`}
               >
                 5/29 (목) - 신촌캠
@@ -125,7 +125,7 @@ export function BoothLayoutPage() {
                     className={`flex-1 px-4 py-3 rounded-lg border-2 transition-all ${
                       selectedLocation === location
                         ? "border-cyan-500 bg-cyan-50 text-cyan-700 font-semibold"
-                        : "border text-muted-foreground hover:border-ds-border-strong"
+                        : "border-border text-muted-foreground hover:border-ds-border-strong"
                     }`}
                   >
                     {location}

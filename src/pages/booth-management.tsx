@@ -233,7 +233,7 @@ export function BoothManagement() {
   if (isPending) {
     return (
       <div className="p-8 flex items-center justify-center min-h-[60vh]">
-        <div className="h-10 w-10 animate-spin rounded-full border-4 border border-t-primary" />
+        <div className="h-10 w-10 animate-spin rounded-full border-4 border-muted border-t-primary" />
       </div>
     );
   }
