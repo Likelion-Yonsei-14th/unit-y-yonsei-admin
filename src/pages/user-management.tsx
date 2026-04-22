@@ -26,17 +26,19 @@ import type { Role } from "@/types/role";
 
 type RoleFilter = "전체" | Role;
 
-const ROLE_OPTIONS: Role[] = ["Super", "Master", "Booth", "Performer"];
+/**
+ * Super 는 배포 시점 1인(시스템 오너) 고정이라 UI 승격·강등 경로를
+ * 의도적으로 배제한다. 옵션에도 내놓지 않는다.
+ */
+const ROLE_OPTIONS: Role[] = ["Master", "Booth", "Performer"];
 
 /**
  * 역할 전이의 확인 레벨.
  * - 0: 무확인 즉시 반영 (교정/강등 성격의 저위험 전이)
  * - 1: 단순 Confirm (Master로의 승격)
- * - 2: 사유 입력 Confirm (Super가 개입되는 전이 — 감사 필수)
  */
-function getRoleChangeTier(from: Role, to: Role): 0 | 1 | 2 {
+function getRoleChangeTier(from: Role, to: Role): 0 | 1 {
   if (from === to) return 0;
-  if (from === "Super" || to === "Super") return 2;
   if (to === "Master") return 1;
   return 0;
 }
@@ -44,7 +46,6 @@ function getRoleChangeTier(from: Role, to: Role): 0 | 1 | 2 {
 interface PendingRoleChange {
   user: User;
   to: Role;
-  tier: 1 | 2;
 }
 
 /**
@@ -67,7 +68,6 @@ export function UserManagement() {
   const [statusSort, setStatusSort] = useState<SortDir>("none");
   const [pendingDeactivate, setPendingDeactivate] = useState<User | null>(null);
   const [pendingRoleChange, setPendingRoleChange] = useState<PendingRoleChange | null>(null);
-  const [reason, setReason] = useState("");
   const navigate = useNavigate();
   const { user: currentUser, can } = useAuth();
 
@@ -118,8 +118,7 @@ export function UserManagement() {
       setUsers((prev) => prev.map((x) => (x.id === u.id ? { ...x, role: to } : x)));
       return;
     }
-    setReason("");
-    setPendingRoleChange({ user: u, to, tier });
+    setPendingRoleChange({ user: u, to });
   };
 
   const confirmRoleChange = () => {
@@ -131,7 +130,6 @@ export function UserManagement() {
       );
     }
     setPendingRoleChange(null);
-    setReason("");
   };
 
   const roleBadgeClass = (role: Role) =>
@@ -316,10 +314,7 @@ export function UserManagement() {
       <AlertDialog
         open={!!pendingRoleChange}
         onOpenChange={(o) => {
-          if (!o) {
-            setPendingRoleChange(null);
-            setReason("");
-          }
+          if (!o) setPendingRoleChange(null);
         }}
       >
         <AlertDialogContent>
@@ -328,27 +323,11 @@ export function UserManagement() {
             <AlertDialogDescription>
               {pendingRoleChange?.user.userId}의 권한을{" "}
               <b>{pendingRoleChange?.user.role}</b> → <b>{pendingRoleChange?.to}</b> 로 변경합니다.
-              {pendingRoleChange?.tier === 2
-                ? " Super가 개입되는 전이는 감사 기록을 위해 변경 사유를 반드시 입력해야 합니다."
-                : ""}
             </AlertDialogDescription>
           </AlertDialogHeader>
-          {pendingRoleChange?.tier === 2 && (
-            <textarea
-              value={reason}
-              onChange={(e) => setReason(e.target.value)}
-              placeholder="변경 사유 (필수)"
-              className="w-full min-h-20 rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
-            />
-          )}
           <AlertDialogFooter>
             <AlertDialogCancel>취소</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={confirmRoleChange}
-              disabled={pendingRoleChange?.tier === 2 && reason.trim().length === 0}
-            >
-              확인
-            </AlertDialogAction>
+            <AlertDialogAction onClick={confirmRoleChange}>확인</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
