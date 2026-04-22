@@ -29,9 +29,17 @@ export function ReservationManagement() {
 
   // 훅 호출 이후에 조건부 리턴 — Rules of Hooks 위반 방지.
   // Booth 계정이 본인 소속이 아닌 부스 URL 을 직접 입력한 경우 자기 부스로 튕김.
+  // boothId 미할당(이론상 엣지) 계정은 `/reservations` 의 entry 로 보내
+  // "소속 부스 미설정" 안내를 보여준다. 이 가드가 없으면 `/reservations/undefined`
+  // 로 보내 NaN 매칭 → 재리다이렉트 무한 루프에 빠진다.
   // Super/Master 는 모든 부스 열람 가능하므로 그대로 진행.
-  if (user?.role === "Booth" && user.boothId !== boothId) {
-    return <Navigate to={`/reservations/${user.boothId}`} replace />;
+  if (user?.role === "Booth") {
+    if (user.boothId == null) {
+      return <Navigate to="/reservations" replace />;
+    }
+    if (user.boothId !== boothId) {
+      return <Navigate to={`/reservations/${user.boothId}`} replace />;
+    }
   }
 
   // 유효하지 않은 boothId (없는 부스 · 숫자 아님) → picker 로 복귀.
