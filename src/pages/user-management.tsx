@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router";
-import { ArrowDown, ArrowUp, ArrowUpDown, UserPlus, Users } from "lucide-react";
+import { ArrowDown, ArrowUp, ArrowUpDown, Search, UserPlus, Users, X } from "lucide-react";
 import { mockUsers, type MockUser as User } from "@/mocks/users";
 import { PageHeaderAction } from "@/components/common/page-header-action";
 import { useAuth } from "@/features/auth/hooks";
@@ -65,6 +65,7 @@ const nextSortDir: Record<SortDir, SortDir> = {
 export function UserManagement() {
   const [users, setUsers] = useState<User[]>(mockUsers);
   const [selectedRole, setSelectedRole] = useState<RoleFilter>("전체");
+  const [searchQuery, setSearchQuery] = useState("");
   const [statusSort, setStatusSort] = useState<SortDir>("none");
   const [pendingDeactivate, setPendingDeactivate] = useState<User | null>(null);
   const [pendingRoleChange, setPendingRoleChange] = useState<PendingRoleChange | null>(null);
@@ -75,8 +76,31 @@ export function UserManagement() {
   const canEditRole = can("user.update.role");
   const canToggleStatus = can("user.deactivate");
 
-  const filteredUsers =
-    selectedRole === "전체" ? users : users.filter((u) => u.role === selectedRole);
+  // 파이프: users → 검색 → 역할 필터 → 상태 정렬 → visibleUsers
+  // 전화번호/이메일은 검색 대상 제외 — 값 형태가 제각각이라 매칭 체감이 나쁨.
+  const normalizedQuery = searchQuery.trim().toLowerCase();
+
+  const searchedUsers = useMemo(() => {
+    if (!normalizedQuery) return users;
+    return users.filter((u) => {
+      const haystack = [
+        u.userId,
+        u.representative,
+        u.affiliation,
+        u.boothName,
+        u.performanceTeamName,
+      ];
+      return haystack.some((f) => f.toLowerCase().includes(normalizedQuery));
+    });
+  }, [users, normalizedQuery]);
+
+  const filteredUsers = useMemo(
+    () =>
+      selectedRole === "전체"
+        ? searchedUsers
+        : searchedUsers.filter((u) => u.role === selectedRole),
+    [searchedUsers, selectedRole],
+  );
 
   const visibleUsers = useMemo(() => {
     if (statusSort === "none") return filteredUsers;
@@ -88,6 +112,8 @@ export function UserManagement() {
     });
     return copy;
   }, [filteredUsers, statusSort]);
+
+  const hasActiveFilter = !!normalizedQuery || selectedRole !== "전체";
 
   const SortIcon = statusSort === "asc" ? ArrowUp : statusSort === "desc" ? ArrowDown : ArrowUpDown;
   const sortLabel =
@@ -161,24 +187,55 @@ export function UserManagement() {
         )}
       </div>
 
-      {/* Role Filter — 가장 긴 라벨("Performer") 기준으로 폭을 고정해 pill 크기 편차 제거 */}
-      <div className="flex gap-3 mb-6">
-        {roles.map((role) => (
-          <button
-            key={role}
-            onClick={() => setSelectedRole(role)}
-            className={`
-              min-w-28 px-5 py-2 rounded-full text-sm font-medium text-center transition-all duration-200
-              ${
-                selectedRole === role
-                  ? "bg-foreground text-primary-foreground shadow-lg"
-                  : "bg-background text-muted-foreground border border-border hover:border-ds-border-strong"
-              }
-            `}
-          >
-            {role}
-          </button>
-        ))}
+      {/*
+        Role Filter + 검색 — 한 줄에 좌측 pill, 우측 inline search.
+        pill 은 가장 긴 라벨("Performer") 기준 min-w-28 로 폭 편차 제거.
+        계정 규모(≤수백)를 감안해 서버 검색 없이 프론트에서 .includes() 로 충분.
+      */}
+      <div className="flex items-center justify-between gap-4 mb-6">
+        <div className="flex gap-3">
+          {roles.map((role) => (
+            <button
+              key={role}
+              onClick={() => setSelectedRole(role)}
+              className={`
+                min-w-28 px-5 py-2 rounded-full text-sm font-medium text-center transition-all duration-200
+                ${
+                  selectedRole === role
+                    ? "bg-foreground text-primary-foreground shadow-lg"
+                    : "bg-background text-muted-foreground border border-border hover:border-ds-border-strong"
+                }
+              `}
+            >
+              {role}
+            </button>
+          ))}
+        </div>
+
+        <div className="relative w-72">
+          <Search
+            size={16}
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-ds-text-disabled pointer-events-none"
+          />
+          <input
+            type="search"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="유저 ID·이름·소속·부스/공연팀명 검색"
+            aria-label="유저 검색"
+            className="w-full h-10 pl-9 pr-9 text-sm bg-background border border-border rounded-full focus:outline-none focus:ring-2 focus:ring-ring placeholder:text-ds-text-disabled"
+          />
+          {searchQuery && (
+            <button
+              type="button"
+              onClick={() => setSearchQuery("")}
+              aria-label="검색어 지우기"
+              className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+            >
+              <X size={14} />
+            </button>
+          )}
+        </div>
       </div>
 
       {/*
@@ -219,6 +276,18 @@ export function UserManagement() {
             </tr>
           </thead>
           <tbody>
+            {visibleUsers.length === 0 && (
+              <tr>
+                <td
+                  colSpan={10}
+                  className="px-6 py-12 text-center text-sm text-muted-foreground"
+                >
+                  {hasActiveFilter
+                    ? "검색 조건에 맞는 유저가 없습니다."
+                    : "표시할 유저가 없습니다."}
+                </td>
+              </tr>
+            )}
             {visibleUsers.map((user, index) => {
               const isSelf = currentUser?.userId === user.userId;
               const rowDimmed = !user.active ? "opacity-60" : "";
