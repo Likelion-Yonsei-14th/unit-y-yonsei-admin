@@ -38,7 +38,7 @@ export function LoginPage() {
 
         <form
           onSubmit={handleSubmit(onSubmit)}
-          className="bg-background border border-border rounded-2xl p-8 space-y-5 shadow-sm"
+          className="bg-background rounded-2xl p-8 space-y-5 shadow-sm"
           noValidate
         >
           <div className="space-y-1.5">

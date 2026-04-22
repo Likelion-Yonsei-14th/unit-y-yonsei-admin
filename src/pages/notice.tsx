@@ -43,9 +43,9 @@ export function NoticePage() {
 
       {/* Notice List */}
       {!showForm && (
-        <div className="bg-background rounded-2xl border border-border overflow-hidden shadow-sm">
+        <div className="bg-background rounded-2xl overflow-hidden shadow-sm">
           <table className="w-full">
-            <thead className="bg-muted border-b border-border">
+            <thead className="bg-muted">
               <tr>
                 <th className="px-6 py-4 text-left text-sm font-semibold text-foreground">제목</th>
                 <th className="px-6 py-4 text-left text-sm font-semibold text-foreground">등록일</th>
@@ -55,7 +55,7 @@ export function NoticePage() {
             </thead>
             <tbody>
               {notices.map((notice) => (
-                <tr key={notice.id} className="border-b border hover:bg-muted transition-colors">
+                <tr key={notice.id} className="hover:bg-muted transition-colors">
                   <td className="px-6 py-4">
                     <div className="text-sm font-medium text-foreground">{notice.title}</div>
                     <div className="text-xs text-muted-foreground mt-1 line-clamp-1">{notice.content}</div>
@@ -102,7 +102,7 @@ export function NoticePage() {
 
       {/* Notice Form */}
       {showForm && (
-        <div className="bg-background rounded-2xl border border p-8 shadow-sm">
+        <div className="bg-background rounded-2xl p-8 shadow-sm">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-bold text-foreground">
               {editingNotice ? "공지사항 수정" : "새 공지사항 작성"}
@@ -122,7 +122,7 @@ export function NoticePage() {
                 type="text"
                 placeholder="공지사항 제목을 입력하세요"
                 defaultValue={editingNotice?.title || ""}
-                className="w-full px-4 py-3 border border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
+                className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
               />
             </div>
 
@@ -140,14 +140,14 @@ export function NoticePage() {
                 rows={6}
                 placeholder="공지사항 내용을 작성하세요"
                 defaultValue={editingNotice?.content || ""}
-                className="w-full px-4 py-3 border border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all resize-none"
+                className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all resize-none"
               />
             </div>
 
-            <div className="flex justify-end gap-3 pt-4 border-t border">
+            <div className="flex justify-end gap-3 pt-4">
               <button 
                 onClick={handleCancel}
-                className="px-6 py-3 border border text-foreground rounded-lg hover:bg-muted transition-colors"
+                className="px-6 py-3 border border-border text-foreground rounded-lg hover:bg-muted transition-colors"
               >
                 취소
               </button>

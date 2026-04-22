@@ -60,7 +60,7 @@ export function PerformanceReviewPage() {
 
       {/* 통계 카드 */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        <div className="bg-background rounded-xl border border-border p-5 shadow-sm">
+        <div className="bg-background rounded-xl p-5 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-muted-foreground">전체 후기</p>
@@ -72,7 +72,7 @@ export function PerformanceReviewPage() {
           </div>
         </div>
 
-        <div className="bg-background rounded-xl border border-border p-5 shadow-sm">
+        <div className="bg-background rounded-xl p-5 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-muted-foreground">숨김 처리</p>
@@ -84,7 +84,7 @@ export function PerformanceReviewPage() {
           </div>
         </div>
 
-        <div className="bg-background rounded-xl border border-border p-5 shadow-sm">
+        <div className="bg-background rounded-xl p-5 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-muted-foreground">평균 후기/팀</p>
@@ -98,7 +98,7 @@ export function PerformanceReviewPage() {
           </div>
         </div>
 
-        <div className="bg-background rounded-xl border border-border p-5 shadow-sm">
+        <div className="bg-background rounded-xl p-5 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-muted-foreground">인기 곡 1위</p>
@@ -114,7 +114,7 @@ export function PerformanceReviewPage() {
       </div>
 
       {/* 필터 및 검색 */}
-      <div className="bg-background rounded-xl border border p-6 shadow-sm mb-6">
+      <div className="bg-background rounded-xl p-6 shadow-sm mb-6">
         <div className="flex flex-col md:flex-row gap-4">
           <div className="flex-1">
             <label className="block text-sm font-semibold text-foreground mb-2">공연팀 필터</label>
@@ -123,7 +123,7 @@ export function PerformanceReviewPage() {
               <select
                 value={selectedTeam}
                 onChange={(e) => setSelectedTeam(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 border border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
+                className="w-full pl-10 pr-4 py-2.5 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
               >
                 {performanceTeams.map(team => (
                   <option key={team} value={team}>{team}</option>
@@ -141,13 +141,13 @@ export function PerformanceReviewPage() {
                 placeholder="메시지 또는 곡명 검색..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 border border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
+                className="w-full pl-10 pr-4 py-2.5 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
               />
             </div>
           </div>
 
           <div className="flex items-end">
-            <label className="flex items-center gap-2 cursor-pointer px-4 py-2.5 border border rounded-lg hover:bg-muted transition-colors">
+            <label className="flex items-center gap-2 cursor-pointer px-4 py-2.5 border border-border rounded-lg hover:bg-muted transition-colors">
               <input
                 type="checkbox"
                 checked={showHidden}
@@ -162,7 +162,7 @@ export function PerformanceReviewPage() {
 
       {/* 인기 곡 순위 */}
       {stats.topSongs.length > 0 && (
-        <div className="bg-background rounded-xl border border p-6 shadow-sm mb-6">
+        <div className="bg-background rounded-xl p-6 shadow-sm mb-6">
           <h3 className="font-bold text-foreground mb-4 flex items-center gap-2">
             <Heart size={20} className="text-destructive" />
             인기 곡 TOP 5
@@ -190,8 +190,8 @@ export function PerformanceReviewPage() {
       )}
 
       {/* 후기 목록 */}
-      <div className="bg-background rounded-xl border border shadow-sm">
-        <div className="px-6 py-4 border-b border">
+      <div className="bg-background rounded-xl shadow-sm">
+        <div className="px-6 py-4">
           <h3 className="font-bold text-foreground">
             후기 목록 ({filteredReviews.length})
           </h3>
@@ -262,11 +262,11 @@ export function PerformanceReviewPage() {
 
       {/* 공연팀별 통계 */}
       {stats.byTeam.length > 0 && (
-        <div className="bg-background rounded-xl border border p-6 shadow-sm mt-6">
+        <div className="bg-background rounded-xl p-6 shadow-sm mt-6">
           <h3 className="font-bold text-foreground mb-4">공연팀별 후기 수</h3>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {stats.byTeam.map(({ team, count }) => (
-              <div key={team} className="p-4 border border rounded-lg">
+              <div key={team} className="p-4 rounded-lg bg-muted">
                 <p className="text-sm text-muted-foreground mb-1">{team}</p>
                 <p className="text-2xl font-bold text-foreground">{count}</p>
               </div>

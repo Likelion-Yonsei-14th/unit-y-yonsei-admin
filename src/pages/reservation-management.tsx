@@ -122,9 +122,9 @@ export function ReservationManagement() {
       </div>
 
       {/* Reservations Table */}
-      <div className="bg-background rounded-xl border border overflow-hidden shadow-sm">
+      <div className="bg-background rounded-xl overflow-hidden shadow-sm">
         <table className="w-full">
-          <thead className="bg-muted border-b border">
+          <thead className="bg-muted">
             <tr>
               <th className="w-12 py-4 text-center">
                 <input
@@ -148,7 +148,7 @@ export function ReservationManagement() {
               <tr
                 key={reservation.id}
                 onClick={() => setSelectedReservation(reservation)}
-                className="border-b border hover:bg-muted transition-colors cursor-pointer"
+                className="hover:bg-muted transition-colors cursor-pointer"
               >
                 <td className="py-4 text-center">
                   <input
@@ -303,7 +303,7 @@ export function ReservationManagement() {
               </button>
               <button
                 onClick={() => setShowStatusChangeModal(false)}
-                className="w-full px-4 py-3 border border text-foreground rounded-lg hover:bg-muted transition-colors"
+                className="w-full px-4 py-3 border border-border text-foreground rounded-lg hover:bg-muted transition-colors"
               >
                 닫기
               </button>

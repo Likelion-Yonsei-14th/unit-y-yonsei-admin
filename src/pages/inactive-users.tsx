@@ -71,9 +71,9 @@ export function InactiveUsers() {
       </div>
 
       {/* Users Table */}
-      <div className="bg-background rounded-xl border border overflow-hidden shadow-sm">
+      <div className="bg-background rounded-xl overflow-hidden shadow-sm">
         <table className="w-full">
-          <thead className="bg-muted border-b border">
+          <thead className="bg-muted">
             <tr>
               <th className="w-12 py-4 text-center">
                 <input
@@ -96,7 +96,7 @@ export function InactiveUsers() {
             {filteredUsers.map((user, index) => (
               <tr
                 key={user.id}
-                className="border-b border hover:bg-muted transition-colors"
+                className="hover:bg-muted transition-colors"
               >
                 <td className="py-4 text-center">
                   <input

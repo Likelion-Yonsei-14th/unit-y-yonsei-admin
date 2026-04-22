@@ -99,9 +99,9 @@ export function UserManagement() {
       </div>
 
       {/* Users Table */}
-      <div className="bg-background rounded-xl border border overflow-hidden shadow-sm">
+      <div className="bg-background rounded-xl overflow-hidden shadow-sm">
         <table className="w-full">
-          <thead className="bg-muted border-b border">
+          <thead className="bg-muted">
             <tr>
               <th className="w-12 py-4 text-center">
                 <input
@@ -124,7 +124,7 @@ export function UserManagement() {
             {filteredUsers.map((user, index) => (
               <tr
                 key={user.id}
-                className="border-b border hover:bg-muted transition-colors"
+                className="hover:bg-muted transition-colors"
               >
                 <td className="py-4 text-center">
                   <input
@@ -191,7 +191,7 @@ export function UserManagement() {
               </button>
               <button
                 onClick={() => setShowStatusModal(false)}
-                className="w-full px-6 py-3 border border text-foreground rounded-lg hover:bg-muted transition-colors"
+                className="w-full px-6 py-3 border border-border text-foreground rounded-lg hover:bg-muted transition-colors"
               >
                 취소
               </button>
@@ -235,7 +235,7 @@ export function UserManagement() {
               </button>
               <button
                 onClick={() => setShowRoleModal(false)}
-                className="w-full px-6 py-3 border border text-foreground rounded-lg hover:bg-muted transition-colors"
+                className="w-full px-6 py-3 border border-border text-foreground rounded-lg hover:bg-muted transition-colors"
               >
                 취소
               </button>

@@ -120,7 +120,7 @@ export function CreateAdmin() {
       )}
 
       <form onSubmit={handleSubmit}>
-        <div className="bg-background rounded-2xl border border p-8 shadow-sm space-y-6">
+        <div className="bg-background rounded-2xl p-8 shadow-sm space-y-6">
           {/* Warning Notice */}
           <div className="flex items-start gap-3 p-4 bg-ds-primary-subtle border border-ds-primary rounded-lg">
             <Shield size={20} className="text-primary flex-shrink-0 mt-0.5" />
@@ -163,7 +163,7 @@ export function CreateAdmin() {
                 onChange={(e) => setTempPassword(e.target.value)}
                 placeholder="최소 8자 이상"
                 className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 transition-all ${
-                  errors.tempPassword ? 'border-destructive focus:ring-destructive' : 'border focus:ring-ring'
+                  errors.tempPassword ? 'border-destructive focus:ring-destructive' : 'border-border focus:ring-ring'
                 }`}
               />
               {errors.tempPassword && <p className="text-destructive text-xs mt-1">{errors.tempPassword}</p>}
@@ -180,7 +180,7 @@ export function CreateAdmin() {
               onChange={(e) => setAffiliation(e.target.value)}
               placeholder="예: 문헌정보학과, 멋쟁이사자처럼, 총학생회 등"
               className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 transition-all ${
-                errors.affiliation ? 'border-destructive focus:ring-destructive' : 'border focus:ring-ring'
+                errors.affiliation ? 'border-destructive focus:ring-destructive' : 'border-border focus:ring-ring'
               }`}
             />
             {errors.affiliation && <p className="text-destructive text-xs mt-1">{errors.affiliation}</p>}
@@ -271,7 +271,7 @@ export function CreateAdmin() {
                 onChange={(e) => setRepresentativeName(e.target.value)}
                 placeholder="홍길동"
                 className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 transition-all ${
-                  errors.representativeName ? 'border-destructive focus:ring-destructive' : 'border focus:ring-ring'
+                  errors.representativeName ? 'border-destructive focus:ring-destructive' : 'border-border focus:ring-ring'
                 }`}
               />
               {errors.representativeName && <p className="text-destructive text-xs mt-1">{errors.representativeName}</p>}
@@ -287,7 +287,7 @@ export function CreateAdmin() {
                 onChange={(e) => setRepresentativePhone(e.target.value)}
                 placeholder="010-1234-5678"
                 className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 transition-all ${
-                  errors.representativePhone ? 'border-destructive focus:ring-destructive' : 'border focus:ring-ring'
+                  errors.representativePhone ? 'border-destructive focus:ring-destructive' : 'border-border focus:ring-ring'
                 }`}
               />
               {errors.representativePhone && <p className="text-destructive text-xs mt-1">{errors.representativePhone}</p>}
@@ -306,7 +306,7 @@ export function CreateAdmin() {
               onChange={(e) => setInternalMemo(e.target.value)}
               placeholder="요청 경로, 검토 내용, 특이사항 등을 기록해주세요. (예: 카카오톡으로 요청받음 - 문헌정보학과 부스 운영 확인 완료)"
               className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 transition-all resize-none ${
-                errors.internalMemo ? 'border-destructive focus:ring-destructive' : 'border focus:ring-ring'
+                errors.internalMemo ? 'border-destructive focus:ring-destructive' : 'border-border focus:ring-ring'
               }`}
             />
             {errors.internalMemo && <p className="text-destructive text-xs mt-1">{errors.internalMemo}</p>}
