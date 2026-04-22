@@ -25,6 +25,18 @@ export function ReservationManagement() {
     [boothId],
   );
 
+  // 대기 순번은 시간 오름차순 기준 고정이라 boothReservations 가 바뀔 때만
+  // 다시 계산한다. 렌더마다 getWaitingNumber 에서 filter+sort 를 돌리면
+  // 행 렌더 횟수에 비례해 O(n² log n) 까지 악화되므로 Map 으로 O(1) 조회.
+  const waitingNumberById = useMemo(() => {
+    const sorted = boothReservations
+      .filter((r) => r.status === "waiting")
+      .sort((a, b) => a.time.localeCompare(b.time));
+    const map = new Map<string, number>();
+    sorted.forEach((r, i) => map.set(r.id, i + 1));
+    return map;
+  }, [boothReservations]);
+
   const statuses: ReservationStatus[] = ["전체 목록", "대기자 목록", "취소 목록", "완료 목록"];
 
   // 훅 호출 이후에 조건부 리턴 — Rules of Hooks 위반 방지.
@@ -54,15 +66,6 @@ export function ReservationManagement() {
     if (selectedStatus === "완료 목록") return res.status === "completed";
     return true;
   });
-
-  // 대기 순번은 부스 스코프 내에서 계산 (전역 순번이 아님).
-  const getWaitingNumber = (reservation: Reservation) => {
-    if (reservation.status !== "waiting") return null;
-    const waitingReservations = boothReservations
-      .filter((r) => r.status === "waiting")
-      .sort((a, b) => a.time.localeCompare(b.time));
-    return waitingReservations.findIndex((r) => r.id === reservation.id) + 1;
-  };
 
   const boothHeaderLabel = booth.name || "이름 미입력 부스";
 
@@ -206,7 +209,7 @@ export function ReservationManagement() {
                     ${reservation.status === 'completed' && 'bg-ds-success-subtle text-ds-success-pressed'}
                     ${reservation.status === 'cancelled' && 'bg-ds-error-subtle text-ds-error-pressed'}
                   `}>
-                    {reservation.status === 'waiting' && `대기 ${getWaitingNumber(reservation)}번`}
+                    {reservation.status === 'waiting' && `대기 ${waitingNumberById.get(reservation.id) ?? ''}번`}
                     {reservation.status === 'completed' && '완료'}
                     {reservation.status === 'cancelled' && '취소'}
                   </span>
