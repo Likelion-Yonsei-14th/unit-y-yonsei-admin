@@ -178,12 +178,18 @@ export function ReservationManagement() {
         ))}
       </div>
 
-      {/* Reservations Table */}
+      {/*
+        Reservations Table
+
+        필터 전환 시(대기자 ↔ 완료 ↔ 취소 ↔ 전체) 현재 행 내용에 따라
+        auto-layout 이 컬럼 폭을 다시 계산해 ui 가 튀는 문제.
+        table-fixed + 명시 폭으로 컬럼을 고정한다. (user-management 와 동일 패턴)
+      */}
       <div className="bg-background rounded-xl overflow-hidden shadow-sm">
-        <table className="w-full">
+        <table className="w-full table-fixed">
           <thead className="bg-muted">
             <tr>
-              <th className="w-12 py-4 text-center">
+              <th className="w-[4%] py-4 text-center">
                 <input
                   type="checkbox"
                   className="w-4 h-4 rounded accent-primary"
@@ -191,13 +197,13 @@ export function ReservationManagement() {
                   onChange={toggleSelectAll}
                 />
               </th>
-              <th className="px-6 py-4 text-left text-sm font-semibold text-foreground">예약 ID</th>
-              <th className="px-6 py-4 text-left text-sm font-semibold text-foreground">예약 시간</th>
-              <th className="px-6 py-4 text-left text-sm font-semibold text-foreground">예약 신청자명</th>
-              <th className="px-6 py-4 text-left text-sm font-semibold text-foreground">인원수</th>
-              <th className="px-6 py-4 text-left text-sm font-semibold text-foreground">연락처</th>
-              <th className="px-6 py-4 text-left text-sm font-semibold text-foreground">상태</th>
-              <th className="px-6 py-4 text-center text-sm font-semibold text-foreground">액션</th>
+              <th className="w-[10%] px-6 py-4 text-left text-sm font-semibold text-foreground">예약 ID</th>
+              <th className="w-[10%] px-6 py-4 text-left text-sm font-semibold text-foreground">예약 시간</th>
+              <th className="w-[12%] px-6 py-4 text-left text-sm font-semibold text-foreground">예약 신청자명</th>
+              <th className="w-[8%] px-6 py-4 text-left text-sm font-semibold text-foreground">인원수</th>
+              <th className="w-[18%] px-6 py-4 text-left text-sm font-semibold text-foreground">연락처</th>
+              <th className="w-[18%] px-6 py-4 text-left text-sm font-semibold text-foreground">상태</th>
+              <th className="w-[20%] px-6 py-4 text-center text-sm font-semibold text-foreground">액션</th>
             </tr>
           </thead>
           <tbody>
@@ -216,11 +222,11 @@ export function ReservationManagement() {
                     onClick={(e) => e.stopPropagation()}
                   />
                 </td>
-                <td className="px-6 py-4 text-sm font-medium text-foreground">{reservation.id}</td>
-                <td className="px-6 py-4 text-sm text-muted-foreground">{reservation.time}</td>
-                <td className="px-6 py-4 text-sm text-foreground">{reservation.name}</td>
-                <td className="px-6 py-4 text-sm text-muted-foreground">{reservation.people}명</td>
-                <td className="px-6 py-4 text-sm text-muted-foreground">{reservation.contact}</td>
+                <td className="px-6 py-4 text-sm font-medium text-foreground truncate" title={reservation.id}>{reservation.id}</td>
+                <td className="px-6 py-4 text-sm text-muted-foreground truncate">{reservation.time}</td>
+                <td className="px-6 py-4 text-sm text-foreground truncate" title={reservation.name}>{reservation.name}</td>
+                <td className="px-6 py-4 text-sm text-muted-foreground truncate">{reservation.people}명</td>
+                <td className="px-6 py-4 text-sm text-muted-foreground truncate" title={reservation.contact}>{reservation.contact}</td>
                 <td className="px-6 py-4">
                   {/*
                     라벨 길이가 "완료/취소"(2자) ~ "대기 99번"(5자) 로 들쑥날쑥해
