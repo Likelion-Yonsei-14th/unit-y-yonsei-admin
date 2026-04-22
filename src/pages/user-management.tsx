@@ -1,66 +1,141 @@
-import { useState } from "react";
-import { Plus, Trash2, UserX, Edit, Users } from "lucide-react";
+import { useMemo, useState } from "react";
+import { useNavigate } from "react-router";
+import { ArrowDown, ArrowUp, ArrowUpDown, UserPlus, Users } from "lucide-react";
 import { mockUsers, type MockUser as User } from "@/mocks/users";
 import { PageHeaderAction } from "@/components/common/page-header-action";
+import { useAuth } from "@/features/auth/hooks";
+import { Switch } from "@/components/ui/switch";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import type { Role } from "@/types/role";
 
-type UserRole = "전체" | "Super" | "Master" | "Booth" | "Performer";
+type RoleFilter = "전체" | Role;
+
+/**
+ * Super 는 배포 시점 1인(시스템 오너) 고정이라 UI 승격·강등 경로를
+ * 의도적으로 배제한다. 옵션에도 내놓지 않는다.
+ */
+const ROLE_OPTIONS: Role[] = ["Master", "Booth", "Performer"];
+
+/**
+ * 역할 전이의 확인 레벨.
+ * - 0: 무확인 즉시 반영 (교정/강등 성격의 저위험 전이)
+ * - 1: 단순 Confirm (Master로의 승격)
+ */
+function getRoleChangeTier(from: Role, to: Role): 0 | 1 {
+  if (from === to) return 0;
+  if (to === "Master") return 1;
+  return 0;
+}
+
+interface PendingRoleChange {
+  user: User;
+  to: Role;
+}
+
+/**
+ * 상태 컬럼 정렬 상태. 스프레드시트 관행을 따른다:
+ * - 'none': 원본 순서 유지
+ * - 'asc': 오름차순 = false(비활성) 먼저 — ArrowUp
+ * - 'desc': 내림차순 = true(활성) 먼저 — ArrowDown
+ */
+type SortDir = "none" | "asc" | "desc";
+
+const nextSortDir: Record<SortDir, SortDir> = {
+  none: "asc",
+  asc: "desc",
+  desc: "none",
+};
 
 export function UserManagement() {
-  const [selectedRole, setSelectedRole] = useState<UserRole>("전체");
-  const [selectedUsers, setSelectedUsers] = useState<Set<number>>(new Set());
-  const [users] = useState<User[]>(mockUsers);
-  const [showStatusModal, setShowStatusModal] = useState(false);
-  const [showRoleModal, setShowRoleModal] = useState(false);
+  const [users, setUsers] = useState<User[]>(mockUsers);
+  const [selectedRole, setSelectedRole] = useState<RoleFilter>("전체");
+  const [statusSort, setStatusSort] = useState<SortDir>("none");
+  const [pendingDeactivate, setPendingDeactivate] = useState<User | null>(null);
+  const [pendingRoleChange, setPendingRoleChange] = useState<PendingRoleChange | null>(null);
+  const navigate = useNavigate();
+  const { user: currentUser, can } = useAuth();
 
-  const roles: UserRole[] = ["전체", "Super", "Master", "Booth", "Performer"];
+  const roles: RoleFilter[] = ["전체", "Super", "Master", "Booth", "Performer"];
+  const canEditRole = can("user.update.role");
+  const canToggleStatus = can("user.deactivate");
 
-  const toggleUser = (id: number) => {
-    const newSelected = new Set(selectedUsers);
-    if (newSelected.has(id)) {
-      newSelected.delete(id);
+  const filteredUsers =
+    selectedRole === "전체" ? users : users.filter((u) => u.role === selectedRole);
+
+  const visibleUsers = useMemo(() => {
+    if (statusSort === "none") return filteredUsers;
+    const copy = [...filteredUsers];
+    copy.sort((a, b) => {
+      if (a.active === b.active) return 0;
+      if (statusSort === "desc") return a.active ? -1 : 1; // 활성 먼저
+      return a.active ? 1 : -1; // 비활성 먼저
+    });
+    return copy;
+  }, [filteredUsers, statusSort]);
+
+  const SortIcon = statusSort === "asc" ? ArrowUp : statusSort === "desc" ? ArrowDown : ArrowUpDown;
+  const sortLabel =
+    statusSort === "asc" ? "비활성 먼저" : statusSort === "desc" ? "활성 먼저" : "정렬 없음";
+
+  const applyStatus = (id: number, active: boolean) => {
+    setUsers((prev) => prev.map((u) => (u.id === id ? { ...u, active } : u)));
+  };
+
+  const handleToggleActive = (u: User) => {
+    if (u.active) {
+      // 활성 → 비활성은 로그인 차단으로 이어지므로 확인 받음.
+      setPendingDeactivate(u);
     } else {
-      newSelected.add(id);
+      // 비활성 → 활성은 복구 방향이라 즉시 반영.
+      applyStatus(u.id, true);
     }
-    setSelectedUsers(newSelected);
   };
 
-  const handleStatusChange = () => {
-    if (selectedUsers.size === 0) {
-      alert("유저를 선택해주세요.");
+  const confirmDeactivate = () => {
+    if (pendingDeactivate) applyStatus(pendingDeactivate.id, false);
+    setPendingDeactivate(null);
+  };
+
+  const handleRoleSelect = (u: User, to: Role) => {
+    const tier = getRoleChangeTier(u.role, to);
+    if (tier === 0) {
+      setUsers((prev) => prev.map((x) => (x.id === u.id ? { ...x, role: to } : x)));
       return;
     }
-    setShowStatusModal(true);
+    setPendingRoleChange({ user: u, to });
   };
 
-  const handleRoleChange = () => {
-    if (selectedUsers.size === 0) {
-      alert("유저를 선택해주세요.");
-      return;
+  const confirmRoleChange = () => {
+    if (pendingRoleChange) {
+      setUsers((prev) =>
+        prev.map((x) =>
+          x.id === pendingRoleChange.user.id ? { ...x, role: pendingRoleChange.to } : x,
+        ),
+      );
     }
-    setShowRoleModal(true);
+    setPendingRoleChange(null);
   };
 
-  const handleDeactivate = () => {
-    alert(`${selectedUsers.size}명의 유저를 비활성화했습니다.`);
-    setShowStatusModal(false);
-    setSelectedUsers(new Set());
-  };
-
-  const handleActivate = () => {
-    alert(`${selectedUsers.size}명의 유저를 활성화했습니다.`);
-    setShowStatusModal(false);
-    setSelectedUsers(new Set());
-  };
-
-  const handleRoleUpdate = (newRole: string) => {
-    alert(`${selectedUsers.size}명의 유저 권한을 ${newRole}로 변경했습니다.`);
-    setShowRoleModal(false);
-    setSelectedUsers(new Set());
-  };
-
-  const filteredUsers = selectedRole === "전체"
-    ? users
-    : users.filter(u => u.role === selectedRole);
+  const roleBadgeClass = (role: Role) =>
+    role === "Booth"
+      ? "bg-ds-primary-subtle text-ds-primary-pressed"
+      : "bg-ds-secondary-a-subtle text-ds-secondary-a-pressed";
 
   return (
     <div className="p-8">
@@ -69,14 +144,15 @@ export function UserManagement() {
           <Users size={32} />
           유저 관리
         </h1>
-        <div className="flex items-center gap-3">
-          <PageHeaderAction tone="blue" onClick={handleStatusChange} icon={<UserX size={16} />}>
-            유저 상태 변경
+        {can("admin.create") && (
+          <PageHeaderAction
+            tone="green"
+            onClick={() => navigate("/create-admin")}
+            icon={<UserPlus size={16} />}
+          >
+            신규 계정 생성
           </PageHeaderAction>
-          <PageHeaderAction tone="purple" onClick={handleRoleChange} icon={<Edit size={16} />}>
-            권한 변경
-          </PageHeaderAction>
-        </div>
+        )}
       </div>
 
       {/* Role Filter */}
@@ -87,9 +163,10 @@ export function UserManagement() {
             onClick={() => setSelectedRole(role)}
             className={`
               px-5 py-2 rounded-full text-sm font-medium transition-all duration-200
-              ${selectedRole === role
-                ? 'bg-foreground text-primary-foreground shadow-lg'
-                : 'bg-background text-muted-foreground border border-border hover:border-ds-border-strong'
+              ${
+                selectedRole === role
+                  ? "bg-foreground text-primary-foreground shadow-lg"
+                  : "bg-background text-muted-foreground border border-border hover:border-ds-border-strong"
               }
             `}
           >
@@ -103,12 +180,6 @@ export function UserManagement() {
         <table className="w-full">
           <thead className="bg-muted">
             <tr>
-              <th className="w-12 py-4 text-center">
-                <input
-                  type="checkbox"
-                  className="w-4 h-4 rounded accent-primary"
-                />
-              </th>
               <th className="px-6 py-4 text-left text-sm font-semibold text-foreground">No.</th>
               <th className="px-6 py-4 text-left text-sm font-semibold text-foreground">유저 ID</th>
               <th className="px-6 py-4 text-left text-sm font-semibold text-foreground">권한</th>
@@ -117,132 +188,154 @@ export function UserManagement() {
               <th className="px-6 py-4 text-left text-sm font-semibold text-foreground">공연팀명</th>
               <th className="px-6 py-4 text-left text-sm font-semibold text-foreground">이름</th>
               <th className="px-6 py-4 text-left text-sm font-semibold text-foreground">전화번호</th>
-              <th className="px-6 py-4 text-left text-sm font-semibold text-foreground">정보작성여부</th>
+              <th className="px-6 py-4 text-center text-sm font-semibold text-foreground">정보작성여부</th>
+              <th className="px-6 py-4 text-center text-sm font-semibold text-foreground">
+                <button
+                  type="button"
+                  onClick={() => setStatusSort((d) => nextSortDir[d])}
+                  className="inline-flex items-center gap-1 mx-auto hover:text-primary transition-colors"
+                  title={`상태 정렬: ${sortLabel} (클릭하여 전환)`}
+                  aria-label={`상태 정렬 — 현재: ${sortLabel}`}
+                >
+                  상태
+                  <SortIcon
+                    size={14}
+                    className={statusSort === "none" ? "text-muted-foreground" : "text-primary"}
+                  />
+                </button>
+              </th>
             </tr>
           </thead>
           <tbody>
-            {filteredUsers.map((user, index) => (
-              <tr
-                key={user.id}
-                className="hover:bg-muted transition-colors"
-              >
-                <td className="py-4 text-center">
-                  <input
-                    type="checkbox"
-                    checked={selectedUsers.has(user.id)}
-                    onChange={() => toggleUser(user.id)}
-                    className="w-4 h-4 rounded accent-primary"
-                  />
-                </td>
-                <td className="px-6 py-4 text-sm text-muted-foreground">
-                  {String(index + 1).padStart(2, '0')}
-                </td>
-                <td className="px-6 py-4 text-sm text-foreground">{user.userId}</td>
-                <td className="px-6 py-4">
-                  <span className={`
-                    inline-block px-3 py-1 rounded-full text-xs font-medium
-                    ${user.role === 'Booth' ? 'bg-ds-primary-subtle text-ds-primary-pressed' : 'bg-ds-secondary-a-subtle text-ds-secondary-a-pressed'}
-                  `}>
-                    {user.role}
-                  </span>
-                </td>
-                <td className="px-6 py-4 text-sm text-muted-foreground">{user.affiliation}</td>
-                <td className="px-6 py-4 text-sm text-muted-foreground">{user.boothName}</td>
-                <td className="px-6 py-4 text-sm text-muted-foreground">{user.performanceTeamName}</td>
-                <td className="px-6 py-4 text-sm text-muted-foreground">{user.representative}</td>
-                <td className="px-6 py-4 text-sm text-muted-foreground">{user.phone}</td>
-                <td className="px-6 py-4 text-center">
-                  <span className={`
-                    inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold
-                    ${user.infoCompleted
-                      ? 'bg-ds-success text-white'
-                      : 'bg-destructive text-destructive-foreground'
-                    }
-                  `}>
-                    {user.infoCompleted ? 'O' : 'X'}
-                  </span>
-                </td>
-              </tr>
-            ))}
+            {visibleUsers.map((user, index) => {
+              const isSelf = currentUser?.userId === user.userId;
+              const rowDimmed = !user.active ? "opacity-60" : "";
+              return (
+                <tr
+                  key={user.id}
+                  className={`hover:bg-muted transition-colors ${rowDimmed}`}
+                >
+                  <td className="px-6 py-4 text-sm text-muted-foreground">
+                    {String(index + 1).padStart(2, "0")}
+                  </td>
+                  <td className="px-6 py-4 text-sm text-foreground">{user.userId}</td>
+                  <td className="px-6 py-4">
+                    {canEditRole && !isSelf ? (
+                      <Select
+                        value={user.role}
+                        onValueChange={(v) => handleRoleSelect(user, v as Role)}
+                      >
+                        <SelectTrigger
+                          size="sm"
+                          className={`w-auto border-0 shadow-none px-3 h-7 rounded-full text-xs font-medium ${roleBadgeClass(user.role)}`}
+                        >
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {ROLE_OPTIONS.map((r) => (
+                            <SelectItem key={r} value={r}>
+                              {r}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <span
+                        className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${roleBadgeClass(user.role)}`}
+                        title={isSelf ? "자신의 권한은 변경할 수 없습니다" : undefined}
+                      >
+                        {user.role}
+                      </span>
+                    )}
+                  </td>
+                  <td className="px-6 py-4 text-sm text-muted-foreground">{user.affiliation}</td>
+                  <td className="px-6 py-4 text-sm text-muted-foreground">{user.boothName}</td>
+                  <td className="px-6 py-4 text-sm text-muted-foreground">{user.performanceTeamName}</td>
+                  <td className="px-6 py-4 text-sm text-muted-foreground">{user.representative}</td>
+                  <td className="px-6 py-4 text-sm text-muted-foreground">{user.phone}</td>
+                  <td className="px-6 py-4 text-center">
+                    <span
+                      className={`
+                        inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold
+                        ${
+                          user.infoCompleted
+                            ? "bg-ds-success text-white"
+                            : "bg-destructive text-destructive-foreground"
+                        }
+                      `}
+                    >
+                      {user.infoCompleted ? "O" : "X"}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 text-center">
+                    <Switch
+                      checked={user.active}
+                      onCheckedChange={() => handleToggleActive(user)}
+                      disabled={!canToggleStatus || isSelf}
+                      aria-label={user.active ? "비활성화" : "활성화"}
+                      title={
+                        isSelf
+                          ? "자신의 상태는 변경할 수 없습니다"
+                          : !canToggleStatus
+                            ? "상태 변경 권한이 없습니다"
+                            : undefined
+                      }
+                    />
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
 
-      {/* Status Change Modal */}
-      {showStatusModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-background rounded-2xl p-8 max-w-md w-full mx-4 shadow-2xl">
-            <h3 className="text-xl font-bold text-foreground mb-4">유저 상태 변경</h3>
-            <p className="text-sm text-muted-foreground mb-6">
-              선택된 {selectedUsers.size}명의 유저 상태를 변경합니다.
-            </p>
-            <div className="flex flex-col gap-3">
-              <button
-                onClick={handleActivate}
-                className="w-full px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-lg hover:shadow-lg hover:shadow-green-200 transition-all duration-200"
-              >
-                활성화
-              </button>
-              <button
-                onClick={handleDeactivate}
-                className="w-full px-6 py-3 bg-gradient-to-r from-red-500 to-rose-500 text-white rounded-lg hover:shadow-lg hover:shadow-red-200 transition-all duration-200"
-              >
-                비활성화
-              </button>
-              <button
-                onClick={() => setShowStatusModal(false)}
-                className="w-full px-6 py-3 border border-border text-foreground rounded-lg hover:bg-muted transition-colors"
-              >
-                취소
-              </button>
+      {/* 비활성화 확인 — 차단 방향은 파괴성이 커서 경고 패널을 동반한다 */}
+      <AlertDialog
+        open={!!pendingDeactivate}
+        onOpenChange={(o) => !o && setPendingDeactivate(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>유저 비활성화</AlertDialogTitle>
+            <AlertDialogDescription>
+              {pendingDeactivate?.userId}
+              {pendingDeactivate?.representative ? ` (${pendingDeactivate.representative})` : ""}
+              을(를) 비활성화합니다.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          {pendingDeactivate && (
+            <div className="rounded-md border border-ds-warning bg-ds-warning-subtle px-3 py-2 text-sm text-ds-warning-pressed">
+              비활성화 즉시 해당 유저는 로그인할 수 없게 됩니다. 되돌리려면 다시 활성화해야 합니다.
             </div>
-          </div>
-        </div>
-      )}
+          )}
+          <AlertDialogFooter>
+            <AlertDialogCancel>취소</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDeactivate}>비활성화</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
-      {/* Role Change Modal */}
-      {showRoleModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-background rounded-2xl p-8 max-w-md w-full mx-4 shadow-2xl">
-            <h3 className="text-xl font-bold text-foreground mb-4">권한 변경</h3>
-            <p className="text-sm text-muted-foreground mb-6">
-              선택된 {selectedUsers.size}명의 유저 권한을 변경합니다.
-            </p>
-            <div className="flex flex-col gap-3">
-              <button
-                onClick={() => handleRoleUpdate("Super")}
-                className="w-full px-6 py-3 bg-gradient-to-r from-red-500 to-orange-500 text-white rounded-lg hover:shadow-lg hover:shadow-red-200 transition-all duration-200"
-              >
-                Super
-              </button>
-              <button
-                onClick={() => handleRoleUpdate("Master")}
-                className="w-full px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:shadow-lg hover:shadow-purple-200 transition-all duration-200"
-              >
-                Master
-              </button>
-              <button
-                onClick={() => handleRoleUpdate("Booth")}
-                className="w-full px-6 py-3 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-lg hover:shadow-lg hover:shadow-blue-200 transition-all duration-200"
-              >
-                Booth
-              </button>
-              <button
-                onClick={() => handleRoleUpdate("Performer")}
-                className="w-full px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-lg hover:shadow-lg hover:shadow-green-200 transition-all duration-200"
-              >
-                Performer
-              </button>
-              <button
-                onClick={() => setShowRoleModal(false)}
-                className="w-full px-6 py-3 border border-border text-foreground rounded-lg hover:bg-muted transition-colors"
-              >
-                취소
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* 권한 변경 확인 */}
+      <AlertDialog
+        open={!!pendingRoleChange}
+        onOpenChange={(o) => {
+          if (!o) setPendingRoleChange(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>권한 변경</AlertDialogTitle>
+            <AlertDialogDescription>
+              {pendingRoleChange?.user.userId}의 권한을{" "}
+              <b>{pendingRoleChange?.user.role}</b> → <b>{pendingRoleChange?.to}</b> 로 변경합니다.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>취소</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmRoleChange}>확인</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

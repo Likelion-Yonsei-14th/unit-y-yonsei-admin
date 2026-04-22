@@ -22,7 +22,6 @@ function DefaultLanding() {
 }
 
 import { UserManagement } from '@/pages/user-management';
-import { InactiveUsers } from '@/pages/inactive-users';
 import { BoothManagement } from '@/pages/booth-management';
 import { ReservationManagement } from '@/pages/reservation-management';
 import { PerformanceManagement } from '@/pages/performance-management';
@@ -70,14 +69,6 @@ export const router = createBrowserRouter([
         element: (
           <RequirePermission permission="user.read">
             <UserManagement />
-          </RequirePermission>
-        ),
-      },
-      {
-        path: 'users/inactive',
-        element: (
-          <RequirePermission permission="user.read">
-            <InactiveUsers />
           </RequirePermission>
         ),
       },

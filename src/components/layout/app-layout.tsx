@@ -127,49 +127,51 @@ export function AppLayout() {
               <div key={item.path}>
                 {hasChildren ? (
                   /**
-                   * 자식이 있는 상위 메뉴. 기획 의도: Link + Chevron이 시각적으로
-                   * 한 덩어리 버튼처럼 보여야 한다. 활성화 시 전체가 파란색으로.
-                   * 내부에서만 클릭 영역을 둘로 쪼갬: 좌측(Link) = 네비게이션,
-                   * 우측(chevron) = 서브메뉴 토글. rounded-lg + overflow-hidden로
-                   * 하나의 라운드 표면을 공유한다.
+                   * 자식이 있는 상위 메뉴. 행 전체가 하나의 클릭 영역이며,
+                   * 클릭 시 서브 서랍이 토글된다. path 권한이 있는 경우
+                   * Link를 통해 해당 path로도 함께 이동한다(기타 정보 관리 같은
+                   * path 권한 없는 그룹은 순수 토글 버튼으로 렌더).
                    */
                   item.requires && can(item.requires) ? (
-                    <div
+                    <Link
+                      to={item.path}
+                      onClick={(e) => {
+                        /**
+                         * 현재 탭에서 실제로 네비게이션이 일어나는 경우에만 토글.
+                         * Cmd/Ctrl/Shift/Alt-클릭(새 탭·새 창)이나 가운데 클릭은
+                         * 현재 탭 상태를 건드리지 않는다.
+                         */
+                        if (e.defaultPrevented) return;
+                        if (e.button !== 0) return;
+                        if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+                        toggleMenu(item.path);
+                      }}
+                      aria-expanded={isCollapsed ? undefined : isExpanded}
                       className={`
-                        flex items-center rounded-lg overflow-hidden transition-colors
+                        flex items-center gap-3 rounded-lg transition-colors
+                        ${isCollapsed ? 'justify-center px-3 py-3' : 'px-4 py-2.5'}
                         ${isActive
                           ? 'bg-primary text-primary-foreground'
                           : 'text-muted-foreground hover:bg-muted'}
                       `}
+                      title={isCollapsed ? item.label : undefined}
                     >
-                      <Link
-                        to={item.path}
-                        className={`
-                          flex items-center gap-3 flex-1 min-w-0
-                          ${isCollapsed ? 'justify-center px-3 py-3' : 'px-4 py-2.5'}
-                        `}
-                        title={isCollapsed ? item.label : undefined}
-                      >
-                        <Icon size={18} />
-                        {!isCollapsed && <span className="ds-body-2 flex-1">{item.label}</span>}
-                      </Link>
+                      <Icon size={18} />
                       {!isCollapsed && (
-                        <button
-                          onClick={() => toggleMenu(item.path)}
-                          className="self-stretch px-3 flex items-center hover:bg-black/10 transition-colors"
-                          aria-label="서브메뉴 토글"
-                        >
+                        <>
+                          <span className="ds-body-2 flex-1 min-w-0 truncate">{item.label}</span>
                           <ChevronDown
                             size={16}
                             className={`transition-transform ${isExpanded ? 'rotate-180' : ''}`}
                           />
-                        </button>
+                        </>
                       )}
-                    </div>
+                    </Link>
                   ) : (
                     /* path 권한이 없거나 path 자체가 없는 그룹 헤더: 순수 토글 버튼 */
                     <button
                       onClick={() => toggleMenu(item.path)}
+                      aria-expanded={isCollapsed ? undefined : isExpanded}
                       className={`
                         flex items-center gap-3 rounded-lg transition-colors w-full
                         ${isCollapsed ? 'justify-center px-3 py-3' : 'px-4 py-2.5'}
@@ -180,7 +182,7 @@ export function AppLayout() {
                       <Icon size={18} />
                       {!isCollapsed && (
                         <>
-                          <span className="ds-body-2 flex-1 text-left">{item.label}</span>
+                          <span className="ds-body-2 flex-1 min-w-0 truncate text-left">{item.label}</span>
                           <ChevronDown
                             size={16}
                             className={`transition-transform ${isExpanded ? 'rotate-180' : ''}`}

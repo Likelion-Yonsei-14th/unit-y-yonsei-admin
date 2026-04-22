@@ -1,7 +1,7 @@
 import type { LucideIcon } from 'lucide-react';
 import {
-  Users, UserX, Store, Calendar, Music, Settings,
-  FileText, Package, Map, MessageCircle, UserPlus,
+  Users, Store, Calendar, Music, Settings,
+  FileText, Package, Map, MessageCircle,
 } from 'lucide-react';
 import type { Permission } from './permissions';
 
@@ -25,9 +25,6 @@ export const MAIN_NAV: NavItem[] = [
     label: '유저 관리',
     icon: Users,
     requires: 'user.read',
-    children: [
-      { path: '/users/inactive', label: '비활성 유저 목록', icon: UserX, requires: 'user.read' },
-    ],
   },
   {
     path: '/booth',
@@ -63,12 +60,11 @@ export const MAIN_NAV: NavItem[] = [
   },
 ];
 
-/** 사이드바 하단 고정 메뉴 */
-export const FOOTER_NAV: NavItem[] = [
-  {
-    path: '/create-admin',
-    label: '신규 어드민 생성',
-    icon: UserPlus,
-    requires: 'admin.create',
-  },
-];
+/**
+ * 사이드바 하단 고정 메뉴.
+ *
+ * 현재는 비어 있다. "신규 어드민 생성"은 `/users` 페이지 헤더의 CTA로 이전됨 —
+ * 유저 CRUD 액션이 한 페이지에 모여 일관성이 좋고, 로그아웃 버튼과의 오클릭 위험도 사라짐.
+ * `/create-admin` 라우트 자체는 딥링크/직접 접근용으로 유지.
+ */
+export const FOOTER_NAV: NavItem[] = [];

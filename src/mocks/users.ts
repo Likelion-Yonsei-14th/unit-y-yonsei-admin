@@ -17,10 +17,11 @@ export interface MockUser {
   email: string;
   phone: string;
   infoCompleted: boolean;
-}
-
-export interface MockInactiveUser extends MockUser {
-  deactivatedDate: string;
+  /**
+   * 현재 로그인 가능 여부. 백엔드 스케줄이 붙으면 `activeOverride: 'auto'|'forced_on'|'forced_off'`
+   * + 계산된 `isActive`로 확장 예정. 프로토타입 단계에선 단일 boolean.
+   */
+  active: boolean;
 }
 
 export const mockUsers: MockUser[] = [
@@ -35,6 +36,7 @@ export const mockUsers: MockUser[] = [
     email: '정@@',
     phone: '010-1234-1234',
     infoCompleted: true,
+    active: true,
   },
   {
     id: 2,
@@ -47,10 +49,8 @@ export const mockUsers: MockUser[] = [
     email: '정@@',
     phone: '010-1234-1234',
     infoCompleted: false,
+    active: true,
   },
-];
-
-export const mockInactiveUsers: MockInactiveUser[] = [
   {
     id: 3,
     userId: 'inactive_user01',
@@ -62,6 +62,6 @@ export const mockInactiveUsers: MockInactiveUser[] = [
     email: 'kim@@',
     phone: '010-5678-5678',
     infoCompleted: true,
-    deactivatedDate: '2026-04-10',
+    active: false,
   },
 ];
