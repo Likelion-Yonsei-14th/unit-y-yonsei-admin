@@ -110,6 +110,8 @@ export function UserManagement() {
     return copy;
   }, [filteredUsers, statusSort]);
 
+  const hasActiveFilter = !!normalizedQuery || selectedRole !== "전체";
+
   const SortIcon = statusSort === "asc" ? ArrowUp : statusSort === "desc" ? ArrowDown : ArrowUpDown;
   const sortLabel =
     statusSort === "asc" ? "비활성 먼저" : statusSort === "desc" ? "활성 먼저" : "정렬 없음";
@@ -271,6 +273,18 @@ export function UserManagement() {
             </tr>
           </thead>
           <tbody>
+            {visibleUsers.length === 0 && (
+              <tr>
+                <td
+                  colSpan={10}
+                  className="px-6 py-12 text-center text-sm text-muted-foreground"
+                >
+                  {hasActiveFilter
+                    ? "검색 조건에 맞는 유저가 없습니다."
+                    : "표시할 유저가 없습니다."}
+                </td>
+              </tr>
+            )}
             {visibleUsers.map((user, index) => {
               const isSelf = currentUser?.userId === user.userId;
               const rowDimmed = !user.active ? "opacity-60" : "";
