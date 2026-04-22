@@ -130,6 +130,8 @@ export function ReservationManagement() {
     }
   }, [someFilteredSelected]);
 
+  const hasActiveFilter = !!normalizedQuery || selectedStatus !== "전체 목록";
+
   // 현재 필터 범위의 행만 대상으로 union/diff. 다른 필터에서 선택한 id 는 보존.
   const toggleSelectAll = () => {
     const filteredIds = filteredReservations.map((r) => r.id);
@@ -277,6 +279,18 @@ export function ReservationManagement() {
             </tr>
           </thead>
           <tbody>
+            {filteredReservations.length === 0 && (
+              <tr>
+                <td
+                  colSpan={8}
+                  className="px-6 py-12 text-center text-sm text-muted-foreground"
+                >
+                  {hasActiveFilter
+                    ? "조건에 맞는 예약이 없습니다."
+                    : "표시할 예약이 없습니다."}
+                </td>
+              </tr>
+            )}
             {filteredReservations.map((reservation) => (
               <tr
                 key={reservation.id}
