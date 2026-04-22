@@ -26,6 +26,8 @@ export function BoothSlider({
   const containerRef = useRef<HTMLDivElement | null>(null);
   const cardRefs = useRef<Map<number, HTMLElement>>(new Map());
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isProgrammaticScroll = useRef(false);
+  const programmaticScrollTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const registerCard = useCallback((boothId: number, el: HTMLElement | null) => {
     if (el) cardRefs.current.set(boothId, el);
@@ -36,8 +38,22 @@ export function BoothSlider({
   useEffect(() => {
     if (focusedBoothId == null) return;
     const el = cardRefs.current.get(focusedBoothId);
-    el?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+    if (!el) return;
+    isProgrammaticScroll.current = true;
+    if (programmaticScrollTimer.current) clearTimeout(programmaticScrollTimer.current);
+    programmaticScrollTimer.current = setTimeout(() => {
+      isProgrammaticScroll.current = false;
+    }, 400);
+    el.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
   }, [focusedBoothId]);
+
+  // 언마운트 시 debounce · programmaticScroll 타이머 정리
+  useEffect(() => {
+    return () => {
+      if (debounceTimer.current) clearTimeout(debounceTimer.current);
+      if (programmaticScrollTimer.current) clearTimeout(programmaticScrollTimer.current);
+    };
+  }, []);
 
   // 스크롤 종료 후 중앙 카드 감지 → onFocus
   const detectCenter = useCallback(() => {
@@ -61,6 +77,7 @@ export function BoothSlider({
   }, [focusedBoothId, onFocus]);
 
   const handleScroll = () => {
+    if (isProgrammaticScroll.current) return;
     if (debounceTimer.current) clearTimeout(debounceTimer.current);
     debounceTimer.current = setTimeout(detectCenter, 80);
   };
