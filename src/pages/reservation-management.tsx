@@ -529,6 +529,7 @@ export function ReservationManagement() {
                 if (pendingCancel) applyStatus(pendingCancel.id, "cancelled");
                 setPendingCancel(null);
               }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               취소 확정
             </AlertDialogAction>
