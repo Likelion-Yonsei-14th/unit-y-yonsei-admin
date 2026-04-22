@@ -1,9 +1,19 @@
 import { useMemo, useState } from "react";
 import { Navigate, useParams } from "react-router";
-import { Phone, MessageSquare, Check, X, Calendar } from "lucide-react";
-import { mockReservations, type Reservation } from "@/mocks/reservations";
+import { Phone, MessageSquare, Check, X, Calendar, RotateCcw } from "lucide-react";
+import { mockReservations, type Reservation, type ReservationState } from "@/mocks/reservations";
 import { mockBoothsById } from "@/mocks/booth-profile";
 import { PageHeaderAction } from "@/components/common/page-header-action";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useAuth } from "@/features/auth/hooks";
 
 type ReservationStatus = "전체 목록" | "대기자 목록" | "취소 목록" | "완료 목록";
@@ -14,16 +24,24 @@ export function ReservationManagement() {
   const booth = Number.isFinite(boothId) ? mockBoothsById[boothId] : undefined;
   const { user } = useAuth();
 
+  const [reservations, setReservations] = useState<Reservation[]>(mockReservations);
   const [selectedStatus, setSelectedStatus] = useState<ReservationStatus>("전체 목록");
   const [reservationEnabled, setReservationEnabled] = useState(booth?.reservationEnabled ?? true);
   const [selectedReservation, setSelectedReservation] = useState<Reservation | null>(null);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [showStatusChangeModal, setShowStatusChangeModal] = useState(false);
+  // 파괴적 전이(→ cancelled)는 상세 모달에서 직접 확정하지 않고 별도 Alert 를 거친다.
+  // 확정 시점에 상세 모달이 뒤에 깔려있으면 답답해서, 먼저 상세를 닫고 Alert 만 띄움.
+  const [pendingCancel, setPendingCancel] = useState<Reservation | null>(null);
 
   const boothReservations = useMemo(
-    () => mockReservations.filter((r) => r.boothId === boothId),
-    [boothId],
+    () => reservations.filter((r) => r.boothId === boothId),
+    [reservations, boothId],
   );
+
+  const applyStatus = (id: string, status: ReservationState) => {
+    setReservations((prev) => prev.map((r) => (r.id === id ? { ...r, status } : r)));
+  };
 
   // 대기 순번은 시간 오름차순 기준 고정이라 boothReservations 가 바뀔 때만
   // 다시 계산한다. 렌더마다 getWaitingNumber 에서 filter+sort 를 돌리면
@@ -275,15 +293,47 @@ export function ReservationManagement() {
               </div>
             </div>
 
+            {/*
+              상태 전이 버튼은 "현재 상태 제외" 규칙으로 항상 2개 노출 — 총 4칸으로 grid-cols-2 채움.
+              입장/대기로 되돌리기 는 즉시 반영, 취소 는 파괴성이 있어 Alert 로 한 번 더 확인.
+            */}
             <div className="grid grid-cols-2 gap-3">
-              <button className="px-4 py-3 bg-ds-success text-white rounded-lg hover:bg-ds-success-pressed transition-colors flex items-center justify-center gap-2">
-                <Check size={18} />
-                입장
-              </button>
-              <button className="px-4 py-3 bg-destructive text-destructive-foreground rounded-lg hover:bg-ds-error-pressed transition-colors flex items-center justify-center gap-2">
-                <X size={18} />
-                취소
-              </button>
+              {selectedReservation.status !== "completed" && (
+                <button
+                  onClick={() => {
+                    applyStatus(selectedReservation.id, "completed");
+                    setSelectedReservation(null);
+                  }}
+                  className="px-4 py-3 bg-ds-success text-white rounded-lg hover:bg-ds-success-pressed transition-colors flex items-center justify-center gap-2"
+                >
+                  <Check size={18} />
+                  입장
+                </button>
+              )}
+              {selectedReservation.status !== "waiting" && (
+                <button
+                  onClick={() => {
+                    applyStatus(selectedReservation.id, "waiting");
+                    setSelectedReservation(null);
+                  }}
+                  className="px-4 py-3 border border-border bg-background text-foreground rounded-lg hover:bg-muted transition-colors flex items-center justify-center gap-2"
+                >
+                  <RotateCcw size={18} />
+                  대기로 되돌리기
+                </button>
+              )}
+              {selectedReservation.status !== "cancelled" && (
+                <button
+                  onClick={() => {
+                    setPendingCancel(selectedReservation);
+                    setSelectedReservation(null);
+                  }}
+                  className="px-4 py-3 bg-destructive text-destructive-foreground rounded-lg hover:bg-ds-error-pressed transition-colors flex items-center justify-center gap-2"
+                >
+                  <X size={18} />
+                  취소
+                </button>
+              )}
               <a
                 href={`sms:${selectedReservation.contact.replace(/-/g, '')}`}
                 className="px-4 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-ds-primary-pressed transition-colors flex items-center justify-center gap-2"
@@ -349,6 +399,34 @@ export function ReservationManagement() {
           </div>
         </div>
       )}
+
+      {/* 예약 취소 확인 — 고객 약속을 깨는 방향이라 파괴적. 한 번 더 확인. */}
+      <AlertDialog
+        open={!!pendingCancel}
+        onOpenChange={(o) => {
+          if (!o) setPendingCancel(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>예약 취소</AlertDialogTitle>
+            <AlertDialogDescription>
+              {pendingCancel?.name}님({pendingCancel?.time}, {pendingCancel?.people}명)의 예약을 취소합니다.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>되돌아가기</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (pendingCancel) applyStatus(pendingCancel.id, "cancelled");
+                setPendingCancel(null);
+              }}
+            >
+              취소 확정
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
