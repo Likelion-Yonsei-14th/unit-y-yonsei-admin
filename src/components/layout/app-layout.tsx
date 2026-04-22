@@ -146,6 +146,7 @@ export function AppLayout() {
                         if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
                         toggleMenu(item.path);
                       }}
+                      aria-expanded={isCollapsed ? undefined : isExpanded}
                       className={`
                         flex items-center gap-3 rounded-lg transition-colors
                         ${isCollapsed ? 'justify-center px-3 py-3' : 'px-4 py-2.5'}
@@ -170,6 +171,7 @@ export function AppLayout() {
                     /* path 권한이 없거나 path 자체가 없는 그룹 헤더: 순수 토글 버튼 */
                     <button
                       onClick={() => toggleMenu(item.path)}
+                      aria-expanded={isCollapsed ? undefined : isExpanded}
                       className={`
                         flex items-center gap-3 rounded-lg transition-colors w-full
                         ${isCollapsed ? 'justify-center px-3 py-3' : 'px-4 py-2.5'}
