@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Navigate, useParams } from "react-router";
 import { Phone, MessageSquare, Check, X, Calendar, RotateCcw } from "lucide-react";
 import { mockReservations, type Reservation, type ReservationState } from "@/mocks/reservations";
@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useAuth } from "@/features/auth/hooks";
 
-type ReservationStatus = "전체 목록" | "대기자 목록" | "취소 목록" | "완료 목록";
+type ReservationStatus = "대기자 목록" | "완료 목록" | "취소 목록" | "전체 목록";
 
 export function ReservationManagement() {
   const { boothId: boothIdParam } = useParams<{ boothId: string }>();
@@ -25,7 +25,7 @@ export function ReservationManagement() {
   const { user } = useAuth();
 
   const [reservations, setReservations] = useState<Reservation[]>(mockReservations);
-  const [selectedStatus, setSelectedStatus] = useState<ReservationStatus>("전체 목록");
+  const [selectedStatus, setSelectedStatus] = useState<ReservationStatus>("대기자 목록");
   const [reservationEnabled, setReservationEnabled] = useState(booth?.reservationEnabled ?? true);
   const [selectedReservation, setSelectedReservation] = useState<Reservation | null>(null);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -55,7 +55,9 @@ export function ReservationManagement() {
     return map;
   }, [boothReservations]);
 
-  const statuses: ReservationStatus[] = ["전체 목록", "대기자 목록", "취소 목록", "완료 목록"];
+  // 대기자 → 완료 → 취소 → 전체 순 — 운영 중 가장 자주 보는 "대기자" 를 좌측 첫 자리에,
+  // 요약/감사용 성격의 "전체" 는 맨 끝에 둔다.
+  const statuses: ReservationStatus[] = ["대기자 목록", "완료 목록", "취소 목록", "전체 목록"];
 
   // 훅 호출 이후에 조건부 리턴 — Rules of Hooks 위반 방지.
   // Booth 계정이 본인 소속이 아닌 부스 URL 을 직접 입력한 경우 자기 부스로 튕김.
@@ -78,28 +80,50 @@ export function ReservationManagement() {
   }
 
   const filteredReservations = boothReservations.filter((res) => {
-    if (selectedStatus === "전체 목록") return true;
     if (selectedStatus === "대기자 목록") return res.status === "waiting";
-    if (selectedStatus === "취소 목록") return res.status === "cancelled";
     if (selectedStatus === "완료 목록") return res.status === "completed";
-    return true;
+    if (selectedStatus === "취소 목록") return res.status === "cancelled";
+    return true; // 전체 목록
   });
 
   const boothHeaderLabel = booth.name || "이름 미입력 부스";
 
   // 체크박스 토글
   const toggleSelectId = (id: string) => {
-    setSelectedIds(prev => 
+    setSelectedIds(prev =>
       prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
     );
   };
 
-  // 전체 선택/해제
+  // "현재 필터 뷰의 전체 행이 선택돼 있는가" 를 실제 membership 으로 판정.
+  // 단순 length 비교는 (a) 0 === 0 으로 빈 목록이 '전체 선택'처럼 보이거나
+  // (b) 필터 전환 시 다른 필터 선택분과 길이가 우연히 같아질 때 거짓 양성.
+  const filteredSelectedCount = filteredReservations.reduce(
+    (n, r) => (selectedIds.includes(r.id) ? n + 1 : n),
+    0,
+  );
+  const allFilteredSelected =
+    filteredReservations.length > 0 &&
+    filteredSelectedCount === filteredReservations.length;
+  const someFilteredSelected =
+    filteredSelectedCount > 0 && !allFilteredSelected;
+
+  // indeterminate 는 checked 와 별개 프로퍼티라 ref 로 직접 세팅.
+  const selectAllRef = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    if (selectAllRef.current) {
+      selectAllRef.current.indeterminate = someFilteredSelected;
+    }
+  }, [someFilteredSelected]);
+
+  // 현재 필터 범위의 행만 대상으로 union/diff. 다른 필터에서 선택한 id 는 보존.
   const toggleSelectAll = () => {
-    if (selectedIds.length === filteredReservations.length) {
-      setSelectedIds([]);
+    const filteredIds = filteredReservations.map((r) => r.id);
+    const filteredIdSet = new Set(filteredIds);
+    if (allFilteredSelected) {
+      setSelectedIds((prev) => prev.filter((id) => !filteredIdSet.has(id)));
     } else {
-      setSelectedIds(filteredReservations.map(r => r.id));
+      setSelectedIds((prev) => Array.from(new Set([...prev, ...filteredIds])));
     }
   };
 
@@ -177,26 +201,34 @@ export function ReservationManagement() {
         ))}
       </div>
 
-      {/* Reservations Table */}
+      {/*
+        Reservations Table
+
+        필터 전환 시(대기자 ↔ 완료 ↔ 취소 ↔ 전체) 현재 행 내용에 따라
+        auto-layout 이 컬럼 폭을 다시 계산해 ui 가 튀는 문제.
+        table-fixed + 명시 폭으로 컬럼을 고정한다. (user-management 와 동일 패턴)
+      */}
       <div className="bg-background rounded-xl overflow-hidden shadow-sm">
-        <table className="w-full">
+        <table className="w-full table-fixed">
           <thead className="bg-muted">
             <tr>
-              <th className="w-12 py-4 text-center">
+              <th className="w-[4%] py-4 text-center">
                 <input
+                  ref={selectAllRef}
                   type="checkbox"
                   className="w-4 h-4 rounded accent-primary"
-                  checked={selectedIds.length === filteredReservations.length}
+                  checked={allFilteredSelected}
                   onChange={toggleSelectAll}
+                  aria-label={allFilteredSelected ? "현재 목록 전체 선택 해제" : "현재 목록 전체 선택"}
                 />
               </th>
-              <th className="px-6 py-4 text-left text-sm font-semibold text-foreground">예약 ID</th>
-              <th className="px-6 py-4 text-left text-sm font-semibold text-foreground">예약 시간</th>
-              <th className="px-6 py-4 text-left text-sm font-semibold text-foreground">예약 신청자명</th>
-              <th className="px-6 py-4 text-left text-sm font-semibold text-foreground">인원수</th>
-              <th className="px-6 py-4 text-left text-sm font-semibold text-foreground">연락처</th>
-              <th className="px-6 py-4 text-left text-sm font-semibold text-foreground">상태</th>
-              <th className="px-6 py-4 text-center text-sm font-semibold text-foreground">액션</th>
+              <th className="w-[10%] px-6 py-4 text-left text-sm font-semibold text-foreground">예약 ID</th>
+              <th className="w-[10%] px-6 py-4 text-left text-sm font-semibold text-foreground">예약 시간</th>
+              <th className="w-[12%] px-6 py-4 text-left text-sm font-semibold text-foreground">예약 신청자명</th>
+              <th className="w-[8%] px-6 py-4 text-left text-sm font-semibold text-foreground">인원수</th>
+              <th className="w-[18%] px-6 py-4 text-left text-sm font-semibold text-foreground">연락처</th>
+              <th className="w-[18%] px-6 py-4 text-left text-sm font-semibold text-foreground">상태</th>
+              <th className="w-[20%] px-6 py-4 text-center text-sm font-semibold text-foreground">액션</th>
             </tr>
           </thead>
           <tbody>
@@ -215,14 +247,19 @@ export function ReservationManagement() {
                     onClick={(e) => e.stopPropagation()}
                   />
                 </td>
-                <td className="px-6 py-4 text-sm font-medium text-foreground">{reservation.id}</td>
-                <td className="px-6 py-4 text-sm text-muted-foreground">{reservation.time}</td>
-                <td className="px-6 py-4 text-sm text-foreground">{reservation.name}</td>
-                <td className="px-6 py-4 text-sm text-muted-foreground">{reservation.people}명</td>
-                <td className="px-6 py-4 text-sm text-muted-foreground">{reservation.contact}</td>
+                <td className="px-6 py-4 text-sm font-medium text-foreground truncate" title={reservation.id}>{reservation.id}</td>
+                <td className="px-6 py-4 text-sm text-muted-foreground truncate">{reservation.time}</td>
+                <td className="px-6 py-4 text-sm text-foreground truncate" title={reservation.name}>{reservation.name}</td>
+                <td className="px-6 py-4 text-sm text-muted-foreground truncate">{reservation.people}명</td>
+                <td className="px-6 py-4 text-sm text-muted-foreground truncate" title={reservation.contact}>{reservation.contact}</td>
                 <td className="px-6 py-4">
+                  {/*
+                    라벨 길이가 "완료/취소"(2자) ~ "대기 99번"(5자) 로 들쑥날쑥해
+                    행마다 배지 폭이 튀는 문제. min-w-24 로 가장 긴 케이스 기준 고정 +
+                    inline-flex 로 짧은 라벨도 중앙 정렬해 균일하게 보이도록.
+                  */}
                   <span className={`
-                    inline-block px-3 py-1 rounded-full text-xs font-medium
+                    inline-flex items-center justify-center min-w-24 px-3 py-1 rounded-full text-xs font-medium
                     ${reservation.status === 'waiting' && 'bg-ds-primary-subtle text-ds-primary-pressed'}
                     ${reservation.status === 'completed' && 'bg-ds-success-subtle text-ds-success-pressed'}
                     ${reservation.status === 'cancelled' && 'bg-ds-error-subtle text-ds-error-pressed'}
@@ -266,7 +303,17 @@ export function ReservationManagement() {
             className="bg-background rounded-2xl p-8 max-w-md w-full mx-4 shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <h3 className="text-2xl font-bold text-foreground mb-6">예약 상세 정보</h3>
+            <div className="flex items-start justify-between mb-6">
+              <h3 className="text-2xl font-bold text-foreground">예약 상세 정보</h3>
+              <button
+                type="button"
+                onClick={() => setSelectedReservation(null)}
+                aria-label="닫기"
+                className="-m-1 p-1 rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+              >
+                <X size={20} />
+              </button>
+            </div>
 
             <div className="space-y-4 mb-8">
               <div>
