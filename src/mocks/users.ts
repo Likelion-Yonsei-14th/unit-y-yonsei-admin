@@ -24,10 +24,6 @@ export interface MockUser {
   active: boolean;
 }
 
-export interface MockInactiveUser extends MockUser {
-  deactivatedDate: string;
-}
-
 export const mockUsers: MockUser[] = [
   {
     id: 1,
@@ -55,9 +51,6 @@ export const mockUsers: MockUser[] = [
     infoCompleted: false,
     active: true,
   },
-];
-
-export const mockInactiveUsers: MockInactiveUser[] = [
   {
     id: 3,
     userId: 'inactive_user01',
@@ -69,7 +62,6 @@ export const mockInactiveUsers: MockInactiveUser[] = [
     email: 'kim@@',
     phone: '010-5678-5678',
     infoCompleted: true,
-    deactivatedDate: '2026-04-10',
     active: false,
   },
 ];
