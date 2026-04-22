@@ -1,4 +1,4 @@
-import { createBrowserRouter, Navigate } from 'react-router';
+import { createBrowserRouter, Navigate, useParams } from 'react-router';
 import { RequireAuth, RequireGuest, RequirePermission } from '@/features/auth/guard';
 import { useAuth } from '@/features/auth/hooks';
 import { AppLayout } from '@/components/layout/app-layout';
@@ -41,6 +41,16 @@ function ReservationsEntry() {
     );
   }
   return <ReservationBoothPicker />;
+}
+
+/**
+ * boothId 가 바뀌면 ReservationManagement 를 강제 remount.
+ * 같은 라우트 패턴 간 이동(`/reservations/1` → `/reservations/3`) 시
+ * 내부 상태(필터·선택·토글 등) 가 전 부스 값을 끌고 오지 않도록 차단.
+ */
+function ReservationManagementRoute() {
+  const { boothId } = useParams<{ boothId: string }>();
+  return <ReservationManagement key={boothId ?? ''} />;
 }
 
 import { UserManagement } from '@/pages/user-management';
@@ -117,7 +127,7 @@ export const router = createBrowserRouter([
         path: 'reservations/:boothId',
         element: (
           <RequirePermission permission="reservation.read">
-            <ReservationManagement />
+            <ReservationManagementRoute />
           </RequirePermission>
         ),
       },
