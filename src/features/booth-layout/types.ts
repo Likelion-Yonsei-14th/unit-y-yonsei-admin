@@ -16,8 +16,9 @@ export interface MapSection {
 
 /**
  * 백엔드 응답 (snake_case).
- * 좌표 (x, y) 는 이미지 기준 0–100 백분율 — 리사이즈/해상도에 안전.
- * (width, height) 는 사각형 footprint — 0–100 % 단위, 이미지 기준.
+ * 좌표·크기는 모두 이미지 기준 0–100 % (리사이즈/해상도에 안전).
+ * - (x, y) = 사각형 핀의 **중심점** 좌표. 프론트가 -translate-[xy]-1/2 로 배치.
+ * - (width, height) = 사각형 footprint 의 가로·세로 크기.
  */
 export interface BoothPlacementDTO {
   booth_id: number;
