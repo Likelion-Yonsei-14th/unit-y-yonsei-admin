@@ -32,8 +32,12 @@ export function PerformanceManagement() {
   const myQuery = useMyPerformance();
   const { data, isLoading, isError, refetch } = isMe ? myQuery : byIdQuery;
 
-  const { canEditPerformance } = useAuth();
+  const { can, canEditPerformance } = useAuth();
   const canEdit = data ? canEditPerformance({ teamId: data.teamId }) : false;
+  // 타임테이블(날짜·스테이지·시작/종료) 은 축제 운영 전체 스케줄의 입력으로
+  // Performer 가 임의로 바꾸면 곤란. 본인 프로필·셋리스트는 수정 가능하되
+  // 이 섹션은 Super/Master(performance.manage) 만 편집할 수 있다.
+  const canEditTimetable = canEdit && can('performance.manage');
 
   const [isEditMode, setIsEditMode] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -402,7 +406,14 @@ export function PerformanceManagement() {
 
       {/* Performance Timetable */}
       <div className="bg-background rounded-2xl p-8 mb-6 shadow-sm">
-        <h2 className="text-xl font-bold text-foreground mb-6">공연 타임테이블</h2>
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-xl font-bold text-foreground">공연 타임테이블</h2>
+          {/* 편집 모드 중이지만 타임테이블을 건드릴 수 없는 케이스(= Performer) 에만 안내.
+              View 모드 유저에게는 모든 필드가 기본적으로 비활성이라 메시지 자체가 노이즈. */}
+          {isEditMode && !canEditTimetable && (
+            <span className="text-xs text-muted-foreground">운영진만 수정 가능</span>
+          )}
+        </div>
 
         <div className="grid grid-cols-2 gap-6">
           <div>
@@ -411,7 +422,7 @@ export function PerformanceManagement() {
               className="w-full px-4 py-3 border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
               value={displayData.date}
               onChange={(e) => setEditingData(prev => prev ? { ...prev, date: e.target.value } : prev)}
-              disabled={!isEditMode}
+              disabled={!isEditMode || !canEditTimetable}
             >
               {FESTIVAL_DATES.map(d => {
                 const [, m, day] = d.split('-');
@@ -425,7 +436,7 @@ export function PerformanceManagement() {
               className="w-full px-4 py-3 border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
               value={displayData.stage}
               onChange={(e) => setEditingData(prev => prev ? { ...prev, stage: e.target.value as PerformanceStage } : prev)}
-              disabled={!isEditMode}
+              disabled={!isEditMode || !canEditTimetable}
             >
               {(Object.values(PERFORMANCE_STAGES) as typeof PERFORMANCE_STAGES[PerformanceStage][])
                 .filter(s => s.dates.includes(displayData.date))
@@ -442,7 +453,7 @@ export function PerformanceManagement() {
               className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
               value={displayData.startTime}
               onChange={(e) => setEditingData(prev => prev ? { ...prev, startTime: e.target.value } : prev)}
-              disabled={!isEditMode}
+              disabled={!isEditMode || !canEditTimetable}
             />
           </div>
           <div>
@@ -453,7 +464,7 @@ export function PerformanceManagement() {
               className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
               value={displayData.endTime}
               onChange={(e) => setEditingData(prev => prev ? { ...prev, endTime: e.target.value } : prev)}
-              disabled={!isEditMode}
+              disabled={!isEditMode || !canEditTimetable}
             />
           </div>
         </div>
