@@ -67,6 +67,7 @@ export function BoothMapPicker({
         boothsInSection={boothsInSection}
         focusedBoothId={focusedBoothId}
         myBoothId={myBoothId}
+        canEnter={canEnter}
         onPinClick={setFocusedBoothId}
       />
       {booths.length > 0 ? (
