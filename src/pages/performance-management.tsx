@@ -222,7 +222,7 @@ export function PerformanceManagement() {
           {!isEditMode && canEdit && (
             <button
               onClick={handleEdit}
-              className="px-6 py-3 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-lg hover:shadow-lg hover:shadow-blue-200 transition-all duration-200 flex items-center gap-2"
+              className="px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-ds-primary-pressed hover:shadow-lg transition-all duration-200 flex items-center gap-2"
             >
               <Edit size={18} />
               <span>편집</span>
@@ -241,7 +241,7 @@ export function PerformanceManagement() {
               </button>
               <button
                 onClick={handleSave}
-                className="px-6 py-3 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-lg hover:shadow-lg hover:shadow-blue-200 transition-all duration-200 flex items-center gap-2"
+                className="px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-ds-primary-pressed hover:shadow-lg transition-all duration-200 flex items-center gap-2"
               >
                 <Check size={18} />
                 <span>저장</span>
@@ -294,8 +294,8 @@ export function PerformanceManagement() {
             <label className="block text-sm font-semibold text-foreground mb-2">SNS 링크 (선택)</label>
             <div className="space-y-3">
               <div className="flex items-center gap-3">
-                <div className="flex items-center justify-center w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg">
-                  <Instagram size={20} className="text-white" />
+                <div className="flex items-center justify-center w-10 h-10 bg-muted text-muted-foreground rounded-lg">
+                  <Instagram size={20} />
                 </div>
                 <input
                   type="text"
@@ -307,8 +307,8 @@ export function PerformanceManagement() {
                 />
               </div>
               <div className="flex items-center gap-3">
-                <div className="flex items-center justify-center w-10 h-10 bg-red-500 rounded-lg">
-                  <Youtube size={20} className="text-white" />
+                <div className="flex items-center justify-center w-10 h-10 bg-muted text-muted-foreground rounded-lg">
+                  <Youtube size={20} />
                 </div>
                 <input
                   type="text"
@@ -345,10 +345,11 @@ export function PerformanceManagement() {
             {(isEditMode ? editingImages : performanceImages).length > 0 && (
               <div className={`${isEditMode ? 'mt-4' : ''} grid grid-cols-4 gap-4`}>
                 {(isEditMode ? editingImages : performanceImages).map((image) => (
-                  <div 
+                  <div
                     key={image.id}
-                    className="relative group aspect-square rounded-lg overflow-hidden border-2 transition-all"
-                    style={{ borderColor: image.isMain ? '#3b82f6' : '#e2e8f0' }}
+                    className={`relative group aspect-square rounded-lg overflow-hidden border-2 transition-all ${
+                      image.isMain ? 'border-primary' : 'border-border'
+                    }`}
                   >
                     <img 
                       src={image.url} 
@@ -359,7 +360,7 @@ export function PerformanceManagement() {
                     {/* Main Badge */}
                     {image.isMain && (
                       <div className="absolute top-2 left-2 px-2 py-1 bg-primary text-primary-foreground text-xs font-semibold rounded-full flex items-center gap-1 shadow-lg">
-                        <Star size={12} fill="white" />
+                        <Star size={12} fill="currentColor" />
                         대표
                       </div>
                     )}
@@ -463,7 +464,7 @@ export function PerformanceManagement() {
           {isEditMode && (
             <button
               onClick={addSetlistItem}
-              className="px-4 py-2 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-lg hover:shadow-lg hover:shadow-blue-200 transition-all duration-200 flex items-center gap-2 text-sm"
+              className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-ds-primary-pressed hover:shadow-lg transition-all duration-200 flex items-center gap-2 text-sm"
             >
               <Plus size={16} />
               곡 추가
@@ -474,7 +475,7 @@ export function PerformanceManagement() {
         <div className="space-y-3">
           {(isEditMode ? editingSetlist : setlist).map((item, index) => (
             <div key={item.id} className="flex items-center gap-4 p-4 border border-border rounded-lg hover:border-primary transition-colors">
-              <div className="flex items-center justify-center w-10 h-10 bg-gradient-to-br from-blue-500 to-cyan-500 text-white font-bold rounded-lg">
+              <div className="flex items-center justify-center w-10 h-10 bg-primary text-primary-foreground font-bold rounded-lg">
                 {index + 1}
               </div>
               <div className="flex-1 grid grid-cols-2 gap-4">
