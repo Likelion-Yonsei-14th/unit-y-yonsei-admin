@@ -17,6 +17,7 @@ export interface MapSection {
 /**
  * 백엔드 응답 (snake_case).
  * 좌표 (x, y) 는 이미지 기준 0–100 백분율 — 리사이즈/해상도에 안전.
+ * (width, height) 는 사각형 footprint — 0–100 % 단위, 이미지 기준.
  */
 export interface BoothPlacementDTO {
   booth_id: number;
@@ -25,6 +26,8 @@ export interface BoothPlacementDTO {
   booth_number: string;
   x: number;
   y: number;
+  width: number;
+  height: number;
 }
 
 /** 프론트 모델 (camelCase). 매퍼를 거쳐 변환. */
@@ -35,6 +38,8 @@ export interface BoothPlacement {
   boothNumber: string;
   x: number;
   y: number;
+  width: number;
+  height: number;
 }
 
 /**

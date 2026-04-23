@@ -7,4 +7,6 @@ export const toBoothPlacement = (d: BoothPlacementDTO): BoothPlacement => ({
   boothNumber: d.booth_number,
   x: d.x,
   y: d.y,
+  width: d.width,
+  height: d.height,
 });
