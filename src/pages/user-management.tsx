@@ -202,7 +202,7 @@ export function UserManagement() {
 
       {/*
         Role Filter + 검색 — 한 줄에 좌측 pill, 우측 inline search.
-        pill 은 가장 긴 라벨("Performer") 기준 min-w-28 로 폭 편차 제거.
+        pill 은 "Performer | 99" 형태의 라벨·카운트 동반 노출을 고려해 min-w-32 로 폭 편차 제거.
         계정 규모(≤수백)를 감안해 서버 검색 없이 프론트에서 .includes() 로 충분.
       */}
       <div className="flex items-center justify-between gap-4 mb-6">
@@ -211,6 +211,7 @@ export function UserManagement() {
             <button
               key={role}
               onClick={() => setSelectedRole(role)}
+              aria-label={`${role} ${roleCounts[role]}명`}
               className={`
                 min-w-32 px-5 py-2 rounded-full text-sm font-medium text-center transition-all duration-200
                 ${
@@ -221,7 +222,7 @@ export function UserManagement() {
               `}
             >
               {role}
-              <span className="mx-1.5 opacity-50">|</span>
+              <span aria-hidden="true" className="mx-1.5 opacity-50">|</span>
               {roleCounts[role]}
             </button>
           ))}
