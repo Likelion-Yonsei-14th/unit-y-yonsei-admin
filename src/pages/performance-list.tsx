@@ -40,13 +40,6 @@ export function PerformanceListPage() {
       .sort((a, b) => a.startTime.localeCompare(b.startTime));
   }, [data, date, stage]);
 
-  // 날짜별 총 공연 수 — 탭 라벨 옆에 뱃지로 노출.
-  const dateCounts = useMemo(() => {
-    const counts: Record<string, number> = Object.fromEntries(FESTIVAL_DATES.map(d => [d, 0]));
-    (data ?? []).forEach(p => { counts[p.date] = (counts[p.date] ?? 0) + 1; });
-    return counts;
-  }, [data]);
-
   return (
     <div className="p-8">
       <div className="flex items-center justify-between mb-8">
@@ -70,7 +63,7 @@ export function PerformanceListPage() {
                   type="button"
                   onClick={() => setDate(d)}
                   aria-pressed={active}
-                  aria-label={`${Number(m)}월 ${Number(day)}일 ${dateCounts[d] ?? 0}개`}
+                  aria-label={`${Number(m)}월 ${Number(day)}일`}
                   className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
                     active
                       ? 'bg-foreground text-primary-foreground'
@@ -78,8 +71,6 @@ export function PerformanceListPage() {
                   }`}
                 >
                   {Number(m)}/{Number(day)}
-                  <span aria-hidden="true" className="mx-1.5 opacity-50">|</span>
-                  {dateCounts[d] ?? 0}
                 </button>
               );
             })}

@@ -32,8 +32,12 @@ export function PerformanceManagement() {
   const myQuery = useMyPerformance();
   const { data, isLoading, isError, refetch } = isMe ? myQuery : byIdQuery;
 
-  const { canEditPerformance } = useAuth();
+  const { can, canEditPerformance } = useAuth();
   const canEdit = data ? canEditPerformance({ teamId: data.teamId }) : false;
+  // 타임테이블(날짜·스테이지·시작/종료) 은 축제 운영 전체 스케줄의 입력으로
+  // Performer 가 임의로 바꾸면 곤란. 본인 프로필·셋리스트는 수정 가능하되
+  // 이 섹션은 Super/Master(performance.manage) 만 편집할 수 있다.
+  const canEditTimetable = canEdit && can('performance.manage');
 
   const [isEditMode, setIsEditMode] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -222,7 +226,7 @@ export function PerformanceManagement() {
           {!isEditMode && canEdit && (
             <button
               onClick={handleEdit}
-              className="px-6 py-3 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-lg hover:shadow-lg hover:shadow-blue-200 transition-all duration-200 flex items-center gap-2"
+              className="px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-ds-primary-pressed hover:shadow-lg transition-all duration-200 flex items-center gap-2"
             >
               <Edit size={18} />
               <span>편집</span>
@@ -241,7 +245,7 @@ export function PerformanceManagement() {
               </button>
               <button
                 onClick={handleSave}
-                className="px-6 py-3 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-lg hover:shadow-lg hover:shadow-blue-200 transition-all duration-200 flex items-center gap-2"
+                className="px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-ds-primary-pressed hover:shadow-lg transition-all duration-200 flex items-center gap-2"
               >
                 <Check size={18} />
                 <span>저장</span>
@@ -294,8 +298,8 @@ export function PerformanceManagement() {
             <label className="block text-sm font-semibold text-foreground mb-2">SNS 링크 (선택)</label>
             <div className="space-y-3">
               <div className="flex items-center gap-3">
-                <div className="flex items-center justify-center w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg">
-                  <Instagram size={20} className="text-white" />
+                <div className="flex items-center justify-center w-10 h-10 bg-muted text-muted-foreground rounded-lg">
+                  <Instagram size={20} />
                 </div>
                 <input
                   type="text"
@@ -307,8 +311,8 @@ export function PerformanceManagement() {
                 />
               </div>
               <div className="flex items-center gap-3">
-                <div className="flex items-center justify-center w-10 h-10 bg-red-500 rounded-lg">
-                  <Youtube size={20} className="text-white" />
+                <div className="flex items-center justify-center w-10 h-10 bg-muted text-muted-foreground rounded-lg">
+                  <Youtube size={20} />
                 </div>
                 <input
                   type="text"
@@ -345,10 +349,11 @@ export function PerformanceManagement() {
             {(isEditMode ? editingImages : performanceImages).length > 0 && (
               <div className={`${isEditMode ? 'mt-4' : ''} grid grid-cols-4 gap-4`}>
                 {(isEditMode ? editingImages : performanceImages).map((image) => (
-                  <div 
+                  <div
                     key={image.id}
-                    className="relative group aspect-square rounded-lg overflow-hidden border-2 transition-all"
-                    style={{ borderColor: image.isMain ? '#3b82f6' : '#e2e8f0' }}
+                    className={`relative group aspect-square rounded-lg overflow-hidden border-2 transition-all ${
+                      image.isMain ? 'border-primary' : 'border-border'
+                    }`}
                   >
                     <img 
                       src={image.url} 
@@ -359,7 +364,7 @@ export function PerformanceManagement() {
                     {/* Main Badge */}
                     {image.isMain && (
                       <div className="absolute top-2 left-2 px-2 py-1 bg-primary text-primary-foreground text-xs font-semibold rounded-full flex items-center gap-1 shadow-lg">
-                        <Star size={12} fill="white" />
+                        <Star size={12} fill="currentColor" />
                         대표
                       </div>
                     )}
@@ -401,7 +406,14 @@ export function PerformanceManagement() {
 
       {/* Performance Timetable */}
       <div className="bg-background rounded-2xl p-8 mb-6 shadow-sm">
-        <h2 className="text-xl font-bold text-foreground mb-6">공연 타임테이블</h2>
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-xl font-bold text-foreground">공연 타임테이블</h2>
+          {/* 편집 모드 중이지만 타임테이블을 건드릴 수 없는 케이스(= Performer) 에만 안내.
+              View 모드 유저에게는 모든 필드가 기본적으로 비활성이라 메시지 자체가 노이즈. */}
+          {isEditMode && !canEditTimetable && (
+            <span className="text-xs text-muted-foreground">운영진만 수정 가능</span>
+          )}
+        </div>
 
         <div className="grid grid-cols-2 gap-6">
           <div>
@@ -410,7 +422,7 @@ export function PerformanceManagement() {
               className="w-full px-4 py-3 border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
               value={displayData.date}
               onChange={(e) => setEditingData(prev => prev ? { ...prev, date: e.target.value } : prev)}
-              disabled={!isEditMode}
+              disabled={!isEditMode || !canEditTimetable}
             >
               {FESTIVAL_DATES.map(d => {
                 const [, m, day] = d.split('-');
@@ -424,7 +436,7 @@ export function PerformanceManagement() {
               className="w-full px-4 py-3 border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
               value={displayData.stage}
               onChange={(e) => setEditingData(prev => prev ? { ...prev, stage: e.target.value as PerformanceStage } : prev)}
-              disabled={!isEditMode}
+              disabled={!isEditMode || !canEditTimetable}
             >
               {(Object.values(PERFORMANCE_STAGES) as typeof PERFORMANCE_STAGES[PerformanceStage][])
                 .filter(s => s.dates.includes(displayData.date))
@@ -437,20 +449,22 @@ export function PerformanceManagement() {
             <label className="block text-sm font-semibold text-foreground mb-2">공연 시작 시간</label>
             <input
               type="time"
+              step={300}
               className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
               value={displayData.startTime}
               onChange={(e) => setEditingData(prev => prev ? { ...prev, startTime: e.target.value } : prev)}
-              disabled={!isEditMode}
+              disabled={!isEditMode || !canEditTimetable}
             />
           </div>
           <div>
             <label className="block text-sm font-semibold text-foreground mb-2">공연 종료 시간</label>
             <input
               type="time"
+              step={300}
               className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
               value={displayData.endTime}
               onChange={(e) => setEditingData(prev => prev ? { ...prev, endTime: e.target.value } : prev)}
-              disabled={!isEditMode}
+              disabled={!isEditMode || !canEditTimetable}
             />
           </div>
         </div>
@@ -463,7 +477,7 @@ export function PerformanceManagement() {
           {isEditMode && (
             <button
               onClick={addSetlistItem}
-              className="px-4 py-2 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-lg hover:shadow-lg hover:shadow-blue-200 transition-all duration-200 flex items-center gap-2 text-sm"
+              className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-ds-primary-pressed hover:shadow-lg transition-all duration-200 flex items-center gap-2 text-sm"
             >
               <Plus size={16} />
               곡 추가
@@ -474,7 +488,7 @@ export function PerformanceManagement() {
         <div className="space-y-3">
           {(isEditMode ? editingSetlist : setlist).map((item, index) => (
             <div key={item.id} className="flex items-center gap-4 p-4 border border-border rounded-lg hover:border-primary transition-colors">
-              <div className="flex items-center justify-center w-10 h-10 bg-gradient-to-br from-blue-500 to-cyan-500 text-white font-bold rounded-lg">
+              <div className="flex items-center justify-center w-10 h-10 bg-primary text-primary-foreground font-bold rounded-lg">
                 {index + 1}
               </div>
               <div className="flex-1 grid grid-cols-2 gap-4">
