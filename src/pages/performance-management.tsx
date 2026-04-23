@@ -1,30 +1,76 @@
-import { useState } from "react";
-import { Plus, Trash2, Instagram, Youtube, Music, Check, Edit, X, Star, Upload } from "lucide-react";
+import { useEffect, useState, type ChangeEvent } from "react";
+import { useParams, Link } from "react-router";
+import { ArrowLeft, Plus, Trash2, Instagram, Youtube, Music, Check, Edit, X, Star, Upload } from "lucide-react";
+import { useAuth } from "@/features/auth/hooks";
+import { useMyPerformance, usePerformance } from "@/features/performances/hooks";
 import {
-  mockPerformanceData,
-  mockSetlist,
-  type SetlistItem as Setlist,
+  PERFORMANCE_STAGES,
+  type PerformanceDetail,
   type PerformanceImage,
-  type PerformanceData,
-} from "@/mocks/performance-profile";
+  type PerformanceStage,
+  type SetlistItem,
+} from "@/features/performances/types";
+import { FESTIVAL_DATES } from "@/features/booth-layout/sections";
 
+/**
+ * 공연 상세/편집. 두 진입 경로:
+ *   - `/performance/me`           — Performer 본인 팀 (useMyPerformance)
+ *   - `/performance/:teamId`      — Super/Master 가 리스트에서 선택한 팀 (usePerformance)
+ * useParams 결과만으로 분기해서 두 훅 중 한 쪽만 실제로 fetch 한다(enabled 가름).
+ */
 export function PerformanceManagement() {
+  const { teamId: teamIdParam } = useParams<{ teamId: string }>();
+  const isMe = !teamIdParam || teamIdParam === 'me';
+  // 숫자 파라미터는 양의 정수일 때만 유효. Number('abc') = NaN 같은 허위 쿼리 방지.
+  const parsedTeamId = isMe ? null : Number(teamIdParam);
+  const validTeamId = parsedTeamId != null && Number.isInteger(parsedTeamId) && parsedTeamId > 0
+    ? parsedTeamId
+    : null;
+  const isInvalidRoute = !isMe && validTeamId === null;
+
+  const byIdQuery = usePerformance(validTeamId);
+  const myQuery = useMyPerformance();
+  const { data, isLoading, isError, refetch } = isMe ? myQuery : byIdQuery;
+
+  const { canEditPerformance } = useAuth();
+  const canEdit = data ? canEditPerformance({ teamId: data.teamId }) : false;
+
   const [isEditMode, setIsEditMode] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
-  
-  // 실제 API 연결 시 useMyPerformance()로 교체
-  const [performanceData, setPerformanceData] = useState<PerformanceData>(mockPerformanceData);
 
-  const [editingData, setEditingData] = useState<PerformanceData>(performanceData);
+  const [performanceData, setPerformanceData] = useState<PerformanceDetail | null>(null);
+  const [editingData, setEditingData] = useState<PerformanceDetail | null>(null);
 
   const [performanceImages, setPerformanceImages] = useState<PerformanceImage[]>([]);
   const [editingImages, setEditingImages] = useState<PerformanceImage[]>([]);
 
-  const [setlist, setSetlist] = useState<Setlist[]>(mockSetlist);
+  const [setlist, setSetlist] = useState<SetlistItem[]>([]);
+  const [editingSetlist, setEditingSetlist] = useState<SetlistItem[]>([]);
 
-  const [editingSetlist, setEditingSetlist] = useState<Setlist[]>(setlist);
+  // data 가 도착/변경되면 view 상태를 재동기화. 편집 중엔 덮어쓰지 않는다
+  // (서버 refetch 타이밍이 편집 중 사용자의 입력을 날려버리지 않도록).
+  useEffect(() => {
+    if (!data || isEditMode) return;
+    setPerformanceData(data);
+    setPerformanceImages(data.images);
+    setSetlist(data.setlist);
+  }, [data, isEditMode]);
+
+  // 편집 중 날짜를 바꿨을 때, 기존 stage 가 새 날짜에서 운영되지 않는다면
+  // 해당 날짜의 첫 유효 스테이지로 자동 보정. 저장 payload 에 (date, stage) 불일치가
+  // 넘어가지 않게 한다. setter 에는 prev 기반으로 써서 stale closure 이슈 회피.
+  useEffect(() => {
+    setEditingData(prev => {
+      if (!prev) return prev;
+      if (PERFORMANCE_STAGES[prev.stage].dates.includes(prev.date)) return prev;
+      const firstValid = (Object.values(PERFORMANCE_STAGES) as typeof PERFORMANCE_STAGES[PerformanceStage][])
+        .find(s => s.dates.includes(prev.date));
+      return firstValid ? { ...prev, stage: firstValid.id } : prev;
+    });
+  }, [editingData?.date]);
 
   const handleEdit = () => {
+    if (!performanceData) return;
     setEditingData(performanceData);
     setEditingSetlist([...setlist]);
     setEditingImages([...performanceImages]);
@@ -35,7 +81,7 @@ export function PerformanceManagement() {
     setIsEditMode(false);
   };
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = (e: ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (files) {
       const newImages: PerformanceImage[] = Array.from(files).map((file, index) => ({
@@ -63,7 +109,7 @@ export function PerformanceManagement() {
   };
 
   const addSetlistItem = () => {
-    const newItem: Setlist = {
+    const newItem: SetlistItem = {
       id: Date.now(),
       order: editingSetlist.length + 1,
       songName: "",
@@ -83,7 +129,8 @@ export function PerformanceManagement() {
   };
 
   const handleSave = () => {
-    // 저장 로직
+    if (!editingData) return;
+    // TODO: 실제 저장 mutation 연결. 지금은 local state 에만 반영해 UI 흐름만 검증.
     setPerformanceData(editingData);
     setSetlist(editingSetlist);
     setPerformanceImages(editingImages);
@@ -94,8 +141,76 @@ export function PerformanceManagement() {
     }, 3000);
   };
 
+  // URL 의 teamId 가 숫자가 아닌 경우 — 쿼리 자체가 안 돌므로 바로 빈 상태로.
+  if (isInvalidRoute) {
+    return (
+      <div className="p-8">
+        <div className="bg-muted rounded-2xl p-12 text-center">
+          <Music size={40} className="mx-auto mb-4 text-ds-text-disabled" />
+          <p className="text-muted-foreground">잘못된 공연팀 경로입니다.</p>
+        </div>
+      </div>
+    );
+  }
+
+  // 실제로 fetch 가 도는 동안만 로딩 화면. enabled=false (예: Performer 인데 소속 팀 없음)
+  // 상태는 "쿼리가 안 나간" 것이라 로딩이 아닌 빈 상태로 떨어져야 한다.
+  if (isLoading) {
+    return (
+      <div className="p-8 text-center text-muted-foreground">공연 정보를 불러오는 중…</div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="p-8">
+        <div className="bg-ds-error-subtle border border-destructive text-destructive rounded-2xl p-6 text-center">
+          <p className="mb-3">공연 정보를 가져오지 못했습니다.</p>
+          <button
+            type="button"
+            onClick={() => refetch()}
+            className="px-4 py-2 rounded-lg bg-destructive text-destructive-foreground hover:bg-ds-error-pressed transition-colors"
+          >
+            다시 시도
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // query data 와 local performanceData 둘 다 없을 때만 "없음" — data 도착 후 useEffect 로
+  // performanceData 에 동기화되기 전 한 프레임 동안 form 이 flash 하지 않게 양쪽 다 확인.
+  if (!performanceData && !data) {
+    return (
+      <div className="p-8">
+        <div className="bg-muted rounded-2xl p-12 text-center">
+          <Music size={40} className="mx-auto mb-4 text-ds-text-disabled" />
+          <p className="text-muted-foreground">
+            {isMe
+              ? '소속된 공연팀이 없습니다. 운영팀에 문의해 주세요.'
+              : '해당 공연팀을 찾을 수 없습니다.'}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // 표시 데이터 우선순위: 편집 중이면 editingData, 아니면 local(performanceData) → 막 도착한 query data.
+  // 위의 `!performanceData && !data` 가드가 둘 중 하나는 non-null 임을 보장.
+  const viewData = performanceData ?? data!;
+  const displayData: PerformanceDetail = isEditMode && editingData ? editingData : viewData;
+
   return (
     <div className="p-8">
+      {!isMe && (
+        <Link
+          to="/performance"
+          className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground mb-4"
+        >
+          <ArrowLeft size={16} />
+          공연 목록으로
+        </Link>
+      )}
       <div className="flex items-center justify-between mb-8">
         <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
           <Music size={32} />
@@ -104,7 +219,7 @@ export function PerformanceManagement() {
         
         <div className="flex items-center gap-3">
           {/* Edit Button */}
-          {!isEditMode && (
+          {!isEditMode && canEdit && (
             <button
               onClick={handleEdit}
               className="px-6 py-3 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-lg hover:shadow-lg hover:shadow-blue-200 transition-all duration-200 flex items-center gap-2"
@@ -157,8 +272,8 @@ export function PerformanceManagement() {
               type="text"
               placeholder="공연팀 이름을 입력하세요"
               className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
-              value={editingData.teamName}
-              onChange={(e) => setEditingData({ ...editingData, teamName: e.target.value })}
+              value={displayData.teamName}
+              onChange={(e) => setEditingData(prev => prev ? { ...prev, teamName: e.target.value } : prev)}
               disabled={!isEditMode}
             />
           </div>
@@ -169,8 +284,8 @@ export function PerformanceManagement() {
               rows={5}
               placeholder="동아리 소개, 구성원 소개 등을 작성하세요"
               className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all resize-none"
-              value={editingData.description}
-              onChange={(e) => setEditingData({ ...editingData, description: e.target.value })}
+              value={displayData.description}
+              onChange={(e) => setEditingData(prev => prev ? { ...prev, description: e.target.value } : prev)}
               disabled={!isEditMode}
             />
           </div>
@@ -186,8 +301,8 @@ export function PerformanceManagement() {
                   type="text"
                   placeholder="인스타그램 URL"
                   className="flex-1 px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
-                  value={editingData.instagramUrl}
-                  onChange={(e) => setEditingData({ ...editingData, instagramUrl: e.target.value })}
+                  value={displayData.instagramUrl}
+                  onChange={(e) => setEditingData(prev => prev ? { ...prev, instagramUrl: e.target.value } : prev)}
                   disabled={!isEditMode}
                 />
               </div>
@@ -199,8 +314,8 @@ export function PerformanceManagement() {
                   type="text"
                   placeholder="유튜브 URL"
                   className="flex-1 px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
-                  value={editingData.youtubeUrl}
-                  onChange={(e) => setEditingData({ ...editingData, youtubeUrl: e.target.value })}
+                  value={displayData.youtubeUrl}
+                  onChange={(e) => setEditingData(prev => prev ? { ...prev, youtubeUrl: e.target.value } : prev)}
                   disabled={!isEditMode}
                 />
               </div>
@@ -290,12 +405,41 @@ export function PerformanceManagement() {
 
         <div className="grid grid-cols-2 gap-6">
           <div>
+            <label className="block text-sm font-semibold text-foreground mb-2">공연 날짜</label>
+            <select
+              className="w-full px-4 py-3 border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
+              value={displayData.date}
+              onChange={(e) => setEditingData(prev => prev ? { ...prev, date: e.target.value } : prev)}
+              disabled={!isEditMode}
+            >
+              {FESTIVAL_DATES.map(d => {
+                const [, m, day] = d.split('-');
+                return <option key={d} value={d}>{`${Number(m)}/${Number(day)}`}</option>;
+              })}
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-foreground mb-2">스테이지</label>
+            <select
+              className="w-full px-4 py-3 border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
+              value={displayData.stage}
+              onChange={(e) => setEditingData(prev => prev ? { ...prev, stage: e.target.value as PerformanceStage } : prev)}
+              disabled={!isEditMode}
+            >
+              {(Object.values(PERFORMANCE_STAGES) as typeof PERFORMANCE_STAGES[PerformanceStage][])
+                .filter(s => s.dates.includes(displayData.date))
+                .map(s => (
+                  <option key={s.id} value={s.id}>{s.label}</option>
+                ))}
+            </select>
+          </div>
+          <div>
             <label className="block text-sm font-semibold text-foreground mb-2">공연 시작 시간</label>
             <input
               type="time"
               className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
-              value={editingData.startTime}
-              onChange={(e) => setEditingData({ ...editingData, startTime: e.target.value })}
+              value={displayData.startTime}
+              onChange={(e) => setEditingData(prev => prev ? { ...prev, startTime: e.target.value } : prev)}
               disabled={!isEditMode}
             />
           </div>
@@ -304,8 +448,8 @@ export function PerformanceManagement() {
             <input
               type="time"
               className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
-              value={editingData.endTime}
-              onChange={(e) => setEditingData({ ...editingData, endTime: e.target.value })}
+              value={displayData.endTime}
+              onChange={(e) => setEditingData(prev => prev ? { ...prev, endTime: e.target.value } : prev)}
               disabled={!isEditMode}
             />
           </div>

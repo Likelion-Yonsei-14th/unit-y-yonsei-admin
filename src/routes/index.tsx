@@ -41,10 +41,31 @@ function ReservationManagementRoute() {
   return <ReservationManagement key={boothId ?? ''} />;
 }
 
+/**
+ * `/performance` 진입 분기.
+ * Super/Master 는 전체 공연 목록(PerformanceListPage) 으로, Performer 는 본인 팀 상세
+ * (`/performance/me`) 로 보낸다. Booth 계정은 performance.read 권한이 없어 가드 단계에서 차단.
+ */
+function PerformanceEntry() {
+  const { user } = useAuth();
+  if (user?.role === 'Performer') return <Navigate to="/performance/me" replace />;
+  return <PerformanceListPage />;
+}
+
+/**
+ * teamId 가 바뀌면 PerformanceManagement 를 강제 remount.
+ * `/performance/1` → `/performance/3` 이동 시 편집 상태·폼 바인딩이 이전 팀 값을 끌고 오지 않도록 차단.
+ */
+function PerformanceManagementRoute() {
+  const { teamId } = useParams<{ teamId: string }>();
+  return <PerformanceManagement key={teamId ?? ''} />;
+}
+
 import { UserManagement } from '@/pages/user-management';
 import { BoothManagement } from '@/pages/booth-management';
 import { ReservationManagement } from '@/pages/reservation-management';
 import { ReservationBoothPicker } from '@/pages/reservation-booth-picker';
+import { PerformanceListPage } from '@/pages/performance-list';
 import { PerformanceManagement } from '@/pages/performance-management';
 import { NoticePage } from '@/pages/notice';
 import { LostFoundPage } from '@/pages/lost-found';
@@ -124,7 +145,26 @@ export const router = createBrowserRouter([
         path: 'performance',
         element: (
           <RequirePermission permission="performance.read">
+            <PerformanceEntry />
+          </RequirePermission>
+        ),
+      },
+      {
+        // Performer 본인 팀 상세. performance.update.own 은 현재 Permissions 매트릭스상
+        // Performer 전용이라 권한 가드 한 줄로 역할 제한이 자연스럽게 따라온다.
+        path: 'performance/me',
+        element: (
+          <RequirePermission permission="performance.update.own">
             <PerformanceManagement />
+          </RequirePermission>
+        ),
+      },
+      {
+        // Super/Master 가 리스트에서 선택한 팀 상세.
+        path: 'performance/:teamId',
+        element: (
+          <RequirePermission permission="performance.manage">
+            <PerformanceManagementRoute />
           </RequirePermission>
         ),
       },

@@ -15,10 +15,12 @@ export function usePerformances() {
 }
 
 export function usePerformance(teamId: number | null | undefined) {
+  // NaN 이 흘러들어와 getPerformance(NaN) 이 호출되는 사고를 차단.
+  const valid = teamId != null && Number.isInteger(teamId) && teamId > 0;
   return useQuery({
     queryKey: ['performances', teamId],
     queryFn: () => getPerformance(teamId as number),
-    enabled: teamId != null,
+    enabled: valid,
   });
 }
 
