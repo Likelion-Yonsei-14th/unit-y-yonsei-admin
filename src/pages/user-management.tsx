@@ -76,6 +76,19 @@ export function UserManagement() {
   const canEditRole = can("user.update.role");
   const canToggleStatus = can("user.deactivate");
 
+  // 역할별 계정 수. pill 라벨에 "Super | 3" 형태로 노출해 필터 클릭 전에도 분포 파악.
+  const roleCounts = useMemo<Record<RoleFilter, number>>(() => {
+    const counts: Record<RoleFilter, number> = {
+      전체: users.length,
+      Super: 0,
+      Master: 0,
+      Booth: 0,
+      Performer: 0,
+    };
+    for (const u of users) counts[u.role] += 1;
+    return counts;
+  }, [users]);
+
   // 파이프: users → 검색 → 역할 필터 → 상태 정렬 → visibleUsers
   // 전화번호/이메일은 검색 대상 제외 — 값 형태가 제각각이라 매칭 체감이 나쁨.
   const normalizedQuery = searchQuery.trim().toLowerCase();
@@ -199,7 +212,7 @@ export function UserManagement() {
               key={role}
               onClick={() => setSelectedRole(role)}
               className={`
-                min-w-28 px-5 py-2 rounded-full text-sm font-medium text-center transition-all duration-200
+                min-w-32 px-5 py-2 rounded-full text-sm font-medium text-center transition-all duration-200
                 ${
                   selectedRole === role
                     ? "bg-foreground text-primary-foreground shadow-lg"
@@ -208,6 +221,8 @@ export function UserManagement() {
               `}
             >
               {role}
+              <span className="mx-1.5 opacity-50">|</span>
+              {roleCounts[role]}
             </button>
           ))}
         </div>
