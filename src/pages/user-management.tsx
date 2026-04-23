@@ -211,6 +211,7 @@ export function UserManagement() {
             <button
               key={role}
               onClick={() => setSelectedRole(role)}
+              aria-pressed={selectedRole === role}
               aria-label={`${role} ${roleCounts[role]}명`}
               className={`
                 min-w-32 px-5 py-2 rounded-full text-sm font-medium text-center transition-all duration-200
