@@ -438,6 +438,7 @@ export function PerformanceManagement() {
             <label className="block text-sm font-semibold text-foreground mb-2">공연 시작 시간</label>
             <input
               type="time"
+              step={300}
               className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
               value={displayData.startTime}
               onChange={(e) => setEditingData(prev => prev ? { ...prev, startTime: e.target.value } : prev)}
@@ -448,6 +449,7 @@ export function PerformanceManagement() {
             <label className="block text-sm font-semibold text-foreground mb-2">공연 종료 시간</label>
             <input
               type="time"
+              step={300}
               className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
               value={displayData.endTime}
               onChange={(e) => setEditingData(prev => prev ? { ...prev, endTime: e.target.value } : prev)}
