@@ -1,5 +1,5 @@
 import { createBrowserRouter, Navigate, useParams } from 'react-router';
-import { RequireAuth, RequireGuest, RequirePermission, RequireRole } from '@/features/auth/guard';
+import { RequireAuth, RequireGuest, RequirePermission } from '@/features/auth/guard';
 import { useAuth } from '@/features/auth/hooks';
 import { AppLayout } from '@/components/layout/app-layout';
 
@@ -150,13 +150,13 @@ export const router = createBrowserRouter([
         ),
       },
       {
-        // Performer 본인 팀 상세. 가드는 update.own 기준 — Super/Master 도 read 는 되지만
-        // 본인 소속이 없으므로 api 에서 null 을 돌려받아 빈 상태로 떨어진다.
+        // Performer 본인 팀 상세. performance.update.own 은 현재 Permissions 매트릭스상
+        // Performer 전용이라 권한 가드 한 줄로 역할 제한이 자연스럽게 따라온다.
         path: 'performance/me',
         element: (
-          <RequireRole allow={['Performer']}>
+          <RequirePermission permission="performance.update.own">
             <PerformanceManagement />
-          </RequireRole>
+          </RequirePermission>
         ),
       },
       {
