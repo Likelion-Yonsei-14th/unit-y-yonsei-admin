@@ -3,8 +3,8 @@
  *
  * 세 날짜(5/27 송도, 5/28·5/29 신촌) × 스테이지(송도 / 백양로 / 노천극장) 에 팀을 분산 배치.
  * 작년(scent-yonsei) 운영 사례를 참고해 시간 슬롯을 촘촘히 잡아 리스트 UI 의 정렬·빈 시간대
- * 처리·필터 동작을 모두 점검할 수 있게 했다. teamId=1 이 Performer 로그인 유저가 바라보는
- * "내 공연팀" — mockPerformanceDetail (performance-profile.ts) 과 식별자 일치 유지.
+ * 처리·필터 동작을 모두 점검할 수 있게 했다. teamId=1 은 Performer 로그인 유저가 바라보는
+ * "내 공연팀"이며, 이 파일의 목록/상세 mock 간 식별자 일관성을 유지한다.
  */
 
 import type { PerformanceDetail } from '@/features/performances/types';
