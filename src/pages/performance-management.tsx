@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ChangeEvent } from "react";
 import { useParams, Link } from "react-router";
 import { ArrowLeft, Plus, Trash2, Instagram, Youtube, Music, Check, Edit, X, Star, Upload } from "lucide-react";
 import { useAuth } from "@/features/auth/hooks";
@@ -21,9 +21,14 @@ import { FESTIVAL_DATES } from "@/features/booth-layout/sections";
 export function PerformanceManagement() {
   const { teamId: teamIdParam } = useParams<{ teamId: string }>();
   const isMe = !teamIdParam || teamIdParam === 'me';
-  const numericTeamId = isMe ? null : Number(teamIdParam);
+  // 숫자 파라미터는 양의 정수일 때만 유효. Number('abc') = NaN 같은 허위 쿼리 방지.
+  const parsedTeamId = isMe ? null : Number(teamIdParam);
+  const validTeamId = parsedTeamId != null && Number.isInteger(parsedTeamId) && parsedTeamId > 0
+    ? parsedTeamId
+    : null;
+  const isInvalidRoute = !isMe && validTeamId === null;
 
-  const byIdQuery = usePerformance(numericTeamId);
+  const byIdQuery = usePerformance(validTeamId);
   const myQuery = useMyPerformance();
   const { data, isLoading, isError, refetch } = isMe ? myQuery : byIdQuery;
 
@@ -51,6 +56,19 @@ export function PerformanceManagement() {
     setSetlist(data.setlist);
   }, [data, isEditMode]);
 
+  // 편집 중 날짜를 바꿨을 때, 기존 stage 가 새 날짜에서 운영되지 않는다면
+  // 해당 날짜의 첫 유효 스테이지로 자동 보정. 저장 payload 에 (date, stage) 불일치가
+  // 넘어가지 않게 한다. setter 에는 prev 기반으로 써서 stale closure 이슈 회피.
+  useEffect(() => {
+    setEditingData(prev => {
+      if (!prev) return prev;
+      if (PERFORMANCE_STAGES[prev.stage].dates.includes(prev.date)) return prev;
+      const firstValid = (Object.values(PERFORMANCE_STAGES) as typeof PERFORMANCE_STAGES[PerformanceStage][])
+        .find(s => s.dates.includes(prev.date));
+      return firstValid ? { ...prev, stage: firstValid.id } : prev;
+    });
+  }, [editingData?.date]);
+
   const handleEdit = () => {
     if (!performanceData) return;
     setEditingData(performanceData);
@@ -63,7 +81,7 @@ export function PerformanceManagement() {
     setIsEditMode(false);
   };
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = (e: ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (files) {
       const newImages: PerformanceImage[] = Array.from(files).map((file, index) => ({
@@ -123,8 +141,21 @@ export function PerformanceManagement() {
     }, 3000);
   };
 
-  // 로딩/에러/빈 상태 — 실제 컨텐츠가 준비되지 않았을 때는 form 자체를 렌더하지 않는다.
-  if (isLoading || (!performanceData && !isError)) {
+  // URL 의 teamId 가 숫자가 아닌 경우 — 쿼리 자체가 안 돌므로 바로 빈 상태로.
+  if (isInvalidRoute) {
+    return (
+      <div className="p-8">
+        <div className="bg-muted rounded-2xl p-12 text-center">
+          <Music size={40} className="mx-auto mb-4 text-ds-text-disabled" />
+          <p className="text-muted-foreground">잘못된 공연팀 경로입니다.</p>
+        </div>
+      </div>
+    );
+  }
+
+  // 실제로 fetch 가 도는 동안만 로딩 화면. enabled=false (예: Performer 인데 소속 팀 없음)
+  // 상태는 "쿼리가 안 나간" 것이라 로딩이 아닌 빈 상태로 떨어져야 한다.
+  if (isLoading) {
     return (
       <div className="p-8 text-center text-muted-foreground">공연 정보를 불러오는 중…</div>
     );
@@ -147,7 +178,9 @@ export function PerformanceManagement() {
     );
   }
 
-  if (!performanceData) {
+  // query data 와 local performanceData 둘 다 없을 때만 "없음" — data 도착 후 useEffect 로
+  // performanceData 에 동기화되기 전 한 프레임 동안 form 이 flash 하지 않게 양쪽 다 확인.
+  if (!performanceData && !data) {
     return (
       <div className="p-8">
         <div className="bg-muted rounded-2xl p-12 text-center">
@@ -162,9 +195,10 @@ export function PerformanceManagement() {
     );
   }
 
-  // 편집 중이 아니면 editingData 는 불필요. UI 코드는 editingData 를 기준으로 바인딩하므로
-  // view 모드에서도 editingData 를 performanceData 로 비어 있지 않게 유지한다.
-  const displayData: PerformanceDetail = isEditMode && editingData ? editingData : performanceData;
+  // 표시 데이터 우선순위: 편집 중이면 editingData, 아니면 local(performanceData) → 막 도착한 query data.
+  // 위의 `!performanceData && !data` 가드가 둘 중 하나는 non-null 임을 보장.
+  const viewData = performanceData ?? data!;
+  const displayData: PerformanceDetail = isEditMode && editingData ? editingData : viewData;
 
   return (
     <div className="p-8">
