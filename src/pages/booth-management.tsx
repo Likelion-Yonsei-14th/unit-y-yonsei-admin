@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import { Upload, Plus, Trash2, Check, X, GripVertical, ArrowLeft, Star, Edit, Store } from "lucide-react";
 import { DndProvider, useDrag, useDrop } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
-import { useMyBoothProfile } from "@/features/booths/hooks";
+import { toast } from "sonner";
+import { useMyBoothProfile, useUpdateMyBoothProfile } from "@/features/booths/hooks";
 import {
   isBoothInfoCompleted, isMenuListCompleted,
   type BoothImage, type BoothMenuItem,
@@ -116,6 +117,7 @@ function DraggableMenuItem({ item, index, moveItem, onUpdate, onDelete }: Dragga
 export function BoothManagement() {
   // 이 페이지는 RequirePermission('booth.update.own')으로 가드 → Booth 역할만 진입.
   const { data: booth, isPending, isError } = useMyBoothProfile();
+  const updateProfile = useUpdateMyBoothProfile();
 
   // "작성 완료" 여부는 저장된 데이터에서 파생 — 편집 중 입력은 반영되지 않음
   // (저장 전까지는 불완전한 입력으로 취급). 파일 상단의 helper 참고.
@@ -159,6 +161,44 @@ export function BoothManagement() {
   const openMenuListForm = () => {
     setShowMenuListForm(true);
     if (!menuListCompleted) setIsEditingMenuList(true);
+  };
+
+  const handleSaveBoothInfo = () => {
+    updateProfile.mutate(
+      {
+        name: boothName,
+        organizationName,
+        description: boothDescription,
+        signatureMenu,
+        operatingHours,
+        reservationEnabled,
+        thumbnails: boothImages,
+      },
+      {
+        onSuccess: () => {
+          setIsEditingBoothInfo(false);
+          toast.success("부스 정보를 저장했습니다.");
+        },
+        onError: () => {
+          toast.error("저장에 실패했습니다. 잠시 후 다시 시도해주세요.");
+        },
+      },
+    );
+  };
+
+  const handleSaveMenuList = () => {
+    updateProfile.mutate(
+      { orderNotice, menuItems },
+      {
+        onSuccess: () => {
+          setIsEditingMenuList(false);
+          toast.success("메뉴 리스트를 저장했습니다.");
+        },
+        onError: () => {
+          toast.error("저장에 실패했습니다. 잠시 후 다시 시도해주세요.");
+        },
+      },
+    );
   };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -380,11 +420,12 @@ export function BoothManagement() {
                   편집
                 </button>
               ) : (
-                <button 
-                  onClick={() => setIsEditingBoothInfo(false)}
-                  className="px-6 py-3 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-lg hover:shadow-lg hover:shadow-blue-200 transition-all duration-200"
+                <button
+                  onClick={handleSaveBoothInfo}
+                  disabled={updateProfile.isPending}
+                  className="px-6 py-3 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-lg hover:shadow-lg hover:shadow-blue-200 transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
                 >
-                  저장
+                  {updateProfile.isPending ? '저장 중…' : '저장'}
                 </button>
               )}
               <button 
@@ -596,11 +637,12 @@ export function BoothManagement() {
                   편집
                 </button>
               ) : (
-                <button 
-                  onClick={() => setIsEditingMenuList(false)}
-                  className="px-6 py-3 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-lg hover:shadow-lg hover:shadow-blue-200 transition-all duration-200"
+                <button
+                  onClick={handleSaveMenuList}
+                  disabled={updateProfile.isPending}
+                  className="px-6 py-3 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-lg hover:shadow-lg hover:shadow-blue-200 transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
                 >
-                  저장
+                  {updateProfile.isPending ? '저장 중…' : '저장'}
                 </button>
               )}
               <button 
