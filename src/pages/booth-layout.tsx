@@ -127,7 +127,7 @@ export function BoothLayoutPage() {
                     onClick={() => setSelectedLocation(location)}
                     className={`flex-1 px-4 py-3 rounded-lg border-2 transition-all ${
                       selectedLocation === location
-                        ? "border-cyan-500 bg-cyan-50 text-cyan-700 font-semibold"
+                        ? "border-primary bg-ds-primary-subtle text-primary font-semibold"
                         : "border-border text-muted-foreground hover:border-ds-border-strong"
                     }`}
                   >
@@ -186,7 +186,7 @@ export function BoothLayoutPage() {
                 onClick={handleSubmit}
                 disabled={!isFormComplete}
                 title={!isFormComplete ? "부스 번호·부스명·단체명을 모두 입력해주세요" : undefined}
-                className="px-6 py-3 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-lg hover:shadow-lg hover:shadow-blue-200 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-none"
+                className="px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-ds-primary-pressed transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 매칭 정보 저장
               </button>

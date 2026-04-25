@@ -151,7 +151,7 @@ export function NoticePage() {
               >
                 취소
               </button>
-              <button className="px-6 py-3 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-lg hover:shadow-lg hover:shadow-blue-200 transition-all duration-200">
+              <button className="px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-ds-primary-pressed transition-colors duration-200">
                 {editingNotice ? "수정 완료" : "공지사항 등록"}
               </button>
             </div>
