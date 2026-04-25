@@ -180,7 +180,9 @@ export function AppLayout() {
                       className={`
                         flex items-center gap-3 rounded-lg transition-colors w-full
                         ${isCollapsed ? 'justify-center px-3 py-3' : 'px-4 py-2.5'}
-                        text-muted-foreground hover:bg-muted
+                        ${isActive
+                          ? 'bg-primary text-primary-foreground'
+                          : 'text-muted-foreground hover:bg-muted'}
                       `}
                       title={isCollapsed ? item.label : undefined}
                     >
@@ -226,7 +228,7 @@ export function AppLayout() {
                           className={`
                             flex items-center gap-3 rounded-lg ml-4 pl-7 pr-4 py-2 transition-all
                             ${isChildActive
-                              ? 'bg-ds-primary-subtle text-ds-primary-pressed'
+                              ? 'bg-primary text-primary-foreground'
                               : 'text-muted-foreground hover:bg-muted'}
                           `}
                         >
