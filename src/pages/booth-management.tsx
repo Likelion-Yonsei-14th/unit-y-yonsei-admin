@@ -52,7 +52,7 @@ function DraggableMenuItem({ item, index, moveItem, onUpdate, onDelete }: Dragga
         <GripVertical size={20} />
       </div>
 
-      <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-cyan-500 text-white flex items-center justify-center font-semibold text-sm flex-shrink-0">
+      <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-semibold text-sm flex-shrink-0">
         {item.order}
       </div>
 
@@ -307,7 +307,7 @@ export function BoothManagement() {
             className={`
               relative w-14 h-7 rounded-full transition-all duration-300
               ${reservationEnabled
-                ? 'bg-gradient-to-r from-blue-500 to-cyan-500 shadow-lg shadow-blue-200'
+                ? 'bg-primary shadow-lg'
                 : 'bg-ds-border-strong'
               }
             `}
@@ -328,8 +328,8 @@ export function BoothManagement() {
             className={`
             relative overflow-hidden rounded-2xl p-8 transition-all duration-300 text-left cursor-pointer hover:scale-105
             ${boothInfoCompleted
-              ? 'bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-200 hover:border-green-300'
-              : 'bg-gradient-to-br from-red-50 to-rose-50 border-2 border-red-200 hover:border-red-300'
+              ? 'bg-ds-success-subtle border-2 border-ds-success-subtle hover:border-ds-success'
+              : 'bg-ds-error-subtle border-2 border-ds-error-subtle hover:border-ds-error'
             }
           `}>
             <div className="flex items-start justify-between mb-4">
@@ -339,8 +339,8 @@ export function BoothManagement() {
               <div className={`
                 w-16 h-16 rounded-full flex items-center justify-center text-2xl font-bold
                 ${boothInfoCompleted
-                  ? 'bg-ds-success text-white shadow-lg shadow-green-200'
-                  : 'bg-destructive text-destructive-foreground shadow-lg shadow-red-200'
+                  ? 'bg-ds-success text-white shadow-lg'
+                  : 'bg-destructive text-destructive-foreground shadow-lg'
                 }
               `}>
                 {boothInfoCompleted ? <Check size={32} /> : <X size={32} />}
@@ -368,8 +368,8 @@ export function BoothManagement() {
             className={`
             relative overflow-hidden rounded-2xl p-8 transition-all duration-300 text-left cursor-pointer hover:scale-105
             ${menuListCompleted
-              ? 'bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-200 hover:border-green-300'
-              : 'bg-gradient-to-br from-red-50 to-rose-50 border-2 border-red-200 hover:border-red-300'
+              ? 'bg-ds-success-subtle border-2 border-ds-success-subtle hover:border-ds-success'
+              : 'bg-ds-error-subtle border-2 border-ds-error-subtle hover:border-ds-error'
             }
           `}>
             <div className="flex items-start justify-between mb-4">
@@ -379,8 +379,8 @@ export function BoothManagement() {
               <div className={`
                 w-16 h-16 rounded-full flex items-center justify-center text-2xl font-bold
                 ${menuListCompleted
-                  ? 'bg-ds-success text-white shadow-lg shadow-green-200'
-                  : 'bg-destructive text-destructive-foreground shadow-lg shadow-red-200'
+                  ? 'bg-ds-success text-white shadow-lg'
+                  : 'bg-destructive text-destructive-foreground shadow-lg'
                 }
               `}>
                 {menuListCompleted ? <Check size={32} /> : <X size={32} />}
@@ -414,7 +414,7 @@ export function BoothManagement() {
               {!isEditingBoothInfo ? (
                 <button 
                   onClick={() => setIsEditingBoothInfo(true)}
-                  className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-lg hover:shadow-lg hover:shadow-blue-200 transition-all duration-200"
+                  className="flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-ds-primary-pressed transition-colors duration-200"
                 >
                   <Edit size={18} />
                   편집
@@ -423,7 +423,7 @@ export function BoothManagement() {
                 <button
                   onClick={handleSaveBoothInfo}
                   disabled={updateProfile.isPending}
-                  className="px-6 py-3 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-lg hover:shadow-lg hover:shadow-blue-200 transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
+                  className="px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-ds-primary-pressed transition-colors duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                   {updateProfile.isPending ? '저장 중…' : '저장'}
                 </button>
@@ -514,10 +514,11 @@ export function BoothManagement() {
                 {boothImages.length > 0 && (
                   <div className="mt-4 grid grid-cols-4 gap-4">
                     {boothImages.map((image) => (
-                      <div 
+                      <div
                         key={image.id}
-                        className="relative group aspect-square rounded-lg overflow-hidden border-2 transition-all"
-                        style={{ borderColor: image.isMain ? '#3b82f6' : '#e2e8f0' }}
+                        className={`relative group aspect-square rounded-lg overflow-hidden border-2 transition-all ${
+                          image.isMain ? 'border-primary' : 'border-border'
+                        }`}
                       >
                         <img 
                           src={image.url} 
@@ -598,7 +599,7 @@ export function BoothManagement() {
                 className={`
                   relative w-14 h-7 rounded-full transition-all duration-300
                   ${reservationEnabled
-                    ? 'bg-gradient-to-r from-green-400 to-emerald-500 shadow-lg shadow-green-200'
+                    ? 'bg-ds-success shadow-lg'
                     : 'bg-ds-border-strong'
                   }
                   ${!isEditingBoothInfo ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
@@ -631,7 +632,7 @@ export function BoothManagement() {
               {!isEditingMenuList ? (
                 <button 
                   onClick={() => setIsEditingMenuList(true)}
-                  className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-lg hover:shadow-lg hover:shadow-blue-200 transition-all duration-200"
+                  className="flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-ds-primary-pressed transition-colors duration-200"
                 >
                   <Edit size={18} />
                   편집
@@ -640,7 +641,7 @@ export function BoothManagement() {
                 <button
                   onClick={handleSaveMenuList}
                   disabled={updateProfile.isPending}
-                  className="px-6 py-3 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-lg hover:shadow-lg hover:shadow-blue-200 transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
+                  className="px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-ds-primary-pressed transition-colors duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                   {updateProfile.isPending ? '저장 중…' : '저장'}
                 </button>
@@ -695,7 +696,7 @@ export function BoothManagement() {
             <div className="space-y-4">
               {menuItems.map((item) => (
                 <div key={item.id} className="flex items-center gap-4 p-4 rounded-lg bg-muted">
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-cyan-500 text-white flex items-center justify-center font-semibold text-sm flex-shrink-0">
+                  <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-semibold text-sm flex-shrink-0">
                     {item.order}
                   </div>
 
