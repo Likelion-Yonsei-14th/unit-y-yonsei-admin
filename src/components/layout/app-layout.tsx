@@ -173,16 +173,18 @@ export function AppLayout() {
                       )}
                     </Link>
                   ) : (
-                    /* path 권한이 없거나 path 자체가 없는 그룹 헤더: 순수 토글 버튼 */
+                    /**
+                     * path 권한이 없거나 path 자체가 없는 그룹 헤더: 순수 토글 버튼.
+                     * 자체 페이지가 없으므로 active 배경은 적용하지 않고
+                     * 활성 표시는 펼쳐진 자식 항목이 담당한다.
+                     */
                     <button
                       onClick={() => toggleMenu(item.path)}
                       aria-expanded={isCollapsed ? undefined : isExpanded}
                       className={`
                         flex items-center gap-3 rounded-lg transition-colors w-full
+                        text-muted-foreground hover:bg-muted
                         ${isCollapsed ? 'justify-center px-3 py-3' : 'px-4 py-2.5'}
-                        ${isActive
-                          ? 'bg-primary text-primary-foreground'
-                          : 'text-muted-foreground hover:bg-muted'}
                       `}
                       title={isCollapsed ? item.label : undefined}
                     >

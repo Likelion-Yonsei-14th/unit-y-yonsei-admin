@@ -1,12 +1,46 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Plus, Trash2, Edit2, Upload, Package } from "lucide-react";
+import { toast } from "sonner";
 import { mockLostItems, type LostItem } from "@/mocks/lost-items";
 import { PageHeaderAction } from "@/components/common/page-header-action";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+
+const todayString = () => new Date().toISOString().slice(0, 10);
 
 export function LostFoundPage() {
   const [lostItems, setLostItems] = useState<LostItem[]>(mockLostItems);
   const [showForm, setShowForm] = useState(false);
   const [editingItem, setEditingItem] = useState<LostItem | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<LostItem | null>(null);
+
+  const [nameDraft, setNameDraft] = useState("");
+  const [locationDraft, setLocationDraft] = useState("");
+  const [descriptionDraft, setDescriptionDraft] = useState("");
+  const [hasImageDraft, setHasImageDraft] = useState(false);
+
+  useEffect(() => {
+    if (!showForm) return;
+    if (editingItem) {
+      setNameDraft(editingItem.name);
+      setLocationDraft(editingItem.location);
+      setDescriptionDraft(editingItem.description ?? "");
+      setHasImageDraft(editingItem.hasImage);
+    } else {
+      setNameDraft("");
+      setLocationDraft("");
+      setDescriptionDraft("");
+      setHasImageDraft(false);
+    }
+  }, [editingItem, showForm]);
 
   const handleCreateNew = () => {
     setEditingItem(null);
@@ -18,11 +52,50 @@ export function LostFoundPage() {
     setShowForm(true);
   };
 
-  const handleDelete = (id: number) => {
-    setLostItems(lostItems.filter(item => item.id !== id));
+  const confirmDelete = () => {
+    if (!pendingDelete) return;
+    setLostItems(lostItems.filter(item => item.id !== pendingDelete.id));
+    toast.success("분실물을 삭제했습니다.");
+    setPendingDelete(null);
   };
 
   const handleCancel = () => {
+    setShowForm(false);
+    setEditingItem(null);
+  };
+
+  const handleSave = () => {
+    if (!nameDraft.trim() || !locationDraft.trim()) {
+      toast.error("분실물명과 발견 위치를 모두 입력해주세요.");
+      return;
+    }
+    const description = descriptionDraft.trim() || undefined;
+    if (editingItem) {
+      setLostItems(lostItems.map(item =>
+        item.id === editingItem.id
+          ? {
+              ...item,
+              name: nameDraft.trim(),
+              location: locationDraft.trim(),
+              description,
+              hasImage: hasImageDraft,
+            }
+          : item,
+      ));
+      toast.success("분실물 정보를 수정했습니다.");
+    } else {
+      const nextId = lostItems.reduce((max, item) => Math.max(max, item.id), 0) + 1;
+      const newItem: LostItem = {
+        id: nextId,
+        name: nameDraft.trim(),
+        location: locationDraft.trim(),
+        date: todayString(),
+        hasImage: hasImageDraft,
+        description,
+      };
+      setLostItems([newItem, ...lostItems]);
+      toast.success("분실물을 등록했습니다.");
+    }
     setShowForm(false);
     setEditingItem(null);
   };
@@ -78,14 +151,14 @@ export function LostFoundPage() {
                   </td>
                   <td className="px-6 py-4 text-center">
                     <div className="flex items-center justify-center gap-2">
-                      <button 
+                      <button
                         onClick={() => handleEdit(item)}
                         className="p-2 text-primary hover:bg-ds-primary-subtle rounded-lg transition-colors"
                       >
                         <Edit2 size={16} />
                       </button>
-                      <button 
-                        onClick={() => handleDelete(item.id)}
+                      <button
+                        onClick={() => setPendingDelete(item)}
                         className="p-2 text-destructive hover:bg-ds-error-subtle rounded-lg transition-colors"
                       >
                         <Trash2 size={16} />
@@ -111,7 +184,7 @@ export function LostFoundPage() {
             <h2 className="text-xl font-bold text-foreground">
               {editingItem ? "분실물 수정" : "분실물 등록"}
             </h2>
-            <button 
+            <button
               onClick={handleCancel}
               className="px-4 py-2 text-muted-foreground hover:bg-muted rounded-lg transition-colors text-sm"
             >
@@ -126,7 +199,8 @@ export function LostFoundPage() {
                 <input
                   type="text"
                   placeholder="분실물 이름을 입력하세요"
-                  defaultValue={editingItem?.name || ""}
+                  value={nameDraft}
+                  onChange={(e) => setNameDraft(e.target.value)}
                   className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
                 />
               </div>
@@ -135,7 +209,8 @@ export function LostFoundPage() {
                 <input
                   type="text"
                   placeholder="발견 위치를 입력하세요"
-                  defaultValue={editingItem?.location || ""}
+                  value={locationDraft}
+                  onChange={(e) => setLocationDraft(e.target.value)}
                   className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
                 />
               </div>
@@ -146,33 +221,71 @@ export function LostFoundPage() {
               <textarea
                 rows={4}
                 placeholder="분실물에 대한 상세 설명을 입력하세요"
-                defaultValue={editingItem?.description || ""}
+                value={descriptionDraft}
+                onChange={(e) => setDescriptionDraft(e.target.value)}
                 className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all resize-none"
               />
             </div>
 
             <div>
               <label className="block text-sm font-semibold text-foreground mb-2">분실물 사진</label>
-              <div className="border-2 border-dashed border-ds-border-strong rounded-lg p-8 text-center hover:border-primary transition-colors cursor-pointer">
+              <label className="block border-2 border-dashed border-ds-border-strong rounded-lg p-8 text-center hover:border-primary transition-colors cursor-pointer">
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => setHasImageDraft(!!e.target.files?.length)}
+                />
                 <Upload className="mx-auto mb-3 text-ds-text-disabled" size={32} />
-                <p className="text-sm text-muted-foreground">분실물 사진을 업로드하세요</p>
-              </div>
+                <p className="text-sm text-muted-foreground">
+                  {hasImageDraft ? "사진이 첨부되었습니다." : "분실물 사진을 업로드하세요"}
+                </p>
+              </label>
             </div>
 
             <div className="flex justify-end gap-3 pt-4">
-              <button 
+              <button
                 onClick={handleCancel}
                 className="px-6 py-3 border border-border text-foreground rounded-lg hover:bg-muted transition-colors"
               >
                 취소
               </button>
-              <button className="px-6 py-3 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-lg hover:shadow-lg hover:shadow-blue-200 transition-all duration-200">
+              <button
+                onClick={handleSave}
+                className="px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-ds-primary-pressed transition-colors duration-200"
+              >
                 {editingItem ? "수정 완료" : "등록"}
               </button>
             </div>
           </div>
         </div>
       )}
+
+      {/* 삭제 확인 다이얼로그 */}
+      <AlertDialog
+        open={!!pendingDelete}
+        onOpenChange={(o) => {
+          if (!o) setPendingDelete(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>분실물 삭제</AlertDialogTitle>
+            <AlertDialogDescription>
+              "{pendingDelete?.name}" 분실물 기록을 삭제합니다. 삭제 후에는 복구할 수 없습니다.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>취소</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              삭제
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

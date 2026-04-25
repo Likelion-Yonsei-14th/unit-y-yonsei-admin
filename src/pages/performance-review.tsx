@@ -184,9 +184,9 @@ export function PerformanceReviewPage() {
               <div key={song} className="flex items-center gap-3">
                 <div className={`
                   w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm
-                  ${index === 0 ? 'bg-gradient-to-r from-yellow-400 to-orange-400 text-white' :
-                    index === 1 ? 'bg-gradient-to-r from-slate-300 to-slate-400 text-white' :
-                    index === 2 ? 'bg-gradient-to-r from-amber-600 to-amber-700 text-white' :
+                  ${index === 0 ? 'bg-ds-warning text-white' :
+                    index === 1 ? 'bg-ds-gray-300 text-white' :
+                    index === 2 ? 'bg-ds-warning-pressed text-white' :
                     'bg-muted text-muted-foreground'}
                 `}>
                   {index + 1}
@@ -225,7 +225,7 @@ export function PerformanceReviewPage() {
               >
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center gap-3">
-                    <div className="px-3 py-1 bg-gradient-to-r from-blue-500 to-cyan-500 text-white text-sm rounded-full">
+                    <div className="px-3 py-1 bg-primary text-primary-foreground text-sm rounded-full">
                       {review.performanceTeam}
                     </div>
                     {review.isHidden && (

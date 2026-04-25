@@ -177,7 +177,7 @@ export function ReservationManagement() {
               className={`
                 relative w-14 h-7 rounded-full transition-all duration-300
                 ${reservationEnabled
-                  ? 'bg-gradient-to-r from-blue-500 to-cyan-500 shadow-lg shadow-blue-200'
+                  ? 'bg-primary shadow-lg'
                   : 'bg-ds-border-strong'
                 }
               `}

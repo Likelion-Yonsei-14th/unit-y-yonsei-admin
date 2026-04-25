@@ -7,15 +7,14 @@ import { cn } from '@/components/ui/utils';
  *
  * 각 페이지가 제각각 px/py와 text 사이즈를 쓰던 것을 하나로 통일하기 위해
  * shadcn Button을 고정 size="lg"로 감싸고, 톤만 prop으로 선택하게 한다.
- * 톤별 그라데이션은 Figma Make 원본 비주얼을 유지 — 색상 토큰 마이그레이션은 별건.
  */
 type Tone = 'blue' | 'purple' | 'green' | 'neutral';
 
 const TONE_CLASS: Record<Tone, string> = {
-  blue: 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white hover:shadow-lg hover:shadow-blue-200',
-  purple: 'bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:shadow-lg hover:shadow-purple-200',
-  green: 'bg-gradient-to-r from-green-500 to-emerald-500 text-white hover:shadow-lg hover:shadow-green-200',
-  neutral: 'bg-slate-800 text-white hover:bg-slate-700',
+  blue: 'bg-primary text-primary-foreground hover:bg-ds-primary-pressed',
+  purple: 'bg-ds-violet-500 text-white hover:bg-ds-violet-700',
+  green: 'bg-ds-success text-white hover:bg-ds-success-pressed',
+  neutral: 'bg-ds-gray-800 text-white hover:bg-ds-gray-700',
 };
 
 interface Props extends Omit<ComponentProps<'button'>, 'className'> {

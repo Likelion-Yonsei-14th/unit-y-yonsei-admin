@@ -72,18 +72,20 @@ export function CreateAdmin() {
     }, 3000);
   };
 
+  // 역할별 식별 색상. brand triplet(blue/violet/pink) + 상태 토큰 조합으로
+  // 역할별 시각 구분만 유지하고 그라데이션은 제거.
   const getPermissionBadgeColor = (type: PermissionType) => {
     switch (type) {
       case "Super":
-        return "from-purple-500 to-pink-500";
+        return "bg-ds-violet-500";
       case "Master":
-        return "from-blue-500 to-cyan-500";
+        return "bg-primary";
       case "Booth":
-        return "from-green-500 to-emerald-500";
+        return "bg-ds-success";
       case "Performer":
-        return "from-orange-500 to-red-500";
+        return "bg-ds-warning";
       default:
-        return "from-slate-400 to-slate-500";
+        return "bg-ds-gray-300";
     }
   };
 
@@ -188,7 +190,7 @@ export function CreateAdmin() {
                   className={`
                     p-4 rounded-lg border-2 transition-all text-left
                     ${permissionType === type
-                      ? `border-transparent bg-gradient-to-r ${getPermissionBadgeColor(type)} text-white shadow-lg`
+                      ? `border-transparent ${getPermissionBadgeColor(type)} text-white shadow-lg`
                       : 'border hover:border-ds-border-strong bg-background'
                     }
                   `}
@@ -230,8 +232,8 @@ export function CreateAdmin() {
 
           {/* Performance Team Name - Conditional */}
           {needsPerformanceTeamName && (
-            <div className="p-4 bg-orange-50 border border-orange-200 rounded-lg">
-              <label className="block text-sm font-semibold text-orange-900 mb-2">
+            <div className="p-4 bg-ds-warning-subtle border border-ds-warning rounded-lg">
+              <label className="block text-sm font-semibold text-ds-warning-pressed mb-2">
                 공연팀명 <span className="text-destructive">*</span>
               </label>
               <input
@@ -240,7 +242,7 @@ export function CreateAdmin() {
                 onChange={(e) => setPerformanceTeamName(e.target.value)}
                 placeholder="공연팀 이름을 입력하세요"
                 className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 transition-all bg-background ${
-                  errors.performanceTeamName ? 'border-destructive focus:ring-destructive' : 'border-orange-200 focus:ring-orange-500'
+                  errors.performanceTeamName ? 'border-destructive focus:ring-destructive' : 'border-ds-warning focus:ring-ds-warning'
                 }`}
               />
               {errors.performanceTeamName && <p className="text-destructive text-xs mt-1">{errors.performanceTeamName}</p>}
@@ -327,7 +329,7 @@ export function CreateAdmin() {
           </button>
           <button
             type="submit"
-            className="px-6 py-3 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-lg hover:shadow-lg hover:shadow-blue-200 transition-all duration-200 flex items-center gap-2"
+            className="px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-ds-primary-pressed transition-colors duration-200 flex items-center gap-2"
           >
             <UserPlus size={18} />
             계정 생성
