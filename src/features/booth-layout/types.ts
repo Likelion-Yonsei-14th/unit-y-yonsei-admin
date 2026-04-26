@@ -17,10 +17,12 @@ export interface MapSection {
 /**
  * 백엔드 응답 (snake_case).
  * 좌표·크기는 모두 이미지 기준 0–100 % (리사이즈/해상도에 안전).
- * - (x, y) = 사각형 핀의 **중심점** 좌표. 프론트가 -translate-[xy]-1/2 로 배치.
- * - (width, height) = 사각형 footprint 의 가로·세로 크기.
+ * - id = surrogate PK. 한 운영자(booth_id)가 같은 (date, section)에 자리 여러 개 가능.
+ * - (x, y) = 사각형 핀의 **중심점** 좌표.
+ * - (width, height) = 사각형 footprint.
  */
 export interface BoothPlacementDTO {
+  id: number;
   booth_id: number;
   date: string;
   section: MapSectionId;
@@ -33,6 +35,7 @@ export interface BoothPlacementDTO {
 
 /** 프론트 모델 (camelCase). 매퍼를 거쳐 변환. */
 export interface BoothPlacement {
+  id: number;
   boothId: number;
   date: string;
   section: MapSectionId;
