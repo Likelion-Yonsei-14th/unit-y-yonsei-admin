@@ -70,8 +70,10 @@ export function BoothMapPicker({
         canEnter={canEnter}
         onPinClick={setFocusedBoothId}
       />
+      {/* 우측 여백(right-24)은 전역 CS 플로팅 버튼(fixed bottom-6 right-6, 56px)과
+          슬라이더 우측 chevron 이 겹치지 않도록 확보한 클리어런스. */}
       {booths.length > 0 ? (
-        <div className="absolute inset-x-4 bottom-4">
+        <div className="absolute bottom-4 left-4 right-24">
           <BoothSlider
             booths={booths}
             focusedBoothId={focusedBoothId}
@@ -82,7 +84,7 @@ export function BoothMapPicker({
           />
         </div>
       ) : (
-        <div className="absolute inset-x-4 bottom-4 rounded-xl bg-background/90 p-4 text-center text-sm text-muted-foreground shadow-sm backdrop-blur">
+        <div className="absolute bottom-4 left-4 right-24 rounded-xl bg-background/90 p-4 text-center text-sm text-muted-foreground shadow-sm backdrop-blur">
           해당 날짜에 배치된 부스가 없습니다.
         </div>
       )}
