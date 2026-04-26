@@ -47,6 +47,12 @@ export const MAIN_NAV: NavItem[] = [
     requires: 'performance.read',
   },
   {
+    path: '/booth-layout/edit',
+    label: '부스 좌표 편집',
+    icon: Map,
+    requires: 'boothlayout.edit',
+  },
+  {
     path: '/general',
     label: '기타 정보 관리',
     icon: Settings,
