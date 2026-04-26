@@ -75,9 +75,14 @@ export function PlacementEditorCanvas({
     });
   };
 
+  // ref 로 라이브 상태를 잡아 effect 가 매 mousemove 마다 재구독되지 않도록 한다.
+  const dragStateRef = useRef(dragState);
+  dragStateRef.current = dragState;
+
   const onPinMouseDown = (e: React.MouseEvent, p: BoothPlacement) => {
     e.stopPropagation();
-    e.preventDefault();
+    // preventDefault 는 의도적으로 호출하지 않음 — click 이벤트가 정상적으로 발생해야
+    // 무이동 탭의 onClick selection 경로가 살아 있다.
     onSelectPlacement(p.id);
     setDragState({
       placementId: p.id,
@@ -88,19 +93,21 @@ export function PlacementEditorCanvas({
     });
   };
 
+  // dragState 객체가 바뀔 때마다 재구독되지 않도록 boolean 만 dep 으로 올린다.
+  const isDragActive = dragState !== null;
   useEffect(() => {
-    if (!dragState || !rect) return;
+    if (!isDragActive || !rect) return;
     const onMove = (e: MouseEvent) => {
-      const dxPct = ((e.clientX - dragState.startClientX) / rect.width) * 100;
-      const dyPct = ((e.clientY - dragState.startClientY) / rect.height) * 100;
+      const ds = dragStateRef.current;
+      if (!ds) return;
+      const dxPct = ((e.clientX - ds.startClientX) / rect.width) * 100;
+      const dyPct = ((e.clientY - ds.startClientY) / rect.height) * 100;
       setDragState((s) => (s ? { ...s, dxPct, dyPct } : s));
     };
     const onUp = () => {
-      if (Math.abs(dragState.dxPct) > 0.05 || Math.abs(dragState.dyPct) > 0.05) {
-        onMovePlacement(dragState.placementId, {
-          dxPct: dragState.dxPct,
-          dyPct: dragState.dyPct,
-        });
+      const ds = dragStateRef.current;
+      if (ds && (Math.abs(ds.dxPct) > 0.05 || Math.abs(ds.dyPct) > 0.05)) {
+        onMovePlacement(ds.placementId, { dxPct: ds.dxPct, dyPct: ds.dyPct });
       }
       setDragState(null);
     };
@@ -110,7 +117,7 @@ export function PlacementEditorCanvas({
       window.removeEventListener('mousemove', onMove);
       window.removeEventListener('mouseup', onUp);
     };
-  }, [dragState, rect, onMovePlacement]);
+  }, [isDragActive, rect, onMovePlacement]);
 
   return (
     <div
