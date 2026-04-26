@@ -13,6 +13,11 @@ export interface PlacementEditorCanvasProps {
   onCreatePlacement: (input: { x: number; y: number; width: number; height: number }) => void;
   /** 핀 드래그 이동 commit. dxPct/dyPct 는 이미지 rect 기준 변위(0–100 %). */
   onMovePlacement: (id: number, delta: { dxPct: number; dyPct: number }) => void;
+  /** 핀 리사이즈 commit. next 는 리사이즈 후 좌표/크기. */
+  onResizePlacement: (
+    id: number,
+    next: { x: number; y: number; width: number; height: number },
+  ) => void;
   /** 마지막에 만든 placement 크기 sticky default. */
   defaultSize: { width: number; height: number };
 }
@@ -20,6 +25,19 @@ export interface PlacementEditorCanvasProps {
 function clamp(v: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, v));
 }
+
+type HandleId = 'nw' | 'n' | 'ne' | 'e' | 'se' | 's' | 'sw' | 'w';
+
+const HANDLE_OFFSETS: Record<HandleId, { dx: string; dy: string; cursor: string }> = {
+  nw: { dx: '0%',   dy: '0%',   cursor: 'nwse-resize' },
+  n:  { dx: '50%',  dy: '0%',   cursor: 'ns-resize'   },
+  ne: { dx: '100%', dy: '0%',   cursor: 'nesw-resize' },
+  e:  { dx: '100%', dy: '50%',  cursor: 'ew-resize'   },
+  se: { dx: '100%', dy: '100%', cursor: 'nwse-resize' },
+  s:  { dx: '50%',  dy: '100%', cursor: 'ns-resize'   },
+  sw: { dx: '0%',   dy: '100%', cursor: 'nesw-resize' },
+  w:  { dx: '0%',   dy: '50%',  cursor: 'ew-resize'   },
+};
 
 export function PlacementEditorCanvas({
   section,
@@ -29,6 +47,7 @@ export function PlacementEditorCanvas({
   onSelectPlacement,
   onCreatePlacement,
   onMovePlacement,
+  onResizePlacement,
   defaultSize,
 }: PlacementEditorCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -47,6 +66,18 @@ export function PlacementEditorCanvas({
     dxPct: number;
     dyPct: number;
   } | null>(null);
+
+  const [resizeState, setResizeState] = useState<{
+    placementId: number;
+    handle: HandleId;
+    startClientX: number;
+    startClientY: number;
+    origin: { x: number; y: number; width: number; height: number };
+    next: { x: number; y: number; width: number; height: number };
+  } | null>(null);
+
+  const resizeStateRef = useRef(resizeState);
+  resizeStateRef.current = resizeState;
 
   const onContainerClick = (e: React.MouseEvent<HTMLDivElement>) => {
     // 핀 클릭은 자식 button 의 stopPropagation 으로 흡수됨.
@@ -119,6 +150,66 @@ export function PlacementEditorCanvas({
     };
   }, [isDragActive, rect, onMovePlacement]);
 
+  const onHandleMouseDown = (
+    e: React.MouseEvent,
+    p: BoothPlacement,
+    handle: HandleId,
+  ) => {
+    e.stopPropagation();
+    e.preventDefault();
+    setResizeState({
+      placementId: p.id,
+      handle,
+      startClientX: e.clientX,
+      startClientY: e.clientY,
+      origin: { x: p.x, y: p.y, width: p.width, height: p.height },
+      next: { x: p.x, y: p.y, width: p.width, height: p.height },
+    });
+  };
+
+  const isResizeActive = resizeState !== null;
+  useEffect(() => {
+    if (!isResizeActive || !rect) return;
+    const MIN = 1; // 최소 1% × 1%
+    const onMove = (e: MouseEvent) => {
+      const rs = resizeStateRef.current;
+      if (!rs) return;
+      const dxPct = ((e.clientX - rs.startClientX) / rect.width) * 100;
+      const dyPct = ((e.clientY - rs.startClientY) / rect.height) * 100;
+      const o = rs.origin;
+      // 핀은 중심좌표 기준이므로 좌상단 기준 좌표로 변환 후 다시 중심으로 환산.
+      let leftPct = o.x - o.width / 2;
+      let topPct = o.y - o.height / 2;
+      let rightPct = o.x + o.width / 2;
+      let bottomPct = o.y + o.height / 2;
+      const h = rs.handle;
+      if (h === 'nw' || h === 'w' || h === 'sw') leftPct = o.x - o.width / 2 + dxPct;
+      if (h === 'ne' || h === 'e' || h === 'se') rightPct = o.x + o.width / 2 + dxPct;
+      if (h === 'nw' || h === 'n' || h === 'ne') topPct = o.y - o.height / 2 + dyPct;
+      if (h === 'sw' || h === 's' || h === 'se') bottomPct = o.y + o.height / 2 + dyPct;
+      leftPct = Math.max(0, leftPct);
+      topPct = Math.max(0, topPct);
+      rightPct = Math.min(100, rightPct);
+      bottomPct = Math.min(100, bottomPct);
+      const width = Math.max(MIN, rightPct - leftPct);
+      const height = Math.max(MIN, bottomPct - topPct);
+      const x = leftPct + width / 2;
+      const y = topPct + height / 2;
+      setResizeState((s) => (s ? { ...s, next: { x, y, width, height } } : s));
+    };
+    const onUp = () => {
+      const rs = resizeStateRef.current;
+      if (rs) onResizePlacement(rs.placementId, rs.next);
+      setResizeState(null);
+    };
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+    return () => {
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+    };
+  }, [isResizeActive, rect, onResizePlacement]);
+
   return (
     <div
       ref={containerRef}
@@ -147,8 +238,19 @@ export function PlacementEditorCanvas({
             const isSelected = p.id === selectedPlacementId;
             const isInGroup = !isSelected && p.boothId === selectedBoothId;
             const isDragging = dragState?.placementId === p.id;
-            const liveX = isDragging ? p.x + dragState!.dxPct : p.x;
-            const liveY = isDragging ? p.y + dragState!.dyPct : p.y;
+            const isResizing = resizeState?.placementId === p.id;
+            const liveX = isDragging
+              ? p.x + dragState!.dxPct
+              : isResizing
+              ? resizeState!.next.x
+              : p.x;
+            const liveY = isDragging
+              ? p.y + dragState!.dyPct
+              : isResizing
+              ? resizeState!.next.y
+              : p.y;
+            const liveW = isResizing ? resizeState!.next.width : p.width;
+            const liveH = isResizing ? resizeState!.next.height : p.height;
             return (
               <button
                 key={p.id}
@@ -161,8 +263,8 @@ export function PlacementEditorCanvas({
                 style={{
                   left: `${liveX}%`,
                   top: `${liveY}%`,
-                  width: `${p.width}%`,
-                  height: `${p.height}%`,
+                  width: `${liveW}%`,
+                  height: `${liveH}%`,
                   minWidth: 8,
                   minHeight: 8,
                 }}
@@ -176,6 +278,27 @@ export function PlacementEditorCanvas({
                 aria-label={`자리 ${p.boothNumber}`}
               >
                 <span className="truncate">{p.boothNumber}</span>
+                {isSelected && !isDragging && !isResizing && (
+                  <>
+                    {(Object.keys(HANDLE_OFFSETS) as HandleId[]).map((h) => {
+                      const o = HANDLE_OFFSETS[h];
+                      return (
+                        <span
+                          key={h}
+                          onMouseDown={(e) => onHandleMouseDown(e, p, h)}
+                          style={{
+                            left: o.dx,
+                            top: o.dy,
+                            cursor: o.cursor,
+                            transform: 'translate(-50%, -50%)',
+                          }}
+                          className="pointer-events-auto absolute h-2 w-2 rounded-sm border border-primary bg-background"
+                          aria-label={`핸들 ${h}`}
+                        />
+                      );
+                    })}
+                  </>
+                )}
               </button>
             );
           })}
