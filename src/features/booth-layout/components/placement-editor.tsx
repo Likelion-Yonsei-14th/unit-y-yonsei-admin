@@ -15,6 +15,8 @@ import {
   type FestivalDate,
 } from '@/features/booth-layout/sections';
 import type { BoothPlacement, MapSectionId } from '@/features/booth-layout/types';
+// TODO(T6.2+): 백엔드 붙는 시점에 페이지에서 useBooths() 로 끌어와 prop 으로 내려줄 것.
+// 현재는 mock 환경이라 직접 import 해 임시 사용.
 import { mockBoothsById } from '@/mocks/booth-profile';
 import { PlacementToolbar } from './placement-toolbar';
 import { PlacementList } from './placement-list';
@@ -50,8 +52,11 @@ function clamp(v: number, min: number, max: number): number {
 
 export function PlacementEditor() {
   const [selectedDate, setSelectedDate] = useState<FestivalDate>(FESTIVAL_DATES[0]);
-  const validSections = sectionsValidFor(selectedDate);
+  const validSections = useMemo(() => sectionsValidFor(selectedDate), [selectedDate]);
   const [selectedSection, setSelectedSection] = useState<MapSectionId>(validSections[0]);
+  // selectedBoothId 는 의도적으로 날짜/섹션 전환에서 유지된다 — 사용자가 한 운영자의
+  // 자리들을 여러 (date, section) 에 걸쳐 연속으로 배치하는 흐름을 지원. 반면
+  // selectedPlacementId 는 특정 row 를 가리키므로 컨텍스트 전환 시 해제된다.
   const [selectedBoothId, setSelectedBoothId] = useState<number | null>(null);
   const [selectedPlacementId, setSelectedPlacementId] = useState<number | null>(null);
   const [stickySize, setStickySize] = useState<{ width: number; height: number }>(DEFAULT_SIZE);
@@ -160,6 +165,9 @@ export function PlacementEditor() {
     try {
       await deleteMut.mutateAsync({ id, date: target.date, boothId: target.boothId });
       setSelectedPlacementId(null);
+      // Edge case: 삭제 직후 같은 booth_number 를 새로 만들면 undo 시 UNIQUE 충돌이 나
+      // toast.error 로 surfaced 됨. 1회 admin 시딩 도구라 명시적 안내로 충분 — 더
+      // 나은 처리(충돌 시 자동 재할당 등) 는 운영 어드민 승격 시 follow-up.
       recordUndo(() =>
         createMut
           .mutateAsync({
