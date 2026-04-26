@@ -39,7 +39,8 @@ export function PlacementEditorCanvas({
 
   const onContainerClick = (e: React.MouseEvent<HTMLDivElement>) => {
     // 핀 클릭은 자식 button 의 stopPropagation 으로 흡수됨.
-    if (e.target !== e.currentTarget) return;
+    // 그 외 자식(특히 <img> — 캔버스의 시각 surface) 클릭은 컨테이너 클릭과 동일 취급.
+    if ((e.target as HTMLElement).closest('button')) return;
     if (!rect) return;
     if (selectedBoothId == null) {
       // 운영자 미선택 — 선택만 해제. 좌측 리스트 강조는 부모 책임.
