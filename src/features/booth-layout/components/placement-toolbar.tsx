@@ -19,7 +19,9 @@ export interface PlacementToolbarProps {
 
 /** 5/27 화 / 5/28 수 / 5/29 목 라벨 */
 function dateLabel(d: string): string {
-  const day = ['일','월','화','수','목','금','토'][new Date(d).getDay()];
+  // new Date('YYYY-MM-DD') 는 UTC 자정으로 파싱되어 KST 외 환경에서 요일이 밀린다.
+  // 축제는 한국 시간이 SOT — KST 자정으로 명시.
+  const day = ['일','월','화','수','목','금','토'][new Date(`${d}T00:00:00+09:00`).getDay()];
   const m = Number(d.slice(5, 7));
   const dd = Number(d.slice(8, 10));
   return `${m}/${dd} (${day})`;
