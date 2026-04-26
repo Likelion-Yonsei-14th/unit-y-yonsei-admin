@@ -1,5 +1,5 @@
 // src/features/booth-layout/components/placement-editor-canvas.tsx
-import { useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useImagePaintedRect } from '@/features/booth-layout/hooks/use-image-painted-rect';
 import type { BoothPlacement, MapSection } from '@/features/booth-layout/types';
 
@@ -11,6 +11,8 @@ export interface PlacementEditorCanvasProps {
   onSelectPlacement: (id: number | null) => void;
   /** 새 placement 생성 콜백. 좌표/크기는 이미지 기준 0–100 %. */
   onCreatePlacement: (input: { x: number; y: number; width: number; height: number }) => void;
+  /** 핀 드래그 이동 commit. dxPct/dyPct 는 이미지 rect 기준 변위(0–100 %). */
+  onMovePlacement: (id: number, delta: { dxPct: number; dyPct: number }) => void;
   /** 마지막에 만든 placement 크기 sticky default. */
   defaultSize: { width: number; height: number };
 }
@@ -26,6 +28,7 @@ export function PlacementEditorCanvas({
   selectedBoothId,
   onSelectPlacement,
   onCreatePlacement,
+  onMovePlacement,
   defaultSize,
 }: PlacementEditorCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -36,6 +39,14 @@ export function PlacementEditorCanvas({
     imgRef,
     reMeasureKey: section.id,
   });
+
+  const [dragState, setDragState] = useState<{
+    placementId: number;
+    startClientX: number;
+    startClientY: number;
+    dxPct: number;
+    dyPct: number;
+  } | null>(null);
 
   const onContainerClick = (e: React.MouseEvent<HTMLDivElement>) => {
     // 핀 클릭은 자식 button 의 stopPropagation 으로 흡수됨.
@@ -64,6 +75,43 @@ export function PlacementEditorCanvas({
     });
   };
 
+  const onPinMouseDown = (e: React.MouseEvent, p: BoothPlacement) => {
+    e.stopPropagation();
+    e.preventDefault();
+    onSelectPlacement(p.id);
+    setDragState({
+      placementId: p.id,
+      startClientX: e.clientX,
+      startClientY: e.clientY,
+      dxPct: 0,
+      dyPct: 0,
+    });
+  };
+
+  useEffect(() => {
+    if (!dragState || !rect) return;
+    const onMove = (e: MouseEvent) => {
+      const dxPct = ((e.clientX - dragState.startClientX) / rect.width) * 100;
+      const dyPct = ((e.clientY - dragState.startClientY) / rect.height) * 100;
+      setDragState((s) => (s ? { ...s, dxPct, dyPct } : s));
+    };
+    const onUp = () => {
+      if (Math.abs(dragState.dxPct) > 0.05 || Math.abs(dragState.dyPct) > 0.05) {
+        onMovePlacement(dragState.placementId, {
+          dxPct: dragState.dxPct,
+          dyPct: dragState.dyPct,
+        });
+      }
+      setDragState(null);
+    };
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+    return () => {
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+    };
+  }, [dragState, rect, onMovePlacement]);
+
   return (
     <div
       ref={containerRef}
@@ -91,29 +139,33 @@ export function PlacementEditorCanvas({
           {placements.map((p) => {
             const isSelected = p.id === selectedPlacementId;
             const isInGroup = !isSelected && p.boothId === selectedBoothId;
+            const isDragging = dragState?.placementId === p.id;
+            const liveX = isDragging ? p.x + dragState!.dxPct : p.x;
+            const liveY = isDragging ? p.y + dragState!.dyPct : p.y;
             return (
               <button
                 key={p.id}
                 type="button"
+                onMouseDown={(e) => onPinMouseDown(e, p)}
                 onClick={(e) => {
                   e.stopPropagation();
                   onSelectPlacement(p.id);
                 }}
                 style={{
-                  left: `${p.x}%`,
-                  top: `${p.y}%`,
+                  left: `${liveX}%`,
+                  top: `${liveY}%`,
                   width: `${p.width}%`,
                   height: `${p.height}%`,
                   minWidth: 8,
                   minHeight: 8,
                 }}
-                className={`pointer-events-auto absolute flex -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-md border-2 text-xs font-semibold shadow-sm transition-all ${
+                className={`pointer-events-auto absolute flex -translate-x-1/2 -translate-y-1/2 cursor-grab items-center justify-center rounded-md border-2 text-xs font-semibold shadow-sm transition-all ${
                   isSelected
                     ? 'border-primary bg-primary/30 ring-2 ring-primary/40'
                     : isInGroup
                     ? 'border-ds-success-pressed bg-ds-success-subtle/70'
                     : 'border-border bg-background/60 hover:border-ds-border-strong'
-                }`}
+                } ${isDragging ? 'cursor-grabbing' : ''}`}
                 aria-label={`자리 ${p.boothNumber}`}
               >
                 <span className="truncate">{p.boothNumber}</span>
