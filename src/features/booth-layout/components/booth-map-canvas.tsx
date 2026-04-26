@@ -51,10 +51,6 @@ export function BoothMapCanvas({
     setLayers([section]);
   }, [section, prev]);
 
-  const focused = boothsInSection.find((b) => b.placement.boothId === focusedBoothId);
-  const translateX = focused ? 50 - focused.placement.x : 0;
-  const translateY = focused ? 50 - focused.placement.y : 0;
-
   return (
     <div ref={containerRef} className="relative h-full w-full overflow-hidden bg-muted">
       {/* 2-레이어 이미지 크로스페이드. object-contain 으로 letterbox. */}
@@ -72,16 +68,19 @@ export function BoothMapCanvas({
         />
       ))}
 
-      {/* 핀 오버레이 — 이미지 painted rect 에 정합. 내부 0-100 % = 이미지 0-100 %. */}
+      {/* 핀 오버레이 — 이미지 painted rect 에 정합. 내부 0-100 % = 이미지 0-100 %.
+          포커스 팬(translate) 은 의도적으로 제거 — 이미지가 가만히 있는데 오버레이만
+          움직여서 핀이 한 덩이로 어긋나 보이는 회귀가 있었다. focused 는 색·ring 으로만
+          강조한다. 운영 단계에서 "특정 핀을 화면 중앙으로 가져오기" 가 다시 필요해지면
+          zoom/pan 인프라(별 PR) 위에서 재구현 예정. */}
       {imageRect && (
         <div
-          className="pointer-events-none absolute transition-transform duration-300 ease-out"
+          className="pointer-events-none absolute"
           style={{
             left: imageRect.left,
             top: imageRect.top,
             width: imageRect.width,
             height: imageRect.height,
-            transform: `translate(${translateX}%, ${translateY}%)`,
           }}
         >
           {boothsInSection.map((b) => (
