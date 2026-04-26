@@ -9,6 +9,14 @@ export interface PlacementEditorCanvasProps {
   selectedPlacementId: number | null;
   selectedBoothId: number | null;
   onSelectPlacement: (id: number | null) => void;
+  /** 새 placement 생성 콜백. 좌표/크기는 이미지 기준 0–100 %. */
+  onCreatePlacement: (input: { x: number; y: number; width: number; height: number }) => void;
+  /** 마지막에 만든 placement 크기 sticky default. */
+  defaultSize: { width: number; height: number };
+}
+
+function clamp(v: number, min: number, max: number): number {
+  return Math.max(min, Math.min(max, v));
 }
 
 export function PlacementEditorCanvas({
@@ -17,6 +25,8 @@ export function PlacementEditorCanvas({
   selectedPlacementId,
   selectedBoothId,
   onSelectPlacement,
+  onCreatePlacement,
+  defaultSize,
 }: PlacementEditorCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const imgRef = useRef<HTMLImageElement>(null);
@@ -27,15 +37,37 @@ export function PlacementEditorCanvas({
     reMeasureKey: section.id,
   });
 
-  const onBackgroundClick = (e: React.MouseEvent) => {
-    if (e.target === e.currentTarget) onSelectPlacement(null);
+  const onContainerClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    // 핀 클릭은 자식 button 의 stopPropagation 으로 흡수됨.
+    if (e.target !== e.currentTarget) return;
+    if (!rect) return;
+    if (selectedBoothId == null) {
+      // 운영자 미선택 — 선택만 해제. 좌측 리스트 강조는 부모 책임.
+      onSelectPlacement(null);
+      return;
+    }
+    const containerBox = containerRef.current?.getBoundingClientRect();
+    if (!containerBox) return;
+    const px = e.clientX - containerBox.left - rect.left;
+    const py = e.clientY - containerBox.top - rect.top;
+    const x = (px / rect.width) * 100;
+    const y = (py / rect.height) * 100;
+    if (x < 0 || x > 100 || y < 0 || y > 100) return;
+    const halfW = defaultSize.width / 2;
+    const halfH = defaultSize.height / 2;
+    onCreatePlacement({
+      x: clamp(x, halfW, 100 - halfW),
+      y: clamp(y, halfH, 100 - halfH),
+      width: defaultSize.width,
+      height: defaultSize.height,
+    });
   };
 
   return (
     <div
       ref={containerRef}
       className="relative h-full w-full overflow-hidden bg-muted"
-      onClick={onBackgroundClick}
+      onClick={onContainerClick}
     >
       <img
         ref={imgRef}
