@@ -18,6 +18,10 @@ export interface PlacementEditorCanvasProps {
     id: number,
     next: { x: number; y: number; width: number; height: number },
   ) => void;
+  /** 미세조정 nudge — 화살표 keydown 1회당 호출. */
+  onNudgePlacement: (id: number, delta: { dxPct: number; dyPct: number }) => void;
+  /** Backspace/Delete 시 — 부모가 확인 다이얼로그 후 실삭제. */
+  onRequestDelete: (id: number) => void;
   /** 마지막에 만든 placement 크기 sticky default. */
   defaultSize: { width: number; height: number };
 }
@@ -48,6 +52,8 @@ export function PlacementEditorCanvas({
   onCreatePlacement,
   onMovePlacement,
   onResizePlacement,
+  onNudgePlacement,
+  onRequestDelete,
   defaultSize,
 }: PlacementEditorCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -215,6 +221,37 @@ export function PlacementEditorCanvas({
       window.removeEventListener('mouseup', onUp);
     };
   }, [isResizeActive, rect, onResizePlacement]);
+
+  useEffect(() => {
+    if (selectedPlacementId == null) return;
+    const onKey = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      // 입력 필드 포커스 시엔 무시 — 폼 인풋이나 textarea 에서 화살표가 빨려가지 않도록.
+      if (target?.tagName === 'INPUT' || target?.tagName === 'TEXTAREA') return;
+
+      const step = e.shiftKey ? 1 : 0.1;
+      let dxPct = 0;
+      let dyPct = 0;
+      if (e.key === 'ArrowLeft')  dxPct = -step;
+      else if (e.key === 'ArrowRight') dxPct = step;
+      else if (e.key === 'ArrowUp')    dyPct = -step;
+      else if (e.key === 'ArrowDown')  dyPct = step;
+      else if (e.key === 'Delete' || e.key === 'Backspace') {
+        e.preventDefault();
+        onRequestDelete(selectedPlacementId);
+        return;
+      } else if (e.key === 'Escape') {
+        onSelectPlacement(null);
+        return;
+      } else {
+        return;
+      }
+      e.preventDefault();
+      onNudgePlacement(selectedPlacementId, { dxPct, dyPct });
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [selectedPlacementId, onNudgePlacement, onRequestDelete, onSelectPlacement]);
 
   return (
     <div
