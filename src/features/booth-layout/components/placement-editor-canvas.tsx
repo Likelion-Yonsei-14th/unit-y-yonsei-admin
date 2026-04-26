@@ -156,6 +156,8 @@ export function PlacementEditorCanvas({
     handle: HandleId,
   ) => {
     e.stopPropagation();
+    // preventDefault: 핸들은 이미 선택된 핀에서만 보이므로 click 폴백 selection 경로가
+    // 필요 없고, 텍스트 드래그 선택 등 native default 가 거추장스러워 일관되게 차단.
     e.preventDefault();
     setResizeState({
       placementId: p.id,
@@ -191,6 +193,10 @@ export function PlacementEditorCanvas({
       topPct = Math.max(0, topPct);
       rightPct = Math.min(100, rightPct);
       bottomPct = Math.min(100, bottomPct);
+      // overshoot 방지: 드래그하던 변이 반대 변을 추월하면 MIN 만큼의 폭에서 멈춤.
+      // 안 그러면 width=MIN 이지만 중심이 반대편으로 튀어 핀이 "snap" 하는 인상.
+      if (leftPct > rightPct - MIN)  leftPct = rightPct - MIN;
+      if (topPct  > bottomPct - MIN) topPct  = bottomPct - MIN;
       const width = Math.max(MIN, rightPct - leftPct);
       const height = Math.max(MIN, bottomPct - topPct);
       const x = leftPct + width / 2;
