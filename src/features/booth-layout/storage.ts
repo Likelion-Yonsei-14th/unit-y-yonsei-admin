@@ -28,12 +28,8 @@ function readRaw(): BoothPlacementDTO[] {
 
 function writeRaw(rows: BoothPlacementDTO[]): void {
   if (typeof window === 'undefined') return;
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(rows));
-  } catch (err) {
-    // 한도 초과/private mode 등 — 호출부 mutation 에서 toast 처리.
-    throw err;
-  }
+  // 한도 초과/private mode 시 setItem 이 throw — 호출부 mutation 에서 toast 처리.
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(rows));
 }
 
 export const placementStorage = {
@@ -41,8 +37,8 @@ export const placementStorage = {
     return readRaw();
   },
 
-  /** id 가 있으면 update, 없으면 throw — create 는 createOne 사용. */
-  upsertOne(dto: BoothPlacementDTO): BoothPlacementDTO {
+  /** 기존 row 갱신. id 가 존재하지 않으면 throw — 신규 생성은 createOne 사용. */
+  updateOne(dto: BoothPlacementDTO): BoothPlacementDTO {
     const rows = readRaw();
     const idx = rows.findIndex((r) => r.id === dto.id);
     if (idx < 0) {
@@ -66,6 +62,10 @@ export const placementStorage = {
     return dto;
   },
 
+  /**
+   * 신규 row 생성. id 는 max(id)+1 이라 삭제된 id 가 재활용됨 — 단일 어드민 단일 탭
+   * 가정에선 안전하지만, 다탭/낙관적 업데이트 컨텍스트에서 stale 캐시 충돌 주의.
+   */
   createOne(input: Omit<BoothPlacementDTO, 'id'>): BoothPlacementDTO {
     const rows = readRaw();
     const conflict = rows.find(
