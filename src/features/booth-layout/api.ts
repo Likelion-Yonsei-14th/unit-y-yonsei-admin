@@ -1,4 +1,3 @@
-// src/features/booth-layout/api.ts (전체)
 import { api } from '@/lib/api-client';
 import { env } from '@/lib/env';
 import { placementStorage } from './storage';

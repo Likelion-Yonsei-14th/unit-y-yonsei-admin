@@ -1,4 +1,3 @@
-// src/features/booth-layout/hooks.ts (전체)
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   copyPlacements,
@@ -28,7 +27,7 @@ export function usePlacements(date: string) {
  */
 export function useMyBoothPlacements(boothId: number | null) {
   return useQuery({
-    queryKey: ['booth-placement', 'by-booth', boothId],
+    queryKey: ['booth-placements', 'by-booth', boothId],
     queryFn: () => getPlacementsByBoothId(boothId!),
     enabled: boothId != null,
   });
@@ -42,7 +41,7 @@ export function useCreatePlacement() {
     mutationFn: (input: CreatePlacementInput) => createPlacement(input),
     onSuccess: (created) => {
       qc.invalidateQueries({ queryKey: ['booth-placements', created.date] });
-      qc.invalidateQueries({ queryKey: ['booth-placement', 'by-booth', created.boothId] });
+      qc.invalidateQueries({ queryKey: ['booth-placements', 'by-booth', created.boothId] });
     },
   });
 }
@@ -53,7 +52,7 @@ export function useUpdatePlacement() {
     mutationFn: (placement: BoothPlacement) => updatePlacement(placement),
     onSuccess: (updated) => {
       qc.invalidateQueries({ queryKey: ['booth-placements', updated.date] });
-      qc.invalidateQueries({ queryKey: ['booth-placement', 'by-booth', updated.boothId] });
+      qc.invalidateQueries({ queryKey: ['booth-placements', 'by-booth', updated.boothId] });
     },
   });
 }
@@ -65,7 +64,7 @@ export function useDeletePlacement() {
       deletePlacement(vars.id).then(() => vars),
     onSuccess: (vars) => {
       qc.invalidateQueries({ queryKey: ['booth-placements', vars.date] });
-      qc.invalidateQueries({ queryKey: ['booth-placement', 'by-booth', vars.boothId] });
+      qc.invalidateQueries({ queryKey: ['booth-placements', 'by-booth', vars.boothId] });
     },
   });
 }
