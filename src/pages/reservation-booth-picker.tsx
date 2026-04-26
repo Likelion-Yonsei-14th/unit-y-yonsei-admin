@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { BoothMapPicker } from '@/features/booth-layout/components/booth-map-picker';
-import { useMyBoothPlacement, usePlacements } from '@/features/booth-layout/hooks';
+import { useMyBoothPlacements, usePlacements } from '@/features/booth-layout/hooks';
 import { FESTIVAL_DATES } from '@/features/booth-layout/sections';
 import type { PickerBooth } from '@/features/booth-layout/types';
 import { useAuth } from '@/features/auth/hooks';
@@ -30,26 +30,28 @@ export function ReservationBoothPicker() {
   const isBooth = user?.role === 'Booth';
   const myBoothId = isBooth ? user?.boothId : undefined;
 
-  // Booth 계정의 본인 배치 (초기 날짜·포커스 resolve 용)
-  const myPlacementQuery = useMyBoothPlacement(isBooth ? (myBoothId ?? null) : null);
+  // Booth 계정의 본인 배치 (초기 날짜·포커스 resolve 용).
+  // 자리가 여러 개일 수 있으나 다중 자리 UX 는 follow-up — 일단 첫 자리만 사용.
+  const myPlacementsQuery = useMyBoothPlacements(isBooth ? (myBoothId ?? null) : null);
+  const myFirstPlacement = myPlacementsQuery.data?.[0] ?? null;
 
   // 역할별 available dates
   const availableDates = useMemo<readonly string[]>(() => {
-    if (isBooth && myPlacementQuery.data) return [myPlacementQuery.data.date];
+    if (isBooth && myFirstPlacement) return [myFirstPlacement.date];
     if (isBooth) return [];
     return FESTIVAL_DATES;
-  }, [isBooth, myPlacementQuery.data]);
+  }, [isBooth, myFirstPlacement]);
 
   // 초기 날짜 resolve
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   useEffect(() => {
     if (selectedDate != null) return;
-    if (isBooth && myPlacementQuery.data) {
-      setSelectedDate(myPlacementQuery.data.date);
+    if (isBooth && myFirstPlacement) {
+      setSelectedDate(myFirstPlacement.date);
     } else if (!isBooth && user) {
       setSelectedDate(FESTIVAL_DATES[0]);
     }
-  }, [isBooth, myPlacementQuery.data, user, selectedDate]);
+  }, [isBooth, myFirstPlacement, user, selectedDate]);
 
   const placementsQuery = usePlacements(selectedDate ?? '');
 
@@ -83,13 +85,13 @@ export function ReservationBoothPicker() {
   );
 
   // Booth 계정 본인 배치 조회 실패 — 영구 로딩 방지 + 재시도 안내
-  if (isBooth && myPlacementQuery.isError) {
+  if (isBooth && myPlacementsQuery.isError) {
     return (
       <div className="flex flex-col items-start gap-3 p-8 text-sm">
         <div className="text-destructive">본인 부스 배치 정보를 불러오지 못했습니다.</div>
         <button
           type="button"
-          onClick={() => myPlacementQuery.refetch()}
+          onClick={() => myPlacementsQuery.refetch()}
           className="rounded-md border border-border px-3 py-1.5 text-foreground hover:border-ds-border-strong"
         >
           다시 시도
@@ -99,7 +101,7 @@ export function ReservationBoothPicker() {
   }
 
   // Booth 계정인데 본인 배치가 없는 경우 (fetch 완료 + null)
-  if (isBooth && myPlacementQuery.isFetched && myPlacementQuery.data === null) {
+  if (isBooth && myPlacementsQuery.isFetched && (myPlacementsQuery.data?.length ?? 0) === 0) {
     return (
       <div className="p-8 text-sm text-muted-foreground">
         소속 부스 정보가 아직 설정되지 않았습니다. 관리자에게 문의해 주세요.

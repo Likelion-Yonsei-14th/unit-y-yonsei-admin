@@ -70,6 +70,7 @@ import { PerformanceManagement } from '@/pages/performance-management';
 import { NoticePage } from '@/pages/notice';
 import { LostFoundPage } from '@/pages/lost-found';
 import { BoothLayoutPage } from '@/pages/booth-layout';
+import { BoothLayoutEditPage } from '@/pages/booth-layout-edit';
 import { PerformanceReviewPage } from '@/pages/performance-review';
 import { CreateAdmin } from '@/pages/create-admin';
 import { LoginPage } from '@/pages/login';
@@ -165,6 +166,15 @@ export const router = createBrowserRouter([
         element: (
           <RequirePermission permission="performance.manage">
             <PerformanceManagementRoute />
+          </RequirePermission>
+        ),
+      },
+
+      {
+        path: 'booth-layout/edit',
+        element: (
+          <RequirePermission permission="boothlayout.edit">
+            <BoothLayoutEditPage />
           </RequirePermission>
         ),
       },

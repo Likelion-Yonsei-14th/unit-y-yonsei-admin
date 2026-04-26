@@ -47,6 +47,7 @@ export const PERMISSIONS = {
   // 부스 배치도
   'boothlayout.read': ['Super', 'Master'],
   'boothlayout.manage': ['Super', 'Master'],
+  'boothlayout.edit': ['Super'],   // 시각 좌표 편집기 전용 (Super only)
 
   // 공연 후기
   'performancereview.read': ['Super', 'Master'],
