@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Lock, Star } from 'lucide-react';
+import { useImagePaintedRect } from '@/features/booth-layout/hooks/use-image-painted-rect';
 import type { MapSection, PickerBooth } from '@/features/booth-layout/types';
 
 interface BoothMapCanvasProps {
@@ -11,13 +12,6 @@ interface BoothMapCanvasProps {
   /** 핀 lock 시각 힌트(🔒 / opacity) 표시용. 클릭은 막지 않음 — commit 은 슬라이더 카드 책임. */
   canEnter: (boothId: number) => boolean;
   onPinClick: (boothId: number) => void;
-}
-
-interface ImageRect {
-  left: number;
-  top: number;
-  width: number;
-  height: number;
 }
 
 function usePrevious<T>(value: T): T | undefined {
@@ -38,7 +32,12 @@ export function BoothMapCanvas({
 }: BoothMapCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const currentImgRef = useRef<HTMLImageElement>(null);
-  const [imageRect, setImageRect] = useState<ImageRect | null>(null);
+
+  const { rect: imageRect, measure } = useImagePaintedRect(containerRef, {
+    aspectRatio: section.imageAspectRatio,
+    imgRef: currentImgRef,
+    reMeasureKey: section.id,
+  });
 
   // 섹션 스왑 크로스페이드 (v1 과 동일 로직).
   const [layers, setLayers] = useState<MapSection[]>([section]);
@@ -51,68 +50,6 @@ export function BoothMapCanvas({
     }
     setLayers([section]);
   }, [section, prev]);
-
-  // object-contain 이미지의 실제 painted rect 를 container 기준으로 계산.
-  // <img> 엘리먼트 박스는 h-full w-full 로 container 와 동일하므로 getBoundingClientRect
-  // 로는 letterbox 포함 박스만 얻어짐. 핀/footprint 정합을 위해선 aspect ratio 로
-  // letterbox 를 제외한 진짜 그림 영역을 직접 계산해야 한다.
-  const measureImage = useCallback(() => {
-    const container = containerRef.current;
-    if (!container) return;
-    const containerBox = container.getBoundingClientRect();
-    if (containerBox.width === 0 || containerBox.height === 0) {
-      setImageRect(null);
-      return;
-    }
-    // 섹션 상수에 박힌 aspect ratio 우선, 없으면 로드된 <img> 의 natural 크기 fallback.
-    const img = currentImgRef.current;
-    const aspect =
-      section.imageAspectRatio && section.imageAspectRatio > 0
-        ? section.imageAspectRatio
-        : img && img.naturalWidth > 0 && img.naturalHeight > 0
-        ? img.naturalWidth / img.naturalHeight
-        : null;
-    if (!aspect) {
-      setImageRect(null);
-      return;
-    }
-    const containerAspect = containerBox.width / containerBox.height;
-    let width: number;
-    let height: number;
-    let left: number;
-    let top: number;
-    if (containerAspect > aspect) {
-      // container 가 더 가로 김 → 세로 fit, 좌우 letterbox.
-      height = containerBox.height;
-      width = height * aspect;
-      left = (containerBox.width - width) / 2;
-      top = 0;
-    } else {
-      // container 가 더 세로 김(또는 동일) → 가로 fit, 상하 letterbox.
-      width = containerBox.width;
-      height = width / aspect;
-      left = 0;
-      top = (containerBox.height - height) / 2;
-    }
-    setImageRect({ left, top, width, height });
-  }, [section.imageAspectRatio]);
-
-  // ResizeObserver 는 container 에 attach — img 직접 관찰 시 섹션 스왑마다 재연결 필요.
-  useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
-    const ro = new ResizeObserver(() => measureImage());
-    ro.observe(container);
-    return () => ro.disconnect();
-  }, [measureImage]);
-
-  // 섹션 전환: aspectRatio 기반이라 동기 계산 가능 — 첫 paint 에 올바른 rect 를
-  // 얻도록 useLayoutEffect 로 승격. rAF 는 naturalWidth fallback 경로 대비 폴백.
-  useLayoutEffect(() => {
-    measureImage();
-    const raf = requestAnimationFrame(() => measureImage());
-    return () => cancelAnimationFrame(raf);
-  }, [section, measureImage]);
 
   const focused = boothsInSection.find((b) => b.placement.boothId === focusedBoothId);
   const translateX = focused ? 50 - focused.placement.x : 0;
@@ -128,7 +65,7 @@ export function BoothMapCanvas({
           src={s.imageUrl}
           alt={s.label}
           aria-hidden={s.id !== section.id}
-          onLoad={s.id === section.id ? measureImage : undefined}
+          onLoad={s.id === section.id ? measure : undefined}
           className={`absolute inset-0 h-full w-full object-contain transition-opacity duration-300 ${
             s.id === section.id ? 'opacity-100' : 'opacity-0'
           }`}
