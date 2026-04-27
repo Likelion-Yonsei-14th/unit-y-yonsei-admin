@@ -2,8 +2,8 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { BoothMapPicker } from '@/features/booth-layout/components/booth-map-picker';
 import { useMyBoothPlacements, usePlacements } from '@/features/booth-layout/hooks';
-import { FESTIVAL_DATES } from '@/features/booth-layout/sections';
-import type { PickerBooth } from '@/features/booth-layout/types';
+import { FESTIVAL_DATES, sectionsValidFor } from '@/features/booth-layout/sections';
+import type { MapSectionId, PickerBooth } from '@/features/booth-layout/types';
 import { useAuth } from '@/features/auth/hooks';
 import { mockBoothsById } from '@/mocks/booth-profile';
 import { mockReservations, type ReservationState } from '@/mocks/reservations';
@@ -52,6 +52,24 @@ export function ReservationBoothPicker() {
       setSelectedDate(FESTIVAL_DATES[0]);
     }
   }, [isBooth, myFirstPlacement, user, selectedDate]);
+
+  // 선택 가능한 섹션 (선택 날짜 기반).
+  const availableSections = useMemo<MapSectionId[]>(
+    () => (selectedDate ? sectionsValidFor(selectedDate) : []),
+    [selectedDate],
+  );
+
+  // 선택 섹션 — Booth 계정은 본인 부스 섹션 default, 그 외엔 첫 유효 섹션.
+  const [selectedSection, setSelectedSection] = useState<MapSectionId | null>(null);
+  useEffect(() => {
+    if (availableSections.length === 0) return;
+    if (selectedSection != null && availableSections.includes(selectedSection)) return;
+    if (isBooth && myFirstPlacement && availableSections.includes(myFirstPlacement.section)) {
+      setSelectedSection(myFirstPlacement.section);
+    } else {
+      setSelectedSection(availableSections[0]);
+    }
+  }, [availableSections, isBooth, myFirstPlacement, selectedSection]);
 
   const placementsQuery = usePlacements(selectedDate ?? '');
 
@@ -109,7 +127,7 @@ export function ReservationBoothPicker() {
     );
   }
 
-  if (!selectedDate) {
+  if (!selectedDate || !selectedSection) {
     return <div className="p-8 text-sm text-muted-foreground">불러오는 중...</div>;
   }
 
@@ -136,6 +154,9 @@ export function ReservationBoothPicker() {
         selectedDate={selectedDate}
         availableDates={availableDates}
         onDateChange={setSelectedDate}
+        selectedSection={selectedSection}
+        availableSections={availableSections}
+        onSectionChange={setSelectedSection}
         myBoothId={myBoothId}
         canEnter={canEnter}
         onEnter={onEnter}

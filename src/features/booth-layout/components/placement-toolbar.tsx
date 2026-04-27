@@ -1,7 +1,7 @@
-// src/features/booth-layout/components/placement-toolbar.tsx
 import { Copy, RotateCcw, Download } from 'lucide-react';
-import { MAP_SECTIONS, FESTIVAL_DATES, type FestivalDate } from '@/features/booth-layout/sections';
+import { FESTIVAL_DATES, type FestivalDate } from '@/features/booth-layout/sections';
 import type { MapSectionId } from '@/features/booth-layout/types';
+import { MapSectionTabs } from './map-section-tabs';
 
 export interface PlacementToolbarProps {
   selectedDate: FestivalDate;
@@ -17,16 +17,6 @@ export interface PlacementToolbarProps {
   onExportJson: () => void;
 }
 
-/** 5/27 화 / 5/28 수 / 5/29 목 라벨 */
-function dateLabel(d: string): string {
-  // new Date('YYYY-MM-DD') 는 UTC 자정으로 파싱되어 KST 외 환경에서 요일이 밀린다.
-  // 축제는 한국 시간이 SOT — KST 자정으로 명시.
-  const day = ['일','월','화','수','목','금','토'][new Date(`${d}T00:00:00+09:00`).getDay()];
-  const m = Number(d.slice(5, 7));
-  const dd = Number(d.slice(8, 10));
-  return `${m}/${dd} (${day})`;
-}
-
 export function PlacementToolbar({
   selectedDate,
   selectedSection,
@@ -40,43 +30,14 @@ export function PlacementToolbar({
 }: PlacementToolbarProps) {
   return (
     <div className="flex flex-wrap items-center gap-3 border-b border-border bg-background px-6 py-3">
-      {/* 날짜 탭 */}
-      <div className="flex gap-1 rounded-lg bg-muted p-1">
-        {FESTIVAL_DATES.map((d) => (
-          <button
-            key={d}
-            type="button"
-            onClick={() => onDateChange(d)}
-            className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
-              selectedDate === d
-                ? 'bg-background text-foreground shadow-sm'
-                : 'text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            {dateLabel(d)}
-          </button>
-        ))}
-      </div>
-
-      {/* 섹션 탭 — 섹션이 둘 이상일 때만 표시 (5/27 global 단일 섹션은 숨김). */}
-      {availableSections.length > 1 && (
-        <div className="flex gap-1 rounded-lg bg-muted p-1">
-          {availableSections.map((s) => (
-            <button
-              key={s}
-              type="button"
-              onClick={() => onSectionChange(s)}
-              className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
-                selectedSection === s
-                  ? 'bg-background text-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              {MAP_SECTIONS[s].label}
-            </button>
-          ))}
-        </div>
-      )}
+      <MapSectionTabs
+        availableDates={FESTIVAL_DATES}
+        selectedDate={selectedDate}
+        onDateChange={(d) => onDateChange(d as FestivalDate)}
+        availableSections={availableSections}
+        selectedSection={selectedSection}
+        onSectionChange={onSectionChange}
+      />
 
       <div className="ml-auto flex gap-2">
         <button
