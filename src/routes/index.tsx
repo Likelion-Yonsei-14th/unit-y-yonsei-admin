@@ -70,7 +70,6 @@ import { PerformanceManagement } from '@/pages/performance-management';
 import { NoticePage } from '@/pages/notice';
 import { LostFoundPage } from '@/pages/lost-found';
 import { BoothLayoutPage } from '@/pages/booth-layout';
-import { BoothLayoutEditPage } from '@/pages/booth-layout-edit';
 import { PerformanceReviewPage } from '@/pages/performance-review';
 import { CreateAdmin } from '@/pages/create-admin';
 import { LoginPage } from '@/pages/login';
@@ -170,15 +169,6 @@ export const router = createBrowserRouter([
         ),
       },
 
-      {
-        path: 'booth-layout/edit',
-        element: (
-          <RequirePermission permission="boothlayout.edit">
-            <BoothLayoutEditPage />
-          </RequirePermission>
-        ),
-      },
-
       // '/general'은 순수 그룹 헤더 — 자체 페이지가 없어 첫 자식으로 리디렉트.
       // nav.ts에서 사이드바도 path 링크 없이 토글로만 동작하도록 설정돼 있다.
       { path: 'general', element: <Navigate to="/general/notice" replace /> },
@@ -201,7 +191,7 @@ export const router = createBrowserRouter([
       {
         path: 'general/booth-layout',
         element: (
-          <RequirePermission permission="boothlayout.read">
+          <RequirePermission permission="boothlayout.manage">
             <BoothLayoutPage />
           </RequirePermission>
         ),
