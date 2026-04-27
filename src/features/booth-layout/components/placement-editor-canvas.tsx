@@ -24,6 +24,8 @@ export interface PlacementEditorCanvasProps {
   onRequestDelete: (id: number) => void;
   /** 마지막에 만든 placement 크기 sticky default. */
   defaultSize: { width: number; height: number };
+  /** 추가 모드 — true 일 때만 빈 곳 클릭이 새 자리 생성을 트리거한다. */
+  isAddMode: boolean;
 }
 
 function clamp(v: number, min: number, max: number): number {
@@ -55,6 +57,7 @@ export function PlacementEditorCanvas({
   onNudgePlacement,
   onRequestDelete,
   defaultSize,
+  isAddMode,
 }: PlacementEditorCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const imgRef = useRef<HTMLImageElement>(null);
@@ -90,8 +93,13 @@ export function PlacementEditorCanvas({
     // 그 외 자식(특히 <img> — 캔버스의 시각 surface) 클릭은 컨테이너 클릭과 동일 취급.
     if ((e.target as HTMLElement).closest('button')) return;
     if (!rect) return;
+    if (!isAddMode) {
+      // 추가 모드 OFF — 클릭은 선택 해제만 한다. 오작동 방지용 명시 토글.
+      onSelectPlacement(null);
+      return;
+    }
     if (selectedBoothId == null) {
-      // 운영자 미선택 — 선택만 해제. 좌측 리스트 강조는 부모 책임.
+      // 추가 모드 ON 인데 운영자 미선택 — 선택만 해제, 좌측 리스트 강조는 부모 책임.
       onSelectPlacement(null);
       return;
     }
@@ -253,10 +261,14 @@ export function PlacementEditorCanvas({
     return () => window.removeEventListener('keydown', onKey);
   }, [selectedPlacementId, onNudgePlacement, onRequestDelete, onSelectPlacement]);
 
+  // 추가 모드 ON + 운영자 선택 + rect 측정 완료 시에만 crosshair 로 affordance 표시.
+  const cursorClass =
+    isAddMode && selectedBoothId != null && rect ? 'cursor-crosshair' : '';
+
   return (
     <div
       ref={containerRef}
-      className="relative h-full w-full overflow-hidden bg-muted"
+      className={`relative h-full w-full overflow-hidden bg-muted ${cursorClass}`}
       onClick={onContainerClick}
     >
       <img

@@ -55,6 +55,8 @@ export function PlacementEditor() {
   const [selectedBoothId, setSelectedBoothId] = useState<number | null>(null);
   const [selectedPlacementId, setSelectedPlacementId] = useState<number | null>(null);
   const [stickySize, setStickySize] = useState<{ width: number; height: number }>(DEFAULT_SIZE);
+  // 추가 모드 — 기본 OFF. 빈 곳 클릭이 의도치 않게 자리를 만드는 오작동 방지.
+  const [isAddMode, setIsAddMode] = useState<boolean>(false);
 
   // 날짜 바뀌면 섹션도 첫 유효 섹션으로 리셋, 선택도 해제.
   const onDateChange = (d: FestivalDate) => {
@@ -249,6 +251,8 @@ export function PlacementEditor() {
           setSelectedSection(s);
           setSelectedPlacementId(null);
         }}
+        isAddMode={isAddMode}
+        onToggleAddMode={() => setIsAddMode((v) => !v)}
         copyFromPreviousAvailable={copyFromPreviousAvailable}
         onCopyFromPrevious={handleCopyFromPrevious}
         onResetSection={handleReset}
@@ -274,11 +278,14 @@ export function PlacementEditor() {
             onNudgePlacement={handleNudge}
             onRequestDelete={handleDeleteRequest}
             defaultSize={stickySize}
+            isAddMode={isAddMode}
           />
           {placementsInSection.length === 0 && (
             <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
               <div className="rounded-lg bg-background/85 px-4 py-2 text-sm text-muted-foreground shadow-sm backdrop-blur">
-                운영자를 선택하고 지도를 클릭해 첫 자리를 만드세요.
+                {isAddMode
+                  ? '운영자를 선택하고 지도를 클릭해 첫 자리를 만드세요.'
+                  : '우상단 "추가 모드 OFF" 를 켠 뒤 운영자를 선택하고 지도를 클릭하면 자리를 만들 수 있습니다.'}
               </div>
             </div>
           )}
