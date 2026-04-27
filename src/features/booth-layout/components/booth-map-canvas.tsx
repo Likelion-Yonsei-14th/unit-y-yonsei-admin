@@ -187,9 +187,10 @@ function BoothPin({ booth, isFocused, isMine, canEnter, onClick }: BoothPinProps
       className={`pointer-events-auto absolute -translate-x-1/2 -translate-y-1/2 flex items-center justify-center rounded-md border-2 text-xs font-semibold shadow-sm transition-all ${stateClass} ${lockedClass}`}
       aria-label={`부스 ${placement.boothNumber}${!canEnter ? ' — 예약 관리 불가' : ''}`}
     >
-      {isMine && <Star size={12} className="mr-1 shrink-0" aria-hidden="true" />}
-      <span className="truncate">{placement.boothNumber}</span>
-      {!canEnter && <Lock size={10} className="ml-1 shrink-0" aria-hidden="true" />}
+      {/* 부스 번호 텍스트는 의도적으로 렌더하지 않음 — 지도 위 매장명/구획 정보를
+          가리는 문제. 식별은 슬라이더 카드의 #번호 + tooltip(title) + aria-label 로 충분. */}
+      {isMine && <Star size={12} className="shrink-0" aria-hidden="true" />}
+      {!canEnter && <Lock size={10} className="shrink-0" aria-hidden="true" />}
     </button>
   );
 }
