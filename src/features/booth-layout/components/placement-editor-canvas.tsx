@@ -1,6 +1,7 @@
 // src/features/booth-layout/components/placement-editor-canvas.tsx
 import { useEffect, useRef, useState } from 'react';
 import { useImagePaintedRect } from '@/features/booth-layout/hooks/use-image-painted-rect';
+import { clamp } from '@/features/booth-layout/utils/clamp';
 import type { BoothPlacement, MapSection } from '@/features/booth-layout/types';
 
 export interface PlacementEditorCanvasProps {
@@ -26,10 +27,6 @@ export interface PlacementEditorCanvasProps {
   defaultSize: { width: number; height: number };
   /** 추가 모드 — true 일 때만 빈 곳 클릭이 새 자리 생성을 트리거한다. */
   isAddMode: boolean;
-}
-
-function clamp(v: number, min: number, max: number): number {
-  return Math.max(min, Math.min(max, v));
 }
 
 type HandleId = 'nw' | 'n' | 'ne' | 'e' | 'se' | 's' | 'sw' | 'w';

@@ -25,6 +25,7 @@ import { PlacementEditorCanvas } from './placement-editor-canvas';
 import { usePlacementUndo } from '@/features/booth-layout/hooks/use-placement-undo';
 import { placementStorage } from '@/features/booth-layout/storage';
 import { exportPlacementsAsJson } from '@/features/booth-layout/utils/export-placements';
+import { clamp } from '@/features/booth-layout/utils/clamp';
 
 const DEFAULT_SIZE = { width: 5, height: 3 };
 
@@ -39,10 +40,6 @@ function nextAvailableBoothNumber(existing: BoothPlacement[]): string {
     if (!used.has(String(n))) return String(n);
   }
   return `${Date.now()}`;
-}
-
-function clamp(v: number, min: number, max: number): number {
-  return Math.max(min, Math.min(max, v));
 }
 
 export function PlacementEditor() {
