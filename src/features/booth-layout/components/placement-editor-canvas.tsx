@@ -85,6 +85,13 @@ export function PlacementEditorCanvas({
   const resizeStateRef = useRef(resizeState);
   resizeStateRef.current = resizeState;
 
+  // 섹션 전환 시 mid-drag/mid-resize state 가 살아있으면 stale 한 좌표로 mouseup
+  // 이 commit 될 위험. 컨텍스트 전환 시 양쪽 모두 강제 클리어.
+  useEffect(() => {
+    setDragState(null);
+    setResizeState(null);
+  }, [section.id]);
+
   const onContainerClick = (e: React.MouseEvent<HTMLDivElement>) => {
     // 핀 클릭은 자식 button 의 stopPropagation 으로 흡수됨.
     // 그 외 자식(특히 <img> — 캔버스의 시각 surface) 클릭은 컨테이너 클릭과 동일 취급.
