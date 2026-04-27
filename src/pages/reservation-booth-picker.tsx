@@ -35,12 +35,17 @@ export function ReservationBoothPicker() {
   const myPlacementsQuery = useMyBoothPlacements(isBooth ? (myBoothId ?? null) : null);
   const myFirstPlacement = myPlacementsQuery.data?.[0] ?? null;
 
-  // 역할별 available dates
+  // 역할별 available dates — Booth 계정은 본인 자리들이 위치한 날짜 모두를 표시
+  // (한 운영자가 여러 날 여러 자리를 가질 수 있음).
   const availableDates = useMemo<readonly string[]>(() => {
-    if (isBooth && myFirstPlacement) return [myFirstPlacement.date];
-    if (isBooth) return [];
+    if (isBooth) {
+      const dates = Array.from(
+        new Set((myPlacementsQuery.data ?? []).map((p) => p.date)),
+      );
+      return dates.sort();
+    }
     return FESTIVAL_DATES;
-  }, [isBooth, myFirstPlacement]);
+  }, [isBooth, myPlacementsQuery.data]);
 
   // 초기 날짜 resolve
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
