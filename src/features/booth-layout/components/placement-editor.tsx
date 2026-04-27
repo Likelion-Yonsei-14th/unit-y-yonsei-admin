@@ -12,6 +12,7 @@ import {
 import {
   FESTIVAL_DATES,
   MAP_SECTIONS,
+  sectionsValidFor,
   type FestivalDate,
 } from '@/features/booth-layout/sections';
 import type { BoothPlacement, MapSectionId } from '@/features/booth-layout/types';
@@ -30,12 +31,6 @@ const DEFAULT_SIZE = { width: 5, height: 3 };
 function previousDateOf(date: FestivalDate): FestivalDate | null {
   const idx = FESTIVAL_DATES.indexOf(date);
   return idx > 0 ? FESTIVAL_DATES[idx - 1] : null;
-}
-
-function sectionsValidFor(date: FestivalDate): MapSectionId[] {
-  return (Object.values(MAP_SECTIONS) as Array<typeof MAP_SECTIONS[MapSectionId]>)
-    .filter((s) => s.validDates.includes(date))
-    .map((s) => s.id);
 }
 
 function nextAvailableBoothNumber(existing: BoothPlacement[]): string {

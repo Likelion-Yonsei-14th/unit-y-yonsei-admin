@@ -22,3 +22,10 @@ export function fallbackSectionFor(date: string): MapSection {
   if (date === '2026-05-27') return MAP_SECTIONS.global;
   return MAP_SECTIONS.baekyang;
 }
+
+/** 해당 날짜에 유효한 섹션들을 nav 정의 순(global → baekyang → hangeul)으로 반환. */
+export function sectionsValidFor(date: string): MapSectionId[] {
+  return (Object.values(MAP_SECTIONS) as Array<typeof MAP_SECTIONS[MapSectionId]>)
+    .filter((s) => s.validDates.includes(date))
+    .map((s) => s.id);
+}
