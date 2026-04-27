@@ -47,12 +47,6 @@ export const MAIN_NAV: NavItem[] = [
     requires: 'performance.read',
   },
   {
-    path: '/booth-layout/edit',
-    label: '부스 좌표 편집',
-    icon: Map,
-    requires: 'boothlayout.edit',
-  },
-  {
     path: '/general',
     label: '기타 정보 관리',
     icon: Settings,
@@ -60,7 +54,7 @@ export const MAIN_NAV: NavItem[] = [
     children: [
       { path: '/general/notice', label: '총학생회 공지사항', icon: FileText, requires: 'notice.manage' },
       { path: '/general/lost-found', label: '분실물 관리', icon: Package, requires: 'lostfound.read' },
-      { path: '/general/booth-layout', label: '부스 배치도 매칭', icon: Map, requires: 'boothlayout.read' },
+      { path: '/general/booth-layout', label: '부스 배치도 편집', icon: Map, requires: 'boothlayout.manage' },
       { path: '/general/performance-review', label: '공연 후기 수합', icon: MessageCircle, requires: 'performancereview.read' },
     ],
   },
