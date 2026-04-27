@@ -68,6 +68,22 @@ export function BoothMapCanvas({
     wrapperRef.current?.centerView(DEFAULT_SCALE_BY_SECTION[section.id], 300, 'easeOut');
   }, [section.id]);
 
+  // 슬라이더에서 다른 핀을 선택하면 그 핀이 화면 중앙으로 오도록 setTransform.
+  // scale=1 (limitToBounds 로 팬 여유 0) 에선 어차피 움직일 수 없어 no-op.
+  useEffect(() => {
+    if (focusedBoothId == null || !imageRect || !containerRef.current) return;
+    const ts = wrapperRef.current?.state;
+    if (!ts || ts.scale <= 1) return;
+    const focused = boothsInSection.find((b) => b.placement.boothId === focusedBoothId);
+    if (!focused) return;
+    const containerBox = containerRef.current.getBoundingClientRect();
+    const contentX = imageRect.left + (focused.placement.x / 100) * imageRect.width;
+    const contentY = imageRect.top + (focused.placement.y / 100) * imageRect.height;
+    const positionX = containerBox.width / 2 - contentX * ts.scale;
+    const positionY = containerBox.height / 2 - contentY * ts.scale;
+    wrapperRef.current?.setTransform(positionX, positionY, ts.scale, 300, 'easeOut');
+  }, [focusedBoothId, imageRect, boothsInSection]);
+
   // 섹션 스왑 크로스페이드.
   const [layers, setLayers] = useState<MapSection[]>([section]);
   const prev = usePrevious(section);
