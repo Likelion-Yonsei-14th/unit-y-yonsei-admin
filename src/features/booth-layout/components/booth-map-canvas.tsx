@@ -1,8 +1,24 @@
 import { useEffect, useRef, useState } from 'react';
-import { Lock, Minus, Plus, RotateCcw, Star } from 'lucide-react';
-import { TransformComponent, TransformWrapper } from 'react-zoom-pan-pinch';
+import { Minus, Plus, RotateCcw, Star } from 'lucide-react';
+import {
+  TransformComponent,
+  TransformWrapper,
+  type ReactZoomPanPinchRef,
+} from 'react-zoom-pan-pinch';
 import { useImagePaintedRect } from '@/features/booth-layout/hooks/use-image-painted-rect';
-import type { MapSection, PickerBooth } from '@/features/booth-layout/types';
+import type { MapSection, MapSectionId, PickerBooth } from '@/features/booth-layout/types';
+
+/**
+ * 섹션별 기본 줌 — 백양로는 종횡비가 매우 좁고 길어(1272x4524) 1x 로는 핀이
+ * 너무 작게 보인다. 최대 확대값(MAX_SCALE) 을 기본값으로 두어 가독성 확보.
+ */
+const MIN_SCALE = 1;
+const MAX_SCALE = 4;
+const DEFAULT_SCALE_BY_SECTION: Record<MapSectionId, number> = {
+  global: MIN_SCALE,
+  baekyang: MAX_SCALE,
+  hangeul: MIN_SCALE,
+};
 
 interface BoothMapCanvasProps {
   section: MapSection;
@@ -36,12 +52,21 @@ export function BoothMapCanvas({
   // 이미지·핀이 함께 변환돼 정합 유지.
   const containerRef = useRef<HTMLDivElement>(null);
   const currentImgRef = useRef<HTMLImageElement>(null);
+  const wrapperRef = useRef<ReactZoomPanPinchRef>(null);
 
   const { rect: imageRect, measure } = useImagePaintedRect(containerRef, {
     aspectRatio: section.imageAspectRatio,
     imgRef: currentImgRef,
     reMeasureKey: section.id,
   });
+
+  // 첫 마운트 시 적용할 initialScale. 이후 섹션 변경은 useEffect 가 처리.
+  const initialScaleRef = useRef<number>(DEFAULT_SCALE_BY_SECTION[section.id]);
+
+  // 섹션 전환 시 그 섹션의 기본 스케일 + 중앙 정렬로 부드럽게 이동.
+  useEffect(() => {
+    wrapperRef.current?.centerView(DEFAULT_SCALE_BY_SECTION[section.id], 300, 'easeOut');
+  }, [section.id]);
 
   // 섹션 스왑 크로스페이드.
   const [layers, setLayers] = useState<MapSection[]>([section]);
@@ -58,9 +83,10 @@ export function BoothMapCanvas({
   return (
     <div ref={containerRef} className="relative h-full w-full overflow-hidden bg-muted">
       <TransformWrapper
-        minScale={1}
-        maxScale={4}
-        initialScale={1}
+        ref={wrapperRef}
+        minScale={MIN_SCALE}
+        maxScale={MAX_SCALE}
+        initialScale={initialScaleRef.current}
         wheel={{ step: 0.1 }}
         doubleClick={{ disabled: true }}
         limitToBounds
@@ -187,10 +213,9 @@ function BoothPin({ booth, isFocused, isMine, canEnter, onClick }: BoothPinProps
       className={`pointer-events-auto absolute -translate-x-1/2 -translate-y-1/2 flex items-center justify-center rounded-md border-2 text-xs font-semibold shadow-sm transition-all ${stateClass} ${lockedClass}`}
       aria-label={`부스 ${placement.boothNumber}${!canEnter ? ' — 예약 관리 불가' : ''}`}
     >
-      {/* 부스 번호 텍스트는 의도적으로 렌더하지 않음 — 지도 위 매장명/구획 정보를
-          가리는 문제. 식별은 슬라이더 카드의 #번호 + tooltip(title) + aria-label 로 충분. */}
+      {/* 핀 안에는 본인 부스 표시용 Star 만 둔다 — 부스 번호는 지도 정보를 가리고,
+          Lock 은 opacity-50 · cursor-not-allowed · tooltip 으로 이미 충분히 전달됨. */}
       {isMine && <Star size={12} className="shrink-0" aria-hidden="true" />}
-      {!canEnter && <Lock size={10} className="shrink-0" aria-hidden="true" />}
     </button>
   );
 }
