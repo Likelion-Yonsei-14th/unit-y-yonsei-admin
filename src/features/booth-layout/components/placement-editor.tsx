@@ -92,6 +92,16 @@ export function PlacementEditor() {
   const resetMut = useResetSection();
   const { recordUndo } = usePlacementUndo();
 
+  // 핀 select 시 그 핀 크기를 stickySize 로 채택 — "클릭=복사, 빈 곳 클릭=붙여넣기"
+  // 멘탈 모델 지원. null(해제) 일 땐 stickySize 손대지 않는다.
+  const handleSelectPlacement = (id: number | null) => {
+    setSelectedPlacementId(id);
+    if (id != null) {
+      const target = placementsInSection.find((p) => p.id === id);
+      if (target) setStickySize({ width: target.width, height: target.height });
+    }
+  };
+
   const handleCreate = async (input: { x: number; y: number; width: number; height: number }) => {
     if (selectedBoothId == null) {
       toast.warning('좌측에서 운영자를 먼저 선택해 주세요.');
@@ -262,7 +272,7 @@ export function PlacementEditor() {
             placements={placementsInSection}
             selectedPlacementId={selectedPlacementId}
             selectedBoothId={selectedBoothId}
-            onSelectPlacement={setSelectedPlacementId}
+            onSelectPlacement={handleSelectPlacement}
             onCreatePlacement={handleCreate}
             onMovePlacement={handleMove}
             onResizePlacement={handleResize}
