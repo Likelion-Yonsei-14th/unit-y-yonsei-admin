@@ -2,7 +2,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Navigate, useParams } from "react-router";
 import { Phone, MessageSquare, Check, X, Calendar, RotateCcw, Search } from "lucide-react";
 import { mockReservations, type Reservation, type ReservationState } from "@/mocks/reservations";
-import { mockBoothsById } from "@/mocks/booth-profile";
 import { PageHeaderAction } from "@/components/common/page-header-action";
 import {
   AlertDialog,
@@ -15,13 +14,18 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useAuth } from "@/features/auth/hooks";
+import { useBooths } from "@/features/booths/hooks";
 
 type ReservationStatus = "대기자 목록" | "완료 목록" | "취소 목록" | "전체 목록";
 
 export function ReservationManagement() {
   const { boothId: boothIdParam } = useParams<{ boothId: string }>();
   const boothId = Number(boothIdParam);
-  const booth = Number.isFinite(boothId) ? mockBoothsById[boothId] : undefined;
+  const boothsQuery = useBooths();
+  const booth = useMemo(() => {
+    if (!Number.isFinite(boothId)) return undefined;
+    return (boothsQuery.data ?? []).find((b) => b.id === boothId);
+  }, [boothId, boothsQuery.data]);
   const { user } = useAuth();
 
   const [reservations, setReservations] = useState<Reservation[]>(mockReservations);

@@ -1,6 +1,15 @@
-// src/features/booth-layout/components/placement-editor.tsx
 import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import {
   usePlacements,
   useCreatePlacement,
@@ -16,15 +25,14 @@ import {
   type FestivalDate,
 } from '@/features/booth-layout/sections';
 import type { BoothPlacement, MapSectionId } from '@/features/booth-layout/types';
-// TODO(T6.2+): 백엔드 붙는 시점에 페이지에서 useBooths() 로 끌어와 prop 으로 내려줄 것.
-// 현재는 mock 환경이라 직접 import 해 임시 사용.
-import { mockBoothsById } from '@/mocks/booth-profile';
+import type { BoothProfile } from '@/features/booths/types';
 import { PlacementToolbar } from './placement-toolbar';
 import { PlacementList } from './placement-list';
 import { PlacementEditorCanvas } from './placement-editor-canvas';
 import { usePlacementUndo } from '@/features/booth-layout/hooks/use-placement-undo';
 import { placementStorage } from '@/features/booth-layout/storage';
 import { exportPlacementsAsJson } from '@/features/booth-layout/utils/export-placements';
+import { clamp } from '@/features/booth-layout/utils/clamp';
 
 const DEFAULT_SIZE = { width: 5, height: 3 };
 
@@ -41,11 +49,12 @@ function nextAvailableBoothNumber(existing: BoothPlacement[]): string {
   return `${Date.now()}`;
 }
 
-function clamp(v: number, min: number, max: number): number {
-  return Math.max(min, Math.min(max, v));
+export interface PlacementEditorProps {
+  /** 운영자(부스 계정) 풀. 페이지에서 useBooths() 로 끌어와 내려준다. */
+  booths: BoothProfile[];
 }
 
-export function PlacementEditor() {
+export function PlacementEditor({ booths }: PlacementEditorProps) {
   const [selectedDate, setSelectedDate] = useState<FestivalDate>(FESTIVAL_DATES[0]);
   const validSections = useMemo(() => sectionsValidFor(selectedDate), [selectedDate]);
   const [selectedSection, setSelectedSection] = useState<MapSectionId>(validSections[0]);
@@ -57,6 +66,10 @@ export function PlacementEditor() {
   const [stickySize, setStickySize] = useState<{ width: number; height: number }>(DEFAULT_SIZE);
   // 추가 모드 — 기본 OFF. 빈 곳 클릭이 의도치 않게 자리를 만드는 오작동 방지.
   const [isAddMode, setIsAddMode] = useState<boolean>(false);
+  // 파괴적 액션 확인 다이얼로그 pending 상태 — 코드베이스 다른 페이지의 패턴과 동일.
+  const [pendingDelete, setPendingDelete] = useState<BoothPlacement | null>(null);
+  const [pendingCopy, setPendingCopy] = useState<boolean>(false);
+  const [pendingReset, setPendingReset] = useState<boolean>(false);
 
   // 날짜 바뀌면 섹션도 첫 유효 섹션으로 리셋, 선택도 해제.
   const onDateChange = (d: FestivalDate) => {
@@ -79,7 +92,6 @@ export function PlacementEditor() {
     [placementsQuery.data, selectedSection],
   );
 
-  const booths = useMemo(() => Object.values(mockBoothsById), []);
   const section = MAP_SECTIONS[selectedSection];
 
   const createMut = useCreatePlacement();
@@ -165,12 +177,22 @@ export function PlacementEditor() {
   const handleNudge = (id: number, delta: { dxPct: number; dyPct: number }) =>
     handleMove(id, delta);
 
-  const handleDeleteRequest = async (id: number) => {
+  const handleDeleteRequest = (id: number) => {
     const target = placementsInSection.find((p) => p.id === id);
     if (!target) return;
-    if (!window.confirm(`자리 "${target.boothNumber}" 를 삭제할까요?`)) return;
+    setPendingDelete(target);
+  };
+
+  const confirmDelete = async () => {
+    const target = pendingDelete;
+    if (!target) return;
+    setPendingDelete(null);
     try {
-      await deleteMut.mutateAsync({ id, date: target.date, boothId: target.boothId });
+      await deleteMut.mutateAsync({
+        id: target.id,
+        date: target.date,
+        boothId: target.boothId,
+      });
       setSelectedPlacementId(null);
       // Edge case: 삭제 직후 같은 booth_number 를 새로 만들면 undo 시 UNIQUE 충돌이 나
       // toast.error 로 surfaced 됨. 1회 admin 시딩 도구라 명시적 안내로 충분 — 더
@@ -194,16 +216,16 @@ export function PlacementEditor() {
     }
   };
 
-  const handleCopyFromPrevious = async () => {
+  const handleCopyFromPrevious = () => {
     const prev = previousDateOf(selectedDate);
     if (!prev) return;
-    if (
-      !window.confirm(
-        `${prev} ${section.label} 좌표를 ${selectedDate} 로 덮어쓸까요?\n현재 (${selectedDate}, ${section.label}) 좌표는 모두 사라집니다.`,
-      )
-    ) {
-      return;
-    }
+    setPendingCopy(true);
+  };
+
+  const confirmCopy = async () => {
+    const prev = previousDateOf(selectedDate);
+    setPendingCopy(false);
+    if (!prev) return;
     try {
       await copyMut.mutateAsync({ fromDate: prev, toDate: selectedDate, section: selectedSection });
       toast.success('전날 좌표를 복제했습니다.');
@@ -212,14 +234,12 @@ export function PlacementEditor() {
     }
   };
 
-  const handleReset = async () => {
-    if (
-      !window.confirm(
-        `${selectedDate} ${section.label} 의 모든 자리를 삭제할까요? 되돌릴 수 없습니다.`,
-      )
-    ) {
-      return;
-    }
+  const handleReset = () => {
+    setPendingReset(true);
+  };
+
+  const confirmReset = async () => {
+    setPendingReset(false);
     try {
       await resetMut.mutateAsync({ date: selectedDate, section: selectedSection });
       setSelectedPlacementId(null);
@@ -291,6 +311,82 @@ export function PlacementEditor() {
           )}
         </div>
       </div>
+
+      {/* 자리 1개 삭제 확인 */}
+      <AlertDialog
+        open={!!pendingDelete}
+        onOpenChange={(o) => {
+          if (!o) setPendingDelete(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>자리 삭제</AlertDialogTitle>
+            <AlertDialogDescription>
+              자리 "{pendingDelete?.boothNumber}" 를 삭제합니다. Cmd/Ctrl+Z 로
+              되돌릴 수 있지만 직후 같은 booth_number 가 재사용되면 충돌할 수 있습니다.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>취소</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              삭제
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* 전날 복제 확인 — 현재 (date, section) 좌표는 모두 덮어써짐 */}
+      <AlertDialog
+        open={pendingCopy}
+        onOpenChange={(o) => {
+          if (!o) setPendingCopy(false);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>전날 좌표 복제</AlertDialogTitle>
+            <AlertDialogDescription>
+              {previousDateOf(selectedDate)} {section.label} 좌표를 {selectedDate}{' '}
+              {section.label} 로 덮어씁니다. 현재 ({selectedDate}, {section.label})
+              에 있는 좌표는 모두 사라집니다.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>취소</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmCopy}>복제</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* 전체 리셋 확인 */}
+      <AlertDialog
+        open={pendingReset}
+        onOpenChange={(o) => {
+          if (!o) setPendingReset(false);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>전체 리셋</AlertDialogTitle>
+            <AlertDialogDescription>
+              {selectedDate} {section.label} 의 모든 자리를 삭제합니다. 되돌릴 수 없습니다.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>취소</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmReset}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              전체 삭제
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

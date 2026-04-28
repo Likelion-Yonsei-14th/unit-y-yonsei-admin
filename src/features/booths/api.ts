@@ -42,7 +42,20 @@ async function updateMyBoothProfileReal(patch: Partial<BoothProfile>): Promise<B
   return toBoothProfile(dto);
 }
 
+// ---- listBooths — Super/Master 가 모든 부스 풀을 조회 ----
+
+async function listBoothsMock(): Promise<BoothProfile[]> {
+  await new Promise((r) => setTimeout(r, 100));
+  return Object.values(mockBoothsById);
+}
+
+async function listBoothsReal(): Promise<BoothProfile[]> {
+  const data = await api.get<BoothProfileDTO[]>('/booths');
+  return data.map(toBoothProfile);
+}
+
 // ---- 분기 export ----
 
 export const getMyBoothProfile = env.USE_MOCK ? getMyBoothProfileMock : getMyBoothProfileReal;
 export const updateMyBoothProfile = env.USE_MOCK ? updateMyBoothProfileMock : updateMyBoothProfileReal;
+export const listBooths = env.USE_MOCK ? listBoothsMock : listBoothsReal;

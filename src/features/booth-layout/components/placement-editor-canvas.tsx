@@ -1,7 +1,21 @@
-// src/features/booth-layout/components/placement-editor-canvas.tsx
 import { useEffect, useRef, useState } from 'react';
+import { Minus, Plus, RotateCcw } from 'lucide-react';
+import {
+  TransformComponent,
+  TransformWrapper,
+  type ReactZoomPanPinchRef,
+} from 'react-zoom-pan-pinch';
 import { useImagePaintedRect } from '@/features/booth-layout/hooks/use-image-painted-rect';
-import type { BoothPlacement, MapSection } from '@/features/booth-layout/types';
+import { clamp } from '@/features/booth-layout/utils/clamp';
+import type { BoothPlacement, MapSection, MapSectionId } from '@/features/booth-layout/types';
+
+const MIN_SCALE = 1;
+const MAX_SCALE = 4;
+const DEFAULT_SCALE_BY_SECTION: Record<MapSectionId, number> = {
+  global: MIN_SCALE,
+  baekyang: MAX_SCALE,
+  hangeul: MIN_SCALE,
+};
 
 export interface PlacementEditorCanvasProps {
   section: MapSection;
@@ -26,10 +40,6 @@ export interface PlacementEditorCanvasProps {
   defaultSize: { width: number; height: number };
   /** 추가 모드 — true 일 때만 빈 곳 클릭이 새 자리 생성을 트리거한다. */
   isAddMode: boolean;
-}
-
-function clamp(v: number, min: number, max: number): number {
-  return Math.max(min, Math.min(max, v));
 }
 
 type HandleId = 'nw' | 'n' | 'ne' | 'e' | 'se' | 's' | 'sw' | 'w';
@@ -61,12 +71,25 @@ export function PlacementEditorCanvas({
 }: PlacementEditorCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const imgRef = useRef<HTMLImageElement>(null);
+  const wrapperRef = useRef<ReactZoomPanPinchRef>(null);
 
   const { rect, measure } = useImagePaintedRect(containerRef, {
     aspectRatio: section.imageAspectRatio,
     imgRef,
     reMeasureKey: section.id,
   });
+
+  // 첫 마운트 시 적용할 initialScale. 이후 섹션 변경은 useEffect 가 처리.
+  const initialScaleRef = useRef<number>(DEFAULT_SCALE_BY_SECTION[section.id]);
+
+  // 섹션 전환 시 그 섹션의 기본 스케일 + 중앙 정렬로 부드럽게 이동.
+  useEffect(() => {
+    wrapperRef.current?.centerView(DEFAULT_SCALE_BY_SECTION[section.id], 300, 'easeOut');
+  }, [section.id]);
+
+  /** 라이브 transform state (scale + position). 좌표 변환에 사용. */
+  const getTransform = () =>
+    wrapperRef.current?.state ?? { scale: 1, positionX: 0, positionY: 0 };
 
   const [dragState, setDragState] = useState<{
     placementId: number;
@@ -88,6 +111,13 @@ export function PlacementEditorCanvas({
   const resizeStateRef = useRef(resizeState);
   resizeStateRef.current = resizeState;
 
+  // 섹션 전환 시 mid-drag/mid-resize state 가 살아있으면 stale 한 좌표로 mouseup
+  // 이 commit 될 위험. 컨텍스트 전환 시 양쪽 모두 강제 클리어.
+  useEffect(() => {
+    setDragState(null);
+    setResizeState(null);
+  }, [section.id]);
+
   const onContainerClick = (e: React.MouseEvent<HTMLDivElement>) => {
     // 핀 클릭은 자식 button 의 stopPropagation 으로 흡수됨.
     // 그 외 자식(특히 <img> — 캔버스의 시각 surface) 클릭은 컨테이너 클릭과 동일 취급.
@@ -105,8 +135,12 @@ export function PlacementEditorCanvas({
     }
     const containerBox = containerRef.current?.getBoundingClientRect();
     if (!containerBox) return;
-    const px = e.clientX - containerBox.left - rect.left;
-    const py = e.clientY - containerBox.top - rect.top;
+    // zoom/pan 적용 시 컨테이너 좌상단에서 화면 픽셀을 다시 콘텐츠 좌표로 환산.
+    const ts = getTransform();
+    const contentX = (e.clientX - containerBox.left - ts.positionX) / ts.scale;
+    const contentY = (e.clientY - containerBox.top - ts.positionY) / ts.scale;
+    const px = contentX - rect.left;
+    const py = contentY - rect.top;
     const x = (px / rect.width) * 100;
     const y = (py / rect.height) * 100;
     if (x < 0 || x > 100 || y < 0 || y > 100) return;
@@ -145,8 +179,10 @@ export function PlacementEditorCanvas({
     const onMove = (e: MouseEvent) => {
       const ds = dragStateRef.current;
       if (!ds) return;
-      const dxPct = ((e.clientX - ds.startClientX) / rect.width) * 100;
-      const dyPct = ((e.clientY - ds.startClientY) / rect.height) * 100;
+      // 화면 픽셀 변위를 zoom scale 로 나눠 콘텐츠 좌표 변위로 환산 후 % 변환.
+      const scale = getTransform().scale;
+      const dxPct = ((e.clientX - ds.startClientX) / scale / rect.width) * 100;
+      const dyPct = ((e.clientY - ds.startClientY) / scale / rect.height) * 100;
       setDragState((s) => (s ? { ...s, dxPct, dyPct } : s));
     };
     const onUp = () => {
@@ -190,8 +226,10 @@ export function PlacementEditorCanvas({
     const onMove = (e: MouseEvent) => {
       const rs = resizeStateRef.current;
       if (!rs) return;
-      const dxPct = ((e.clientX - rs.startClientX) / rect.width) * 100;
-      const dyPct = ((e.clientY - rs.startClientY) / rect.height) * 100;
+      // 화면 픽셀 변위를 scale 로 나눠 콘텐츠 좌표 % 변위로 환산.
+      const scale = getTransform().scale;
+      const dxPct = ((e.clientX - rs.startClientX) / scale / rect.width) * 100;
+      const dyPct = ((e.clientY - rs.startClientY) / scale / rect.height) * 100;
       const o = rs.origin;
       // 핀은 중심좌표 기준이므로 좌상단 기준 좌표로 변환 후 다시 중심으로 환산.
       let leftPct = o.x - o.width / 2;
@@ -271,25 +309,41 @@ export function PlacementEditorCanvas({
       className={`relative h-full w-full overflow-hidden bg-muted ${cursorClass}`}
       onClick={onContainerClick}
     >
-      <img
-        ref={imgRef}
-        src={section.imageUrl}
-        alt={section.label}
-        onLoad={measure}
-        className="absolute inset-0 h-full w-full object-contain"
-      />
+      <TransformWrapper
+        ref={wrapperRef}
+        minScale={MIN_SCALE}
+        maxScale={MAX_SCALE}
+        initialScale={initialScaleRef.current}
+        wheel={{ step: 0.1 }}
+        doubleClick={{ disabled: true }}
+        limitToBounds
+      >
+        {({ zoomIn, zoomOut, resetTransform }) => (
+          <>
+            <TransformComponent
+              wrapperClass="!h-full !w-full"
+              contentClass="!h-full !w-full"
+            >
+              <img
+                ref={imgRef}
+                src={section.imageUrl}
+                alt={section.label}
+                onLoad={measure}
+                draggable={false}
+                className="absolute inset-0 h-full w-full select-none object-contain"
+              />
 
-      {rect && (
-        <div
-          className="pointer-events-none absolute"
-          style={{
-            left: rect.left,
-            top: rect.top,
-            width: rect.width,
-            height: rect.height,
-          }}
-        >
-          {placements.map((p) => {
+              {rect && (
+                <div
+                  className="pointer-events-none absolute"
+                  style={{
+                    left: rect.left,
+                    top: rect.top,
+                    width: rect.width,
+                    height: rect.height,
+                  }}
+                >
+                  {placements.map((p) => {
             const isSelected = p.id === selectedPlacementId;
             const isInGroup = !isSelected && p.boothId === selectedBoothId;
             const isDragging = dragState?.placementId === p.id;
@@ -357,8 +411,43 @@ export function PlacementEditorCanvas({
               </button>
             );
           })}
-        </div>
-      )}
+                </div>
+              )}
+            </TransformComponent>
+
+            {/* 줌 컨트롤 — TransformWrapper 안이지만 TransformComponent 밖이라 화면 고정. */}
+            <div className="absolute right-3 top-3 z-10 flex flex-col gap-1 rounded-md border border-border bg-background/90 p-1 shadow-sm backdrop-blur">
+              <button
+                type="button"
+                onClick={() => zoomIn()}
+                aria-label="확대"
+                title="확대"
+                className="flex h-7 w-7 items-center justify-center rounded text-foreground hover:bg-muted"
+              >
+                <Plus size={14} />
+              </button>
+              <button
+                type="button"
+                onClick={() => zoomOut()}
+                aria-label="축소"
+                title="축소"
+                className="flex h-7 w-7 items-center justify-center rounded text-foreground hover:bg-muted"
+              >
+                <Minus size={14} />
+              </button>
+              <button
+                type="button"
+                onClick={() => resetTransform()}
+                aria-label="원래 크기로"
+                title="원래 크기로"
+                className="flex h-7 w-7 items-center justify-center rounded text-muted-foreground hover:bg-muted"
+              >
+                <RotateCcw size={13} />
+              </button>
+            </div>
+          </>
+        )}
+      </TransformWrapper>
     </div>
   );
 }
