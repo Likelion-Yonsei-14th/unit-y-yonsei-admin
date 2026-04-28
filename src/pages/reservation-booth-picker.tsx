@@ -5,7 +5,7 @@ import { useMyBoothPlacements, usePlacements } from '@/features/booth-layout/hoo
 import { FESTIVAL_DATES, sectionsValidFor } from '@/features/booth-layout/sections';
 import type { MapSectionId, PickerBooth } from '@/features/booth-layout/types';
 import { useAuth } from '@/features/auth/hooks';
-import { mockBoothsById } from '@/mocks/booth-profile';
+import { useBooths } from '@/features/booths/hooks';
 import { mockReservations, type ReservationState } from '@/mocks/reservations';
 
 /** boothId → 상태별 카운트 집계 (mockReservations 순회 1회). */
@@ -77,19 +77,30 @@ export function ReservationBoothPicker() {
   }, [availableSections, isBooth, myFirstPlacement, selectedSection]);
 
   const placementsQuery = usePlacements(selectedDate ?? '');
+  const allBoothsQuery = useBooths();
+  const boothById = useMemo(() => {
+    const m = new Map<number, { name: string; organizationName: string }>();
+    for (const b of allBoothsQuery.data ?? []) {
+      m.set(b.id, { name: b.name, organizationName: b.organizationName });
+    }
+    return m;
+  }, [allBoothsQuery.data]);
 
   const booths = useMemo<PickerBooth[]>(() => {
     if (!placementsQuery.data) return [];
     const countsByBooth = buildReservationCountsByBooth();
-    return placementsQuery.data.map((p) => ({
-      placement: p,
-      profile: {
-        name: mockBoothsById[p.boothId]?.name || '이름 미입력 부스',
-        organizationName: mockBoothsById[p.boothId]?.organizationName || '-',
-      },
-      counts: countsByBooth.get(p.boothId) ?? { waiting: 0, completed: 0, cancelled: 0 },
-    }));
-  }, [placementsQuery.data]);
+    return placementsQuery.data.map((p) => {
+      const profile = boothById.get(p.boothId);
+      return {
+        placement: p,
+        profile: {
+          name: profile?.name || '이름 미입력 부스',
+          organizationName: profile?.organizationName || '-',
+        },
+        counts: countsByBooth.get(p.boothId) ?? { waiting: 0, completed: 0, cancelled: 0 },
+      };
+    });
+  }, [placementsQuery.data, boothById]);
 
   const canEnter = useCallback(
     (boothId: number) => {

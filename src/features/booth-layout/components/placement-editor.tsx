@@ -25,9 +25,7 @@ import {
   type FestivalDate,
 } from '@/features/booth-layout/sections';
 import type { BoothPlacement, MapSectionId } from '@/features/booth-layout/types';
-// TODO(T6.2+): 백엔드 붙는 시점에 페이지에서 useBooths() 로 끌어와 prop 으로 내려줄 것.
-// 현재는 mock 환경이라 직접 import 해 임시 사용.
-import { mockBoothsById } from '@/mocks/booth-profile';
+import type { BoothProfile } from '@/features/booths/types';
 import { PlacementToolbar } from './placement-toolbar';
 import { PlacementList } from './placement-list';
 import { PlacementEditorCanvas } from './placement-editor-canvas';
@@ -51,7 +49,12 @@ function nextAvailableBoothNumber(existing: BoothPlacement[]): string {
   return `${Date.now()}`;
 }
 
-export function PlacementEditor() {
+export interface PlacementEditorProps {
+  /** 운영자(부스 계정) 풀. 페이지에서 useBooths() 로 끌어와 내려준다. */
+  booths: BoothProfile[];
+}
+
+export function PlacementEditor({ booths }: PlacementEditorProps) {
   const [selectedDate, setSelectedDate] = useState<FestivalDate>(FESTIVAL_DATES[0]);
   const validSections = useMemo(() => sectionsValidFor(selectedDate), [selectedDate]);
   const [selectedSection, setSelectedSection] = useState<MapSectionId>(validSections[0]);
@@ -89,7 +92,6 @@ export function PlacementEditor() {
     [placementsQuery.data, selectedSection],
   );
 
-  const booths = useMemo(() => Object.values(mockBoothsById), []);
   const section = MAP_SECTIONS[selectedSection];
 
   const createMut = useCreatePlacement();

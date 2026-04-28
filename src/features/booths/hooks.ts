@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '@/features/auth/store';
-import { getMyBoothProfile, updateMyBoothProfile } from './api';
+import { getMyBoothProfile, listBooths, updateMyBoothProfile } from './api';
 import type { BoothProfile } from './types';
 
 /**
@@ -15,6 +15,17 @@ export function useMyBoothProfile() {
     queryKey: ['booths', 'me', user?.boothId],
     queryFn: getMyBoothProfile,
     enabled: isBoothUser,
+  });
+}
+
+/**
+ * 운영자(부스 계정) 풀 전체 조회.
+ * Super/Master 가 좌표 편집기·예약 picker 에서 운영자 목록·이름 lookup 용도로 사용.
+ */
+export function useBooths() {
+  return useQuery({
+    queryKey: ['booths', 'all'],
+    queryFn: listBooths,
   });
 }
 
