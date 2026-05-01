@@ -1,6 +1,7 @@
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '@/features/auth/store';
-import { getMyPerformance, getPerformance, listPerformances } from './api';
+import { getMyPerformance, getPerformance, listPerformances, updatePerformance } from './api';
+import type { PerformanceDetail } from './types';
 
 /**
  * Super/Master 전용 전체 공연 목록 조회.
@@ -36,5 +37,30 @@ export function useMyPerformance() {
     queryKey: ['performances', 'me', user?.performanceTeamId],
     queryFn: getMyPerformance,
     enabled: isPerformer,
+  });
+}
+
+/**
+ * 공연팀 상세(프로필 + 타임테이블 + 셋리스트 + 이미지) 부분 업데이트.
+ * Performer 본인 폼과 Super/Master 운영진 편집 양쪽이 같은 mutation 을 공유한다.
+ * 성공 시 관련된 query cache 를 직접 갱신해 즉시 화면 반영 + 다음 navigate 시
+ * 잘못된 데이터를 보여주지 않게 한다.
+ */
+export function useUpdatePerformance() {
+  const user = useAuthStore(s => s.user);
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ teamId, patch }: { teamId: number; patch: Partial<PerformanceDetail> }) =>
+      updatePerformance(teamId, patch),
+    onSuccess: (data) => {
+      queryClient.setQueryData(['performances', data.teamId], data);
+      // 본인 팀 상세 캐시도 같이 갱신 (Performer 가 본인 팀을 수정했을 때).
+      if (user?.role === 'Performer' && user.performanceTeamId === data.teamId) {
+        queryClient.setQueryData(['performances', 'me', data.teamId], data);
+      }
+      // 리스트 invalidation — 팀명/날짜/대표 사진 등 리스트 표시 필드가 바뀔 수 있어.
+      queryClient.invalidateQueries({ queryKey: ['performances'], exact: true });
+    },
   });
 }

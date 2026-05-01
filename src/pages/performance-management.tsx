@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type ChangeEvent } from "react";
 import { useParams, Link } from "react-router";
 import { ArrowLeft, Plus, Trash2, Instagram, Youtube, Music, Check, Edit, X, Star, Upload, ChevronDown } from "lucide-react";
 import { useAuth } from "@/features/auth/hooks";
-import { useMyPerformance, usePerformance } from "@/features/performances/hooks";
+import { useMyPerformance, usePerformance, useUpdatePerformance } from "@/features/performances/hooks";
 import {
   PERFORMANCE_STAGES,
   type PerformanceDetail,
@@ -34,6 +34,7 @@ export function PerformanceManagement() {
 
   const { can, canEditPerformance } = useAuth();
   const canEdit = data ? canEditPerformance({ teamId: data.teamId }) : false;
+  const updateMutation = useUpdatePerformance();
   // 타임테이블(날짜·스테이지·시작/종료) 은 축제 운영 전체 스케줄의 입력으로
   // Performer 가 임의로 바꾸면 곤란. 본인 프로필·셋리스트는 수정 가능하되
   // 이 섹션은 Super/Master(performance.manage) 만 편집할 수 있다.
@@ -167,15 +168,27 @@ export function PerformanceManagement() {
 
   const handleSave = () => {
     if (!editingData) return;
-    // TODO: 실제 저장 mutation 연결. 지금은 local state 에만 반영해 UI 흐름만 검증.
-    setPerformanceData(editingData);
-    setSetlist(editingSetlist);
-    setPerformanceImages(editingImages);
-    setIsEditMode(false);
-    setSaveSuccess(true);
-    setTimeout(() => {
-      setSaveSuccess(false);
-    }, 3000);
+    // 편집 중인 모든 영역(프로필+타임테이블+셋리스트+이미지) 을 한 번에 patch.
+    const patch: Partial<PerformanceDetail> = {
+      ...editingData,
+      images: editingImages,
+      setlist: editingSetlist,
+    };
+    updateMutation.mutate(
+      { teamId: editingData.teamId, patch },
+      {
+        onSuccess: (saved) => {
+          // 캐시는 hooks 의 onSuccess 가 갱신함. 여기서는 로컬 view state 를 서버 응답으로 동기화.
+          setPerformanceData(saved);
+          setSetlist(saved.setlist);
+          setPerformanceImages(saved.images);
+          setIsEditMode(false);
+          setSaveSuccess(true);
+          setTimeout(() => setSaveSuccess(false), 3000);
+        },
+        // onError 는 mutation.error 로 노출 — 아래 알림 영역에서 처리.
+      },
+    );
   };
 
   // URL 의 teamId 가 숫자가 아닌 경우 — 쿼리 자체가 안 돌므로 바로 빈 상태로.
@@ -271,22 +284,35 @@ export function PerformanceManagement() {
             <>
               <button
                 onClick={handleCancel}
-                className="px-6 py-3 border border-ds-border-strong text-foreground rounded-lg hover:bg-muted transition-all duration-200 flex items-center gap-2"
+                disabled={updateMutation.isPending}
+                className="px-6 py-3 border border-ds-border-strong text-foreground rounded-lg hover:bg-muted transition-all duration-200 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <X size={18} />
                 <span>취소</span>
               </button>
               <button
                 onClick={handleSave}
-                className="px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-ds-primary-pressed hover:shadow-lg transition-all duration-200 flex items-center gap-2"
+                disabled={updateMutation.isPending}
+                className="px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-ds-primary-pressed hover:shadow-lg transition-all duration-200 flex items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
               >
                 <Check size={18} />
-                <span>저장</span>
+                <span>{updateMutation.isPending ? "저장 중…" : "저장"}</span>
               </button>
             </>
           )}
-          
-          {/* Save Success Toast */}
+
+          {/* 저장 실패 — toast 가 거짓말하지 않도록, 실제 mutation 결과만 노출. */}
+          {updateMutation.isError && (
+            <div
+              role="alert"
+              className="flex items-center gap-2 px-4 py-3 bg-ds-error-subtle border border-destructive text-destructive rounded-lg shadow-lg"
+            >
+              <X size={14} />
+              <span className="font-medium">저장에 실패했습니다. 잠시 후 다시 시도해주세요.</span>
+            </div>
+          )}
+
+          {/* Save Success Toast — 실 mutation 성공 시에만 발화 */}
           {saveSuccess && (
             <div className="flex items-center gap-2 px-4 py-3 bg-ds-success-subtle border border-ds-success text-ds-success-pressed rounded-lg shadow-lg animate-fade-in">
               <div className="w-6 h-6 bg-ds-success rounded-full flex items-center justify-center">
