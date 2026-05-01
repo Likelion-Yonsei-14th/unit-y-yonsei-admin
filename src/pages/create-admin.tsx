@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { UserPlus, Check, Shield, FileText, X } from "lucide-react";
@@ -41,7 +41,7 @@ export function CreateAdmin() {
     watch,
     setValue,
     reset,
-    formState: { errors, isSubmitSuccessful },
+    formState: { errors },
   } = useForm<CreateUserFormValues>({
     resolver: zodResolver(createUserSchema),
     defaultValues: EMPTY_FORM,
@@ -52,24 +52,29 @@ export function CreateAdmin() {
   const needsBoothName = permissionType === "Booth";
   const needsPerformanceTeamName = permissionType === "Performer";
 
+  // 성공 알림 3초 뒤 폼 초기화 타이머 — 다음 submit / unmount 시 반드시 정리해야
+  // 이미 입력 중인 값을 뒤늦게 날리거나, unmount 후 작업이 발생하지 않는다.
+  const resetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const clearResetTimer = () => {
+    if (resetTimerRef.current != null) {
+      clearTimeout(resetTimerRef.current);
+      resetTimerRef.current = null;
+    }
+  };
+  useEffect(() => clearResetTimer, []);
+
   const onSubmit = (values: CreateUserFormValues) => {
+    clearResetTimer(); // 이전 타이머가 살아있으면 취소.
     createMutation.mutate(values, {
       onSuccess: () => {
-        // 성공 알림 3초 후 폼 초기화 — 기존 UX 유지.
-        setTimeout(() => {
+        resetTimerRef.current = setTimeout(() => {
           reset(EMPTY_FORM);
           createMutation.reset();
+          resetTimerRef.current = null;
         }, 3000);
       },
     });
   };
-
-  // mutation 이 새 요청을 시작하면 직전 success 안내가 사라지도록 RHF submit 상태도 함께 초기화.
-  useEffect(() => {
-    if (createMutation.isPending && isSubmitSuccessful) {
-      // no-op: react-hook-form 이 isSubmitSuccessful 을 자체 관리하므로 별도 reset 불필요.
-    }
-  }, [createMutation.isPending, isSubmitSuccessful]);
 
   const isSuccess = createMutation.isSuccess && !createMutation.isPending;
 
@@ -311,6 +316,7 @@ export function CreateAdmin() {
           <button
             type="button"
             onClick={() => {
+              clearResetTimer();
               reset(EMPTY_FORM);
               createMutation.reset();
             }}
