@@ -1,93 +1,77 @@
-import { useState } from "react";
-import { UserPlus, Check, X, Shield, FileText } from "lucide-react";
+import { useEffect } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { UserPlus, Check, Shield, FileText, X } from "lucide-react";
+import { useCreateUser } from "@/features/users/hooks";
+import { createUserSchema, type CreateUserFormValues } from "@/features/users/schema";
+import type { Role } from "@/types/role";
 
-type PermissionType = "Super" | "Master" | "Booth" | "Performer";
+const PERMISSION_OPTIONS: Array<{
+  value: Role;
+  label: string;
+  description: string;
+  badgeClass: string;
+}> = [
+  { value: "Super", label: "Super", description: "모든 권한 보유", badgeClass: "bg-ds-secondary-a" },
+  { value: "Master", label: "Master", description: "전체 관리 권한", badgeClass: "bg-primary" },
+  { value: "Booth", label: "Booth", description: "부스 관리 권한", badgeClass: "bg-ds-success" },
+  { value: "Performer", label: "Performer", description: "공연 관리 권한", badgeClass: "bg-ds-warning" },
+];
+
+const EMPTY_FORM: CreateUserFormValues = {
+  userId: "",
+  tempPassword: "",
+  affiliation: "",
+  // 빈 문자열은 enum 매칭에 실패해 첫 zod parse 시 'permissionType' 에러를 띄운다.
+  // (사용자가 카드를 클릭하면 setValue 로 정상 enum 값이 들어감)
+  permissionType: "" as unknown as Role,
+  representativeName: "",
+  representativePhone: "",
+  boothName: "",
+  performanceTeamName: "",
+  internalMemo: "",
+};
 
 export function CreateAdmin() {
-  const [userId, setUserId] = useState("");
-  const [tempPassword, setTempPassword] = useState("");
-  const [affiliation, setAffiliation] = useState("");
-  const [permissionType, setPermissionType] = useState<PermissionType | "">("");
-  const [representativeName, setRepresentativeName] = useState("");
-  const [representativePhone, setRepresentativePhone] = useState("");
-  const [boothName, setBoothName] = useState("");
-  const [performanceTeamName, setPerformanceTeamName] = useState("");
-  const [internalMemo, setInternalMemo] = useState("");
-  
-  const [showSuccess, setShowSuccess] = useState(false);
-  const [errors, setErrors] = useState<Record<string, string>>({});
+  const createMutation = useCreateUser();
 
+  const {
+    register,
+    handleSubmit,
+    watch,
+    setValue,
+    reset,
+    formState: { errors, isSubmitSuccessful },
+  } = useForm<CreateUserFormValues>({
+    resolver: zodResolver(createUserSchema),
+    defaultValues: EMPTY_FORM,
+    mode: "onSubmit",
+  });
+
+  const permissionType = watch("permissionType");
   const needsBoothName = permissionType === "Booth";
   const needsPerformanceTeamName = permissionType === "Performer";
 
-  const validateForm = () => {
-    const newErrors: Record<string, string> = {};
-
-    if (!userId.trim()) newErrors.userId = "유저 ID를 입력해주세요";
-    if (!tempPassword.trim()) newErrors.tempPassword = "임시 비밀번호를 입력해주세요";
-    if (tempPassword.length < 8) newErrors.tempPassword = "비밀번호는 최소 8자 이상이어야 합니다";
-    if (!affiliation.trim()) newErrors.affiliation = "소속을 입력해주세요";
-    if (!permissionType) newErrors.permissionType = "권한 유형을 선택해주세요";
-    if (!representativeName.trim()) newErrors.representativeName = "대표자명을 입력해주세요";
-    if (!representativePhone.trim()) newErrors.representativePhone = "대표자 전화번호를 입력해주세요";
-    
-    if (needsBoothName && !boothName.trim()) {
-      newErrors.boothName = "부스명을 입력해주세요";
-    }
-    
-    if (needsPerformanceTeamName && !performanceTeamName.trim()) {
-      newErrors.performanceTeamName = "공연팀명을 입력해주세요";
-    }
-
-    if (!internalMemo.trim()) {
-      newErrors.internalMemo = "내부 메모를 입력해주세요";
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+  const onSubmit = (values: CreateUserFormValues) => {
+    createMutation.mutate(values, {
+      onSuccess: () => {
+        // 성공 알림 3초 후 폼 초기화 — 기존 UX 유지.
+        setTimeout(() => {
+          reset(EMPTY_FORM);
+          createMutation.reset();
+        }, 3000);
+      },
+    });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!validateForm()) {
-      return;
+  // mutation 이 새 요청을 시작하면 직전 success 안내가 사라지도록 RHF submit 상태도 함께 초기화.
+  useEffect(() => {
+    if (createMutation.isPending && isSubmitSuccessful) {
+      // no-op: react-hook-form 이 isSubmitSuccessful 을 자체 관리하므로 별도 reset 불필요.
     }
+  }, [createMutation.isPending, isSubmitSuccessful]);
 
-    // 생성 로직 — 백엔드 연결 시 features/users/api.ts 의 createUser 호출로 치환.
-    setShowSuccess(true);
-    setTimeout(() => {
-      setShowSuccess(false);
-      // 폼 초기화
-      setUserId("");
-      setTempPassword("");
-      setAffiliation("");
-      setPermissionType("");
-      setRepresentativeName("");
-      setRepresentativePhone("");
-      setBoothName("");
-      setPerformanceTeamName("");
-      setInternalMemo("");
-      setErrors({});
-    }, 3000);
-  };
-
-  // 역할별 식별 색상. brand triplet(blue/violet/pink) + 상태 토큰 조합으로
-  // 역할별 시각 구분만 유지하고 그라데이션은 제거.
-  const getPermissionBadgeColor = (type: PermissionType) => {
-    switch (type) {
-      case "Super":
-        return "bg-ds-secondary-a";
-      case "Master":
-        return "bg-primary";
-      case "Booth":
-        return "bg-ds-success";
-      case "Performer":
-        return "bg-ds-warning";
-      default:
-        return "bg-ds-gray-300";
-    }
-  };
+  const isSuccess = createMutation.isSuccess && !createMutation.isPending;
 
   return (
     <div className="p-4 md:p-8 max-w-4xl mx-auto">
@@ -99,17 +83,23 @@ export function CreateAdmin() {
         <p className="text-muted-foreground mt-2">외부 요청을 받아 새로운 어드민 계정을 생성합니다. 생성된 계정 정보는 요청자에게 전달됩니다.</p>
       </div>
 
-      {/* Success Toast */}
-      {showSuccess && (
-        <div className="mb-6 flex items-center gap-2 px-4 py-3 bg-ds-success-subtle border border-ds-success text-ds-success-pressed rounded-lg shadow-lg animate-fade-in">
+      {/* 성공/실패 알림 — mutation 결과만을 신뢰 (이전: 무조건 success 토스트로 거짓말). */}
+      {isSuccess && (
+        <div role="status" className="mb-6 flex items-center gap-2 px-4 py-3 bg-ds-success-subtle border border-ds-success text-ds-success-pressed rounded-lg shadow-lg">
           <div className="w-6 h-6 bg-ds-success rounded-full flex items-center justify-center">
             <Check size={14} className="text-white" />
           </div>
           <span className="font-medium">계정이 성공적으로 생성되었습니다!</span>
         </div>
       )}
+      {createMutation.isError && (
+        <div role="alert" className="mb-6 flex items-center gap-2 px-4 py-3 bg-ds-error-subtle border border-destructive text-destructive rounded-lg shadow-lg">
+          <X size={16} />
+          <span className="font-medium">계정 생성에 실패했습니다. 잠시 후 다시 시도해주세요.</span>
+        </div>
+      )}
 
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit(onSubmit)} noValidate>
         <div className="bg-background rounded-2xl p-4 md:p-8 shadow-sm space-y-6">
           {/* Warning Notice */}
           <div className="flex items-start gap-3 p-4 bg-ds-primary-subtle border border-ds-primary rounded-lg">
@@ -128,178 +118,188 @@ export function CreateAdmin() {
           {/* Basic Info */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             <div>
-              <label className="block text-sm font-semibold text-foreground mb-2">
+              <label htmlFor="user-id" className="block text-sm font-semibold text-foreground mb-2">
                 유저 ID <span className="text-destructive">*</span>
               </label>
               <input
+                id="user-id"
                 type="text"
-                value={userId}
-                onChange={(e) => setUserId(e.target.value)}
                 placeholder="example_user"
+                aria-invalid={!!errors.userId}
+                {...register("userId")}
                 className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 transition-all ${
                   errors.userId ? 'border-destructive focus:ring-destructive' : 'border-border focus:ring-ring'
                 }`}
               />
-              {errors.userId && <p className="text-destructive text-xs mt-1">{errors.userId}</p>}
+              {errors.userId && <p className="text-destructive text-xs mt-1">{errors.userId.message}</p>}
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-foreground mb-2">
+              <label htmlFor="temp-password" className="block text-sm font-semibold text-foreground mb-2">
                 임시 비밀번호 <span className="text-destructive">*</span>
               </label>
               <input
+                id="temp-password"
                 type="password"
-                value={tempPassword}
-                onChange={(e) => setTempPassword(e.target.value)}
                 placeholder="최소 8자 이상"
+                aria-invalid={!!errors.tempPassword}
+                {...register("tempPassword")}
                 className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 transition-all ${
                   errors.tempPassword ? 'border-destructive focus:ring-destructive' : 'border-border focus:ring-ring'
                 }`}
               />
-              {errors.tempPassword && <p className="text-destructive text-xs mt-1">{errors.tempPassword}</p>}
+              {errors.tempPassword && <p className="text-destructive text-xs mt-1">{errors.tempPassword.message}</p>}
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-foreground mb-2">
+            <label htmlFor="affiliation" className="block text-sm font-semibold text-foreground mb-2">
               소속 <span className="text-destructive">*</span>
             </label>
             <input
+              id="affiliation"
               type="text"
-              value={affiliation}
-              onChange={(e) => setAffiliation(e.target.value)}
               placeholder="예: 문헌정보학과, 멋쟁이사자처럼, 총학생회 등"
+              aria-invalid={!!errors.affiliation}
+              {...register("affiliation")}
               className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 transition-all ${
                 errors.affiliation ? 'border-destructive focus:ring-destructive' : 'border-border focus:ring-ring'
               }`}
             />
-            {errors.affiliation && <p className="text-destructive text-xs mt-1">{errors.affiliation}</p>}
+            {errors.affiliation && <p className="text-destructive text-xs mt-1">{errors.affiliation.message}</p>}
           </div>
 
-          {/* Permission Type */}
+          {/* Permission Type — radiogroup 으로 의미 매칭 */}
           <div>
-            <label className="block text-sm font-semibold text-foreground mb-3">
+            <span id="permission-label" className="block text-sm font-semibold text-foreground mb-3">
               권한 유형 <span className="text-destructive">*</span>
-            </label>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {(["Super", "Master", "Booth", "Performer"] as PermissionType[]).map((type) => (
-                <button
-                  key={type}
-                  type="button"
-                  onClick={() => setPermissionType(type)}
-                  className={`
-                    p-4 rounded-lg border-2 transition-all text-left
-                    ${permissionType === type
-                      ? `border-transparent ${getPermissionBadgeColor(type)} text-white shadow-lg`
-                      : 'border hover:border-ds-border-strong bg-background'
-                    }
-                  `}
-                >
-                  <div className="flex items-center gap-2 mb-1">
-                    <Shield size={18} />
-                    <span className="font-bold">{type}</span>
-                  </div>
-                  <p className={`text-xs ${permissionType === type ? 'text-white/90' : 'text-muted-foreground'}`}>
-                    {type === "Super" && "모든 권한 보유"}
-                    {type === "Master" && "전체 관리 권한"}
-                    {type === "Booth" && "부스 관리 권한"}
-                    {type === "Performer" && "공연 관리 권한"}
-                  </p>
-                </button>
-              ))}
+            </span>
+            <div role="radiogroup" aria-labelledby="permission-label" className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {PERMISSION_OPTIONS.map((option) => {
+                const selected = permissionType === option.value;
+                return (
+                  <button
+                    key={option.value}
+                    type="button"
+                    role="radio"
+                    aria-checked={selected}
+                    onClick={() => setValue("permissionType", option.value, { shouldValidate: true })}
+                    className={`
+                      p-4 rounded-lg border-2 transition-all text-left
+                      ${selected
+                        ? `border-transparent ${option.badgeClass} text-white shadow-lg`
+                        : 'border-border hover:border-ds-border-strong bg-background'
+                      }
+                    `}
+                  >
+                    <div className="flex items-center gap-2 mb-1">
+                      <Shield size={18} />
+                      <span className="font-bold">{option.label}</span>
+                    </div>
+                    <p className={`text-xs ${selected ? 'text-white/90' : 'text-muted-foreground'}`}>
+                      {option.description}
+                    </p>
+                  </button>
+                );
+              })}
             </div>
-            {errors.permissionType && <p className="text-destructive text-xs mt-1">{errors.permissionType}</p>}
+            {errors.permissionType && <p className="text-destructive text-xs mt-1">{errors.permissionType.message}</p>}
           </div>
 
           {/* Booth Name - Conditional */}
           {needsBoothName && (
             <div className="p-4 bg-ds-success-subtle border border-ds-success rounded-lg">
-              <label className="block text-sm font-semibold text-ds-success-pressed mb-2">
+              <label htmlFor="booth-name-input" className="block text-sm font-semibold text-ds-success-pressed mb-2">
                 부스명 <span className="text-destructive">*</span>
               </label>
               <input
+                id="booth-name-input"
                 type="text"
-                value={boothName}
-                onChange={(e) => setBoothName(e.target.value)}
                 placeholder="운영할 부스 이름을 입력하세요"
+                aria-invalid={!!errors.boothName}
+                {...register("boothName")}
                 className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 transition-all bg-background ${
                   errors.boothName ? 'border-destructive focus:ring-destructive' : 'border-ds-success focus:ring-ds-success'
                 }`}
               />
-              {errors.boothName && <p className="text-destructive text-xs mt-1">{errors.boothName}</p>}
+              {errors.boothName && <p className="text-destructive text-xs mt-1">{errors.boothName.message}</p>}
             </div>
           )}
 
           {/* Performance Team Name - Conditional */}
           {needsPerformanceTeamName && (
             <div className="p-4 bg-ds-warning-subtle border border-ds-warning rounded-lg">
-              <label className="block text-sm font-semibold text-ds-warning-pressed mb-2">
+              <label htmlFor="performance-team-name-input" className="block text-sm font-semibold text-ds-warning-pressed mb-2">
                 공연팀명 <span className="text-destructive">*</span>
               </label>
               <input
+                id="performance-team-name-input"
                 type="text"
-                value={performanceTeamName}
-                onChange={(e) => setPerformanceTeamName(e.target.value)}
                 placeholder="공연팀 이름을 입력하세요"
+                aria-invalid={!!errors.performanceTeamName}
+                {...register("performanceTeamName")}
                 className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 transition-all bg-background ${
                   errors.performanceTeamName ? 'border-destructive focus:ring-destructive' : 'border-ds-warning focus:ring-ds-warning'
                 }`}
               />
-              {errors.performanceTeamName && <p className="text-destructive text-xs mt-1">{errors.performanceTeamName}</p>}
+              {errors.performanceTeamName && <p className="text-destructive text-xs mt-1">{errors.performanceTeamName.message}</p>}
             </div>
           )}
 
           {/* Representative Info */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             <div>
-              <label className="block text-sm font-semibold text-foreground mb-2">
+              <label htmlFor="representative-name" className="block text-sm font-semibold text-foreground mb-2">
                 대표자명 <span className="text-destructive">*</span>
               </label>
               <input
+                id="representative-name"
                 type="text"
-                value={representativeName}
-                onChange={(e) => setRepresentativeName(e.target.value)}
                 placeholder="홍길동"
+                aria-invalid={!!errors.representativeName}
+                {...register("representativeName")}
                 className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 transition-all ${
                   errors.representativeName ? 'border-destructive focus:ring-destructive' : 'border-border focus:ring-ring'
                 }`}
               />
-              {errors.representativeName && <p className="text-destructive text-xs mt-1">{errors.representativeName}</p>}
+              {errors.representativeName && <p className="text-destructive text-xs mt-1">{errors.representativeName.message}</p>}
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-foreground mb-2">
+              <label htmlFor="representative-phone" className="block text-sm font-semibold text-foreground mb-2">
                 대표자 전화번호 <span className="text-destructive">*</span>
               </label>
               <input
+                id="representative-phone"
                 type="tel"
-                value={representativePhone}
-                onChange={(e) => setRepresentativePhone(e.target.value)}
                 placeholder="010-1234-5678"
+                aria-invalid={!!errors.representativePhone}
+                {...register("representativePhone")}
                 className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 transition-all ${
                   errors.representativePhone ? 'border-destructive focus:ring-destructive' : 'border-border focus:ring-ring'
                 }`}
               />
-              {errors.representativePhone && <p className="text-destructive text-xs mt-1">{errors.representativePhone}</p>}
+              {errors.representativePhone && <p className="text-destructive text-xs mt-1">{errors.representativePhone.message}</p>}
             </div>
           </div>
 
           {/* Internal Memo */}
           <div>
-            <label className="block text-sm font-semibold text-foreground mb-2 flex items-center gap-2">
+            <label htmlFor="internal-memo" className="block text-sm font-semibold text-foreground mb-2 flex items-center gap-2">
               <FileText size={16} />
               내부 메모
             </label>
             <textarea
+              id="internal-memo"
               rows={4}
-              value={internalMemo}
-              onChange={(e) => setInternalMemo(e.target.value)}
               placeholder="요청 경로, 검토 내용, 특이사항 등을 기록해주세요. (예: 카카오톡으로 요청받음 - 문헌정보학과 부스 운영 확인 완료)"
+              aria-invalid={!!errors.internalMemo}
+              {...register("internalMemo")}
               className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 transition-all resize-none ${
                 errors.internalMemo ? 'border-destructive focus:ring-destructive' : 'border-border focus:ring-ring'
               }`}
             />
-            {errors.internalMemo && <p className="text-destructive text-xs mt-1">{errors.internalMemo}</p>}
+            {errors.internalMemo && <p className="text-destructive text-xs mt-1">{errors.internalMemo.message}</p>}
             <p className="text-xs text-muted-foreground mt-1">
               계정 생성 이력 관리를 위한 내부 메모입니다. 요청자에게 공개되지 않습니다.
             </p>
@@ -311,28 +311,21 @@ export function CreateAdmin() {
           <button
             type="button"
             onClick={() => {
-              // 폼 초기화
-              setUserId("");
-              setTempPassword("");
-              setAffiliation("");
-              setPermissionType("");
-              setRepresentativeName("");
-              setRepresentativePhone("");
-              setBoothName("");
-              setPerformanceTeamName("");
-              setInternalMemo("");
-              setErrors({});
+              reset(EMPTY_FORM);
+              createMutation.reset();
             }}
-            className="px-6 py-3 bg-background border border-ds-border-strong text-foreground rounded-lg hover:bg-muted transition-colors"
+            disabled={createMutation.isPending}
+            className="px-6 py-3 bg-background border border-ds-border-strong text-foreground rounded-lg hover:bg-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             초기화
           </button>
           <button
             type="submit"
-            className="px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-ds-primary-pressed transition-colors duration-200 flex items-center gap-2"
+            disabled={createMutation.isPending}
+            className="px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-ds-primary-pressed transition-colors duration-200 flex items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
           >
             <UserPlus size={18} />
-            계정 생성
+            {createMutation.isPending ? "생성 중…" : "계정 생성"}
           </button>
         </div>
       </form>
