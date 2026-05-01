@@ -29,6 +29,12 @@ export function AppLayout() {
     setIsMobileOpen(false);
   }, [location.pathname]);
 
+  // 인너 콘텐츠 표시 결정용. 데스크톱에서 collapse 한 채 viewport 가 좁아져
+  // 모바일 drawer 가 열리면, w-60 박스 안에 collapsed 아이콘만 보여 어색한 문제.
+  // drawer 가 열린 동안엔 항상 풀 콘텐츠를 보여준다. 사이드바 width 자체는
+  // CSS 반응형으로 모바일에선 이미 w-60 강제이므로 그대로 isCollapsed 사용.
+  const effectiveCollapsed = isCollapsed && !isMobileOpen;
+
   const toggleMenu = (path: string) => {
     setExpandedMenus((prev) => {
       const next = new Set(prev);
@@ -120,8 +126,8 @@ export function AppLayout() {
         </button>
 
         {/* 헤더 (로고) */}
-        <div className={`p-6 border-b border-border ${isCollapsed ? 'px-3' : ''}`}>
-          {isCollapsed ? (
+        <div className={`p-6 border-b border-border ${effectiveCollapsed ? 'px-3' : ''}`}>
+          {effectiveCollapsed ? (
             <div className="flex justify-center">
               <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center">
                 <span className="text-primary-foreground font-bold">대</span>
@@ -136,7 +142,7 @@ export function AppLayout() {
         </div>
 
         {/* 사용자 정보 */}
-        {!isCollapsed && user && (
+        {!effectiveCollapsed && user && (
           <div className="px-4 py-3 border-b border-border">
             <div className="ds-caption text-muted-foreground">현재 로그인</div>
             <div className="flex items-center gap-2 mt-1">
@@ -149,7 +155,7 @@ export function AppLayout() {
         )}
 
         {/* 메인 네비 */}
-        <nav className={`flex-1 overflow-y-auto p-4 space-y-1 ${isCollapsed ? 'px-2' : ''}`}>
+        <nav className={`flex-1 overflow-y-auto p-4 space-y-1 ${effectiveCollapsed ? 'px-2' : ''}`}>
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = isMenuActive(item);
@@ -179,20 +185,20 @@ export function AppLayout() {
                         if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
                         toggleMenu(item.path);
                       }}
-                      aria-expanded={isCollapsed ? undefined : isExpanded}
+                      aria-expanded={effectiveCollapsed ? undefined : isExpanded}
                       className={`
                         flex items-center gap-3 rounded-lg transition-colors
-                        ${isCollapsed ? 'justify-center px-3 py-3' : 'px-4 py-2.5'}
+                        ${effectiveCollapsed ? 'justify-center px-3 py-3' : 'px-4 py-2.5'}
                         ${
                           isActive
                             ? 'bg-primary text-primary-foreground'
                             : 'text-muted-foreground hover:bg-muted'
                         }
                       `}
-                      title={isCollapsed ? item.label : undefined}
+                      title={effectiveCollapsed ? item.label : undefined}
                     >
                       <Icon size={18} />
-                      {!isCollapsed && (
+                      {!effectiveCollapsed && (
                         <>
                           <span className="ds-body-2 flex-1 min-w-0 truncate">{item.label}</span>
                           <ChevronDown
@@ -210,16 +216,16 @@ export function AppLayout() {
                      */
                     <button
                       onClick={() => toggleMenu(item.path)}
-                      aria-expanded={isCollapsed ? undefined : isExpanded}
+                      aria-expanded={effectiveCollapsed ? undefined : isExpanded}
                       className={`
                         flex items-center gap-3 rounded-lg transition-colors w-full
                         text-muted-foreground hover:bg-muted
-                        ${isCollapsed ? 'justify-center px-3 py-3' : 'px-4 py-2.5'}
+                        ${effectiveCollapsed ? 'justify-center px-3 py-3' : 'px-4 py-2.5'}
                       `}
-                      title={isCollapsed ? item.label : undefined}
+                      title={effectiveCollapsed ? item.label : undefined}
                     >
                       <Icon size={18} />
-                      {!isCollapsed && (
+                      {!effectiveCollapsed && (
                         <>
                           <span className="ds-body-2 flex-1 min-w-0 truncate text-left">
                             {item.label}
@@ -237,22 +243,22 @@ export function AppLayout() {
                     to={item.path}
                     className={`
                       flex items-center gap-3 rounded-lg transition-all
-                      ${isCollapsed ? 'justify-center px-3 py-3' : 'px-4 py-2.5'}
+                      ${effectiveCollapsed ? 'justify-center px-3 py-3' : 'px-4 py-2.5'}
                       ${
                         isActive
                           ? 'bg-primary text-primary-foreground'
                           : 'text-muted-foreground hover:bg-muted'
                       }
                     `}
-                    title={isCollapsed ? item.label : undefined}
+                    title={effectiveCollapsed ? item.label : undefined}
                   >
                     <Icon size={18} />
-                    {!isCollapsed && <span className="ds-body-2">{item.label}</span>}
+                    {!effectiveCollapsed && <span className="ds-body-2">{item.label}</span>}
                   </Link>
                 )}
 
                 {/* 서브 메뉴 */}
-                {hasChildren && isExpanded && !isCollapsed && (
+                {hasChildren && isExpanded && !effectiveCollapsed && (
                   <div className="mt-1 space-y-1">
                     {item.children!.map((child) => {
                       const ChildIcon = child.icon;
@@ -283,7 +289,7 @@ export function AppLayout() {
         </nav>
 
         {/* 하단 메뉴 */}
-        <div className={`p-4 border-t border-border space-y-1 ${isCollapsed ? 'px-2' : ''}`}>
+        <div className={`p-4 border-t border-border space-y-1 ${effectiveCollapsed ? 'px-2' : ''}`}>
           {footerItems.map((item) => {
             const Icon = item.icon;
             const isActive = location.pathname === item.path;
@@ -293,17 +299,17 @@ export function AppLayout() {
                 to={item.path}
                 className={`
                   flex items-center gap-3 rounded-lg transition-all
-                  ${isCollapsed ? 'justify-center px-3 py-3' : 'px-4 py-2.5'}
+                  ${effectiveCollapsed ? 'justify-center px-3 py-3' : 'px-4 py-2.5'}
                   ${
                     isActive
                       ? 'bg-primary text-primary-foreground'
                       : 'text-muted-foreground hover:bg-muted'
                   }
                 `}
-                title={isCollapsed ? item.label : undefined}
+                title={effectiveCollapsed ? item.label : undefined}
               >
                 <Icon size={18} />
-                {!isCollapsed && <span className="ds-body-2">{item.label}</span>}
+                {!effectiveCollapsed && <span className="ds-body-2">{item.label}</span>}
               </Link>
             );
           })}
@@ -313,13 +319,13 @@ export function AppLayout() {
             disabled={logout.isPending}
             className={`
               flex items-center gap-3 rounded-lg w-full transition-all
-              ${isCollapsed ? 'justify-center px-3 py-3' : 'px-4 py-2.5'}
+              ${effectiveCollapsed ? 'justify-center px-3 py-3' : 'px-4 py-2.5'}
               text-muted-foreground hover:bg-muted disabled:opacity-50
             `}
-            title={isCollapsed ? '로그아웃' : undefined}
+            title={effectiveCollapsed ? '로그아웃' : undefined}
           >
             <LogOut size={18} />
-            {!isCollapsed && <span className="ds-body-2">로그아웃</span>}
+            {!effectiveCollapsed && <span className="ds-body-2">로그아웃</span>}
           </button>
         </div>
       </aside>
