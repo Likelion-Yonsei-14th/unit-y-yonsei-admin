@@ -122,7 +122,7 @@ export function LostFoundPage() {
   };
 
   return (
-    <div className="p-8">
+    <div className="p-4 md:p-8">
       <div className="flex items-center justify-between mb-8">
         <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
           <Package size={32} />
@@ -138,7 +138,8 @@ export function LostFoundPage() {
       {/* Lost Items List */}
       {!showForm && (
         <div className="bg-background rounded-2xl overflow-hidden shadow-sm">
-          <table className="w-full">
+          <div className="overflow-x-auto">
+          <table className="w-full min-w-[720px]">
             <thead className="bg-muted">
               <tr>
                 <th className="px-6 py-4 text-left text-sm font-semibold text-foreground">분실물명</th>
@@ -199,6 +200,7 @@ export function LostFoundPage() {
               ))}
             </tbody>
           </table>
+          </div>
           {lostItems.length === 0 && (
             <div className="text-center py-12 text-ds-text-disabled">
               <p>등록된 분실물이 없습니다.</p>
@@ -209,7 +211,7 @@ export function LostFoundPage() {
 
       {/* Lost Item Form */}
       {showForm && (
-        <div className="bg-background rounded-2xl p-8 shadow-sm">
+        <div className="bg-background rounded-2xl p-4 md:p-8 shadow-sm">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-bold text-foreground">
               {editingItem ? "분실물 수정" : "분실물 등록"}
@@ -223,7 +225,7 @@ export function LostFoundPage() {
           </div>
 
           <div className="space-y-6">
-            <div className="grid grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-semibold text-foreground mb-2">분실물명</label>
                 <input

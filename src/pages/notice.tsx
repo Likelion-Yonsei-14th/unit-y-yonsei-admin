@@ -116,7 +116,7 @@ export function NoticePage() {
   };
 
   return (
-    <div className="p-8">
+    <div className="p-4 md:p-8">
       <div className="flex items-center justify-between mb-8">
         <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
           <FileText size={32} />
@@ -132,7 +132,8 @@ export function NoticePage() {
       {/* Notice List */}
       {!showForm && (
         <div className="bg-background rounded-2xl overflow-hidden shadow-sm">
-          <table className="w-full">
+          <div className="overflow-x-auto">
+          <table className="w-full min-w-[640px]">
             <thead className="bg-muted">
               <tr>
                 <th className="px-6 py-4 text-left text-sm font-semibold text-foreground">제목</th>
@@ -189,6 +190,7 @@ export function NoticePage() {
               ))}
             </tbody>
           </table>
+          </div>
           {notices.length === 0 && (
             <div className="text-center py-12 text-ds-text-disabled">
               <p>등록된 공지사항이 없습니다.</p>
@@ -199,7 +201,7 @@ export function NoticePage() {
 
       {/* Notice Form */}
       {showForm && (
-        <div className="bg-background rounded-2xl p-8 shadow-sm">
+        <div className="bg-background rounded-2xl p-4 md:p-8 shadow-sm">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-bold text-foreground">
               {editingNotice ? "공지사항 수정" : "새 공지사항 작성"}

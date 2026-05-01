@@ -148,7 +148,7 @@ export function PerformanceManagement() {
   // URL 의 teamId 가 숫자가 아닌 경우 — 쿼리 자체가 안 돌므로 바로 빈 상태로.
   if (isInvalidRoute) {
     return (
-      <div className="p-8">
+      <div className="p-4 md:p-8">
         <div className="bg-muted rounded-2xl p-12 text-center">
           <Music size={40} className="mx-auto mb-4 text-ds-text-disabled" />
           <p className="text-muted-foreground">잘못된 공연팀 경로입니다.</p>
@@ -161,13 +161,13 @@ export function PerformanceManagement() {
   // 상태는 "쿼리가 안 나간" 것이라 로딩이 아닌 빈 상태로 떨어져야 한다.
   if (isLoading) {
     return (
-      <div className="p-8 text-center text-muted-foreground">공연 정보를 불러오는 중…</div>
+      <div className="p-4 md:p-8 text-center text-muted-foreground">공연 정보를 불러오는 중…</div>
     );
   }
 
   if (isError) {
     return (
-      <div className="p-8">
+      <div className="p-4 md:p-8">
         <div className="bg-ds-error-subtle border border-destructive text-destructive rounded-2xl p-6 text-center">
           <p className="mb-3">공연 정보를 가져오지 못했습니다.</p>
           <button
@@ -186,7 +186,7 @@ export function PerformanceManagement() {
   // performanceData 에 동기화되기 전 한 프레임 동안 form 이 flash 하지 않게 양쪽 다 확인.
   if (!performanceData && !data) {
     return (
-      <div className="p-8">
+      <div className="p-4 md:p-8">
         <div className="bg-muted rounded-2xl p-12 text-center">
           <Music size={40} className="mx-auto mb-4 text-ds-text-disabled" />
           <p className="text-muted-foreground">
@@ -205,7 +205,7 @@ export function PerformanceManagement() {
   const displayData: PerformanceDetail = isEditMode && editingData ? editingData : viewData;
 
   return (
-    <div className="p-8">
+    <div className="p-4 md:p-8">
       {!isMe && (
         <Link
           to="/performance"
@@ -266,7 +266,7 @@ export function PerformanceManagement() {
       </div>
 
       {/* Performance Team Profile */}
-      <div className="bg-background rounded-2xl p-8 mb-6 shadow-sm">
+      <div className="bg-background rounded-2xl p-4 md:p-8 mb-6 shadow-sm">
         <h2 className="text-xl font-bold text-foreground mb-6">공연팀 프로필</h2>
 
         <div className="space-y-6">
@@ -347,7 +347,7 @@ export function PerformanceManagement() {
             
             {/* Image Preview Grid */}
             {(isEditMode ? editingImages : performanceImages).length > 0 && (
-              <div className={`${isEditMode ? 'mt-4' : ''} grid grid-cols-4 gap-4`}>
+              <div className={`${isEditMode ? 'mt-4' : ''} grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4`}>
                 {(isEditMode ? editingImages : performanceImages).map((image) => (
                   <div
                     key={image.id}
@@ -405,7 +405,7 @@ export function PerformanceManagement() {
       </div>
 
       {/* Performance Timetable */}
-      <div className="bg-background rounded-2xl p-8 mb-6 shadow-sm">
+      <div className="bg-background rounded-2xl p-4 md:p-8 mb-6 shadow-sm">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-bold text-foreground">공연 타임테이블</h2>
           {/* 편집 모드 중이지만 타임테이블을 건드릴 수 없는 케이스(= Performer) 에만 안내.
@@ -425,7 +425,7 @@ export function PerformanceManagement() {
             "w-full appearance-none border border-border rounded-lg bg-background py-3 pl-4 transition-all focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent " +
             (timetableEditable ? "pr-10" : "pr-4");
           return (
-            <div className="grid grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-semibold text-foreground mb-2">공연 날짜</label>
                 <div className="relative">
@@ -501,7 +501,7 @@ export function PerformanceManagement() {
       </div>
 
       {/* Setlist Management */}
-      <div className="bg-background rounded-2xl p-8 shadow-sm">
+      <div className="bg-background rounded-2xl p-4 md:p-8 shadow-sm">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-bold text-foreground">공연 셋리스트</h2>
           {isEditMode && (
@@ -521,7 +521,7 @@ export function PerformanceManagement() {
               <div className="flex items-center justify-center w-10 h-10 bg-primary text-primary-foreground font-bold rounded-lg">
                 {index + 1}
               </div>
-              <div className="flex-1 grid grid-cols-2 gap-4">
+              <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <input
                   type="text"
                   placeholder="곡명"

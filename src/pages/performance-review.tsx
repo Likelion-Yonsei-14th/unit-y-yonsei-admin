@@ -61,7 +61,7 @@ export function PerformanceReviewPage() {
   };
 
   return (
-    <div className="p-8">
+    <div className="p-4 md:p-8">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
           <MessageCircle size={32} />

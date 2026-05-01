@@ -41,7 +41,7 @@ export function PerformanceListPage() {
   }, [data, date, stage]);
 
   return (
-    <div className="p-8">
+    <div className="p-4 md:p-8">
       <div className="flex items-center justify-between mb-8">
         <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
           <Music size={32} />
