@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Plus, Trash2, Edit2, Upload, Package } from "lucide-react";
+import { Plus, Trash2, Edit2, Upload, Package, X } from "lucide-react";
 import { toast } from "sonner";
 import { mockLostItems, type LostItem } from "@/mocks/lost-items";
 import { PageHeaderAction } from "@/components/common/page-header-action";
@@ -25,7 +25,8 @@ export function LostFoundPage() {
   const [nameDraft, setNameDraft] = useState("");
   const [locationDraft, setLocationDraft] = useState("");
   const [descriptionDraft, setDescriptionDraft] = useState("");
-  const [hasImageDraft, setHasImageDraft] = useState(false);
+  const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
+  const [hasExistingImage, setHasExistingImage] = useState(false);
 
   useEffect(() => {
     if (!showForm) return;
@@ -33,14 +34,33 @@ export function LostFoundPage() {
       setNameDraft(editingItem.name);
       setLocationDraft(editingItem.location);
       setDescriptionDraft(editingItem.description ?? "");
-      setHasImageDraft(editingItem.hasImage);
+      setHasExistingImage(editingItem.hasImage);
     } else {
       setNameDraft("");
       setLocationDraft("");
       setDescriptionDraft("");
-      setHasImageDraft(false);
+      setHasExistingImage(false);
     }
+    setImagePreviewUrl((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return null;
+    });
   }, [editingItem, showForm]);
+
+  useEffect(() => () => {
+    setImagePreviewUrl((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return null;
+    });
+  }, []);
+
+  const handleImageChange = (file: File | null) => {
+    setImagePreviewUrl((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return file ? URL.createObjectURL(file) : null;
+    });
+    if (file) setHasExistingImage(false);
+  };
 
   const handleCreateNew = () => {
     setEditingItem(null);
@@ -70,6 +90,7 @@ export function LostFoundPage() {
       return;
     }
     const description = descriptionDraft.trim() || undefined;
+    const hasImage = !!imagePreviewUrl || hasExistingImage;
     if (editingItem) {
       setLostItems(lostItems.map(item =>
         item.id === editingItem.id
@@ -78,7 +99,7 @@ export function LostFoundPage() {
               name: nameDraft.trim(),
               location: locationDraft.trim(),
               description,
-              hasImage: hasImageDraft,
+              hasImage,
             }
           : item,
       ));
@@ -90,7 +111,7 @@ export function LostFoundPage() {
         name: nameDraft.trim(),
         location: locationDraft.trim(),
         date: todayString(),
-        hasImage: hasImageDraft,
+        hasImage,
         description,
       };
       setLostItems([newItem, ...lostItems]);
@@ -238,18 +259,54 @@ export function LostFoundPage() {
 
             <div>
               <label className="block text-sm font-semibold text-foreground mb-2">분실물 사진</label>
-              <label className="block border-2 border-dashed border-ds-border-strong rounded-lg p-8 text-center hover:border-primary transition-colors cursor-pointer">
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={(e) => setHasImageDraft(!!e.target.files?.length)}
-                />
-                <Upload className="mx-auto mb-3 text-ds-text-disabled" size={32} />
-                <p className="text-sm text-muted-foreground">
-                  {hasImageDraft ? "사진이 첨부되었습니다." : "분실물 사진을 업로드하세요"}
-                </p>
-              </label>
+              {imagePreviewUrl ? (
+                <div className="relative inline-block max-w-full overflow-hidden rounded-lg border border-border bg-muted">
+                  <img
+                    src={imagePreviewUrl}
+                    alt="첨부한 분실물 사진 미리보기"
+                    className="block max-h-80 w-auto max-w-full object-contain"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => handleImageChange(null)}
+                    aria-label="사진 제거"
+                    className="absolute right-2 top-2 inline-flex h-7 w-7 items-center justify-center rounded-full bg-background/90 text-muted-foreground shadow-sm hover:bg-background hover:text-destructive"
+                  >
+                    <X size={14} />
+                  </button>
+                </div>
+              ) : hasExistingImage ? (
+                <div className="flex items-center justify-between rounded-lg border border-border bg-muted px-4 py-3 text-sm text-muted-foreground">
+                  <span>기존 사진이 첨부되어 있습니다.</span>
+                  <label className="cursor-pointer rounded-md border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground hover:border-ds-border-strong">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => handleImageChange(e.target.files?.[0] ?? null)}
+                    />
+                    사진 변경
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setHasExistingImage(false)}
+                    className="text-xs font-medium text-destructive hover:underline"
+                  >
+                    사진 제거
+                  </button>
+                </div>
+              ) : (
+                <label className="block cursor-pointer rounded-lg border-2 border-dashed border-ds-border-strong p-8 text-center transition-colors hover:border-primary">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => handleImageChange(e.target.files?.[0] ?? null)}
+                  />
+                  <Upload className="mx-auto mb-3 text-ds-text-disabled" size={32} />
+                  <p className="text-sm text-muted-foreground">분실물 사진을 업로드하세요</p>
+                </label>
+              )}
             </div>
 
             <div className="flex justify-end gap-3 pt-4">

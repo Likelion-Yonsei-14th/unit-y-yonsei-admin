@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Upload, Plus, Trash2, Edit2, FileText } from "lucide-react";
+import { Upload, Plus, Trash2, Edit2, FileText, X } from "lucide-react";
 import { toast } from "sonner";
 import { mockNotices, type Notice } from "@/mocks/notices";
 import { PageHeaderAction } from "@/components/common/page-header-action";
@@ -25,20 +25,44 @@ export function NoticePage() {
   // 폼 입력 상태 (controlled)
   const [titleDraft, setTitleDraft] = useState("");
   const [contentDraft, setContentDraft] = useState("");
-  const [hasImageDraft, setHasImageDraft] = useState(false);
+  // 새로 첨부한 이미지의 object URL — 미리보기 + cleanup 대상.
+  const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
+  // 편집 진입 시 기존 이미지 보유 여부 — 새 파일을 올리지 않고 그대로 저장하면 유지된다.
+  const [hasExistingImage, setHasExistingImage] = useState(false);
 
   useEffect(() => {
     if (!showForm) return;
     if (editingNotice) {
       setTitleDraft(editingNotice.title);
       setContentDraft(editingNotice.content);
-      setHasImageDraft(editingNotice.hasImage);
+      setHasExistingImage(editingNotice.hasImage);
     } else {
       setTitleDraft("");
       setContentDraft("");
-      setHasImageDraft(false);
+      setHasExistingImage(false);
     }
+    // 새 미리보기는 폼 진입 시 항상 초기화 — 이전 폼의 잔재가 다음 폼에 남지 않게.
+    setImagePreviewUrl((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return null;
+    });
   }, [editingNotice, showForm]);
+
+  // 컴포넌트 unmount 시 마지막 object URL 정리.
+  useEffect(() => () => {
+    setImagePreviewUrl((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return null;
+    });
+  }, []);
+
+  const handleImageChange = (file: File | null) => {
+    setImagePreviewUrl((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return file ? URL.createObjectURL(file) : null;
+    });
+    if (file) setHasExistingImage(false);
+  };
 
   const handleCreateNew = () => {
     setEditingNotice(null);
@@ -67,10 +91,11 @@ export function NoticePage() {
       toast.error("제목과 본문을 모두 입력해주세요.");
       return;
     }
+    const hasImage = !!imagePreviewUrl || hasExistingImage;
     if (editingNotice) {
       setNotices(notices.map(n =>
         n.id === editingNotice.id
-          ? { ...n, title: titleDraft.trim(), content: contentDraft.trim(), hasImage: hasImageDraft }
+          ? { ...n, title: titleDraft.trim(), content: contentDraft.trim(), hasImage }
           : n,
       ));
       toast.success("공지사항을 수정했습니다.");
@@ -81,7 +106,7 @@ export function NoticePage() {
         title: titleDraft.trim(),
         content: contentDraft.trim(),
         date: todayString(),
-        hasImage: hasImageDraft,
+        hasImage,
       };
       setNotices([newNotice, ...notices]);
       toast.success("공지사항을 등록했습니다.");
@@ -201,18 +226,56 @@ export function NoticePage() {
 
             <div>
               <label className="block text-sm font-semibold text-foreground mb-2">카드뉴스 이미지</label>
-              <label className="block border-2 border-dashed border-ds-border-strong rounded-lg p-8 text-center hover:border-primary transition-colors cursor-pointer">
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={(e) => setHasImageDraft(!!e.target.files?.length)}
-                />
-                <Upload className="mx-auto mb-3 text-ds-text-disabled" size={32} />
-                <p className="text-sm text-muted-foreground">
-                  {hasImageDraft ? "이미지가 첨부되었습니다." : "인스타그램 카드뉴스 이미지를 업로드하세요"}
-                </p>
-              </label>
+              {imagePreviewUrl ? (
+                <div className="relative inline-block max-w-full overflow-hidden rounded-lg border border-border bg-muted">
+                  <img
+                    src={imagePreviewUrl}
+                    alt="첨부한 카드뉴스 미리보기"
+                    className="block max-h-80 w-auto max-w-full object-contain"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => handleImageChange(null)}
+                    aria-label="이미지 제거"
+                    className="absolute right-2 top-2 inline-flex h-7 w-7 items-center justify-center rounded-full bg-background/90 text-muted-foreground shadow-sm hover:bg-background hover:text-destructive"
+                  >
+                    <X size={14} />
+                  </button>
+                </div>
+              ) : hasExistingImage ? (
+                /* 편집 진입 시 mock 데이터엔 URL 이 없어 미리보기를 띄울 수 없는 경우.
+                   '기존 이미지 유지' 의도를 명시하고, 변경하려면 새로 업로드. */
+                <div className="flex items-center justify-between rounded-lg border border-border bg-muted px-4 py-3 text-sm text-muted-foreground">
+                  <span>기존 이미지가 첨부되어 있습니다.</span>
+                  <label className="cursor-pointer rounded-md border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground hover:border-ds-border-strong">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => handleImageChange(e.target.files?.[0] ?? null)}
+                    />
+                    이미지 변경
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setHasExistingImage(false)}
+                    className="text-xs font-medium text-destructive hover:underline"
+                  >
+                    이미지 제거
+                  </button>
+                </div>
+              ) : (
+                <label className="block cursor-pointer rounded-lg border-2 border-dashed border-ds-border-strong p-8 text-center transition-colors hover:border-primary">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => handleImageChange(e.target.files?.[0] ?? null)}
+                  />
+                  <Upload className="mx-auto mb-3 text-ds-text-disabled" size={32} />
+                  <p className="text-sm text-muted-foreground">인스타그램 카드뉴스 이미지를 업로드하세요</p>
+                </label>
+              )}
             </div>
 
             <div>
