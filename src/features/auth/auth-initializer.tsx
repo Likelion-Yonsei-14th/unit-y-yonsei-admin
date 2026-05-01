@@ -12,8 +12,8 @@ import { setUnauthorizedHandler } from '@/lib/api-client';
  * - API client의 401 핸들러를 스토어와 연결
  */
 export function AuthInitializer({ children }: { children: ReactNode }) {
-  const setUser = useAuthStore(s => s.setUser);
-  const setInitializing = useAuthStore(s => s.setInitializing);
+  const setUser = useAuthStore((s) => s.setUser);
+  const setInitializing = useAuthStore((s) => s.setInitializing);
 
   const hasToken = hasStoredToken();
 

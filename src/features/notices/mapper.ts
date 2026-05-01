@@ -8,7 +8,9 @@ export const toNotice = (d: NoticeDTO): Notice => ({
   hasImage: d.has_image,
 });
 
-export const fromNotice = (n: Pick<Notice, 'title' | 'content' | 'hasImage'>): Pick<NoticeDTO, 'title' | 'content' | 'has_image'> => ({
+export const fromNotice = (
+  n: Pick<Notice, 'title' | 'content' | 'hasImage'>,
+): Pick<NoticeDTO, 'title' | 'content' | 'has_image'> => ({
   title: n.title,
   content: n.content,
   has_image: n.hasImage,

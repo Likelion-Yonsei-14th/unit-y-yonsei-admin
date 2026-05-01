@@ -2,10 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router';
 import { Music, Calendar, MapPin } from 'lucide-react';
 import { usePerformances } from '@/features/performances/hooks';
-import {
-  PERFORMANCE_STAGES,
-  type PerformanceStage,
-} from '@/features/performances/types';
+import { PERFORMANCE_STAGES, type PerformanceStage } from '@/features/performances/types';
 import { FESTIVAL_DATES } from '@/features/booth-layout/sections';
 
 /**
@@ -20,9 +17,11 @@ export function PerformanceListPage() {
   const [stage, setStage] = useState<PerformanceStage | 'all'>('all');
 
   const stageOptions = useMemo<(PerformanceStage | 'all')[]>(() => {
-    const available = (Object.values(PERFORMANCE_STAGES) as typeof PERFORMANCE_STAGES[PerformanceStage][])
-      .filter(s => s.dates.includes(date))
-      .map(s => s.id);
+    const available = (
+      Object.values(PERFORMANCE_STAGES) as (typeof PERFORMANCE_STAGES)[PerformanceStage][]
+    )
+      .filter((s) => s.dates.includes(date))
+      .map((s) => s.id);
     return ['all', ...available];
   }, [date]);
 
@@ -34,8 +33,8 @@ export function PerformanceListPage() {
   const filtered = useMemo(() => {
     if (!data) return [];
     return data
-      .filter(p => p.date === date)
-      .filter(p => stage === 'all' || p.stage === stage)
+      .filter((p) => p.date === date)
+      .filter((p) => stage === 'all' || p.stage === stage)
       .slice()
       .sort((a, b) => a.startTime.localeCompare(b.startTime));
   }, [data, date, stage]);
@@ -54,7 +53,7 @@ export function PerformanceListPage() {
         <div className="flex items-center gap-3">
           <Calendar size={16} className="text-muted-foreground" aria-hidden="true" />
           <div className="flex gap-2">
-            {FESTIVAL_DATES.map(d => {
+            {FESTIVAL_DATES.map((d) => {
               const active = d === date;
               const [, m, day] = d.split('-');
               return (
@@ -80,7 +79,7 @@ export function PerformanceListPage() {
         <div className="flex items-center gap-3">
           <MapPin size={16} className="text-muted-foreground" aria-hidden="true" />
           <div className="flex flex-wrap gap-2">
-            {stageOptions.map(s => {
+            {stageOptions.map((s) => {
               const active = s === stage;
               const label = s === 'all' ? '전체 스테이지' : PERFORMANCE_STAGES[s].label;
               return (
@@ -124,15 +123,13 @@ export function PerformanceListPage() {
       {!isLoading && !isError && filtered.length === 0 && (
         <div className="bg-muted rounded-2xl p-12 text-center">
           <Music size={40} className="mx-auto mb-4 text-ds-text-disabled" />
-          <p className="text-muted-foreground">
-            이 날짜·스테이지에 등록된 공연이 없습니다.
-          </p>
+          <p className="text-muted-foreground">이 날짜·스테이지에 등록된 공연이 없습니다.</p>
         </div>
       )}
 
       {!isLoading && !isError && filtered.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filtered.map(p => (
+          {filtered.map((p) => (
             <Link
               key={p.teamId}
               to={`/performance/${p.teamId}`}

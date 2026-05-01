@@ -93,7 +93,10 @@ export function PlacementList({
 
         {/* 검색 — 전체 풀에서 즉시 매칭 (필터 무시). */}
         <div className="relative">
-          <Search size={14} className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 text-ds-text-disabled" />
+          <Search
+            size={14}
+            className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 text-ds-text-disabled"
+          />
           <input
             type="search"
             value={query}
@@ -157,11 +160,7 @@ export function PlacementList({
                 ? 'bg-ds-primary-subtle text-ds-primary-pressed'
                 : 'bg-muted text-muted-foreground';
           const badgeLabel =
-            sectionCount > 0
-              ? `${sectionCount} 자리`
-              : dateCount > 0
-                ? '다른 섹션'
-                : '미배치';
+            sectionCount > 0 ? `${sectionCount} 자리` : dateCount > 0 ? '다른 섹션' : '미배치';
           const badgeTitle =
             sectionCount > 0
               ? `이 (날짜, 섹션) 에 ${sectionCount} 자리 배치됨`
@@ -174,9 +173,7 @@ export function PlacementList({
                 type="button"
                 onClick={() => onSelectBooth(selected ? null : b.id)}
                 className={`flex w-full items-start gap-3 px-4 py-3 text-left transition-colors ${
-                  selected
-                    ? 'bg-ds-primary-subtle'
-                    : 'hover:bg-muted'
+                  selected ? 'bg-ds-primary-subtle' : 'hover:bg-muted'
                 }`}
                 aria-pressed={selected}
               >

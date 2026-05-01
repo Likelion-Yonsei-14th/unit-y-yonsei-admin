@@ -1,10 +1,10 @@
-import { useEffect, useState } from "react";
-import { Store } from "lucide-react";
-import { useMyBoothProfile, useUpdateMyBoothProfile } from "@/features/booths/hooks";
-import { isBoothInfoCompleted, isMenuListCompleted } from "@/features/booths/types";
-import { BoothInfoForm } from "@/features/booths/components/booth-info-form";
-import { BoothStatusCards } from "@/features/booths/components/booth-status-cards";
-import { MenuListForm } from "@/features/booths/components/menu-list-form";
+import { useEffect, useState } from 'react';
+import { Store } from 'lucide-react';
+import { useMyBoothProfile, useUpdateMyBoothProfile } from '@/features/booths/hooks';
+import { isBoothInfoCompleted, isMenuListCompleted } from '@/features/booths/types';
+import { BoothInfoForm } from '@/features/booths/components/booth-info-form';
+import { BoothStatusCards } from '@/features/booths/components/booth-status-cards';
+import { MenuListForm } from '@/features/booths/components/menu-list-form';
 
 /**
  * Booth 역할 사용자의 자기 부스 관리 페이지.
@@ -31,7 +31,7 @@ export function BoothManagement() {
   const [reservationEnabled, setReservationEnabled] = useState(false);
   useEffect(() => {
     if (booth) setReservationEnabled(booth.reservationEnabled);
-  }, [booth?.id, booth?.reservationEnabled]);
+  }, [booth]);
 
   // 작성 완료 여부는 저장된 booth 에서만 파생 — 편집 중 입력은 반영되지 않음.
   const boothInfoCompleted = isBoothInfoCompleted(booth);
@@ -59,7 +59,9 @@ export function BoothManagement() {
       <div className="flex flex-wrap items-center justify-between gap-3 mb-6 md:mb-8">
         <div>
           {booth.organizationName && (
-            <div className="text-sm text-muted-foreground mb-1">{booth.organizationName} 부스 예약 관리</div>
+            <div className="text-sm text-muted-foreground mb-1">
+              {booth.organizationName} 부스 예약 관리
+            </div>
           )}
           <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
             <Store size={32} />
@@ -71,16 +73,18 @@ export function BoothManagement() {
           <span className="text-sm text-muted-foreground">부스 운영 ON/OFF</span>
           <button
             onClick={() => setReservationEnabled(!reservationEnabled)}
-            aria-label={reservationEnabled ? "부스 운영 끄기" : "부스 운영 켜기"}
+            aria-label={reservationEnabled ? '부스 운영 끄기' : '부스 운영 켜기'}
             className={`
               relative w-14 h-7 rounded-full transition-all duration-300
               ${reservationEnabled ? 'bg-primary shadow-lg' : 'bg-ds-border-strong'}
             `}
           >
-            <div className={`
+            <div
+              className={`
               absolute top-1 w-5 h-5 bg-background rounded-full shadow-md transition-all duration-300
               ${reservationEnabled ? 'left-8' : 'left-1'}
-            `} />
+            `}
+            />
           </button>
         </div>
       </div>

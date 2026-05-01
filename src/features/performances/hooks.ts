@@ -30,7 +30,7 @@ export function usePerformance(teamId: number | null | undefined) {
  * Super/Master/Booth 계정이면 enabled=false로 쿼리가 안 나감.
  */
 export function useMyPerformance() {
-  const user = useAuthStore(s => s.user);
+  const user = useAuthStore((s) => s.user);
   const isPerformer = user?.role === 'Performer' && user.performanceTeamId != null;
 
   return useQuery({
@@ -47,7 +47,7 @@ export function useMyPerformance() {
  * 잘못된 데이터를 보여주지 않게 한다.
  */
 export function useUpdatePerformance() {
-  const user = useAuthStore(s => s.user);
+  const user = useAuthStore((s) => s.user);
   const queryClient = useQueryClient();
 
   return useMutation({

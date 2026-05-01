@@ -7,7 +7,10 @@ import type { BoothPlacement, BoothPlacementDTO, MapSectionId } from './types';
 // ---- listPlacements(date) ----
 
 const listPlacementsMock = async (date: string): Promise<BoothPlacement[]> =>
-  placementStorage.loadAll().filter((p) => p.date === date).map(toBoothPlacement);
+  placementStorage
+    .loadAll()
+    .filter((p) => p.date === date)
+    .map(toBoothPlacement);
 
 const listPlacementsReal = async (date: string): Promise<BoothPlacement[]> => {
   const qs = new URLSearchParams({ date }).toString();
@@ -21,7 +24,10 @@ export const listPlacements = env.USE_MOCK ? listPlacementsMock : listPlacements
 // 한 운영자가 자리 여러 개를 가질 수 있어 array 반환.
 
 const getPlacementsByBoothIdMock = async (boothId: number): Promise<BoothPlacement[]> =>
-  placementStorage.loadAll().filter((p) => p.booth_id === boothId).map(toBoothPlacement);
+  placementStorage
+    .loadAll()
+    .filter((p) => p.booth_id === boothId)
+    .map(toBoothPlacement);
 
 const getPlacementsByBoothIdReal = async (boothId: number): Promise<BoothPlacement[]> => {
   const data = await api.get<BoothPlacementDTO[]>(`/booth-placements/by-booth/${boothId}`);

@@ -7,8 +7,12 @@ import { useAuthStore } from './store';
 import type { LoginPayload } from './types';
 
 /** 소유자 판정을 위해 필요한 최소 필드. 실제 Booth/Performance 모델이 이를 만족해야 함. */
-interface OwnableBooth { id: number }
-interface OwnablePerformance { teamId: number }
+interface OwnableBooth {
+  id: number;
+}
+interface OwnablePerformance {
+  teamId: number;
+}
 
 /**
  * 현재 사용자 정보 + 권한 체크 헬퍼.

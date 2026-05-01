@@ -110,10 +110,7 @@ export function BoothMapCanvas({
       >
         {({ zoomIn, zoomOut, resetTransform }) => (
           <>
-            <TransformComponent
-              wrapperClass="!h-full !w-full"
-              contentClass="!h-full !w-full"
-            >
+            <TransformComponent wrapperClass="!h-full !w-full" contentClass="!h-full !w-full">
               {/* 2-레이어 이미지 크로스페이드. object-contain 으로 letterbox. */}
               {layers.map((s) => (
                 <img
@@ -206,13 +203,21 @@ interface BoothPinProps {
   mapHeight: number;
 }
 
-function BoothPin({ booth, isFocused, isMine, canEnter, onClick, mapWidth, mapHeight }: BoothPinProps) {
+function BoothPin({
+  booth,
+  isFocused,
+  isMine,
+  canEnter,
+  onClick,
+  mapWidth,
+  mapHeight,
+}: BoothPinProps) {
   const { placement } = booth;
   const stateClass = isFocused
     ? 'border-primary bg-primary/20 ring-2 ring-primary/30 scale-[1.02]'
     : isMine
-    ? 'border-ds-success-pressed bg-ds-success-subtle/60'
-    : 'border-border bg-background/50 hover:border-ds-border-strong';
+      ? 'border-ds-success-pressed bg-ds-success-subtle/60'
+      : 'border-border bg-background/50 hover:border-ds-border-strong';
   const lockedClass = !canEnter ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer';
 
   const pinPxW = (placement.width / 100) * mapWidth;

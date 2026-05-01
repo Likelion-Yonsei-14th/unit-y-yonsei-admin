@@ -31,9 +31,7 @@ export function LoginPage() {
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <h1 className="ds-display text-foreground mb-2">대동제 어드민</h1>
-          <p className="ds-body-2 text-muted-foreground">
-            관리자 계정으로 로그인해주세요
-          </p>
+          <p className="ds-body-2 text-muted-foreground">관리자 계정으로 로그인해주세요</p>
         </div>
 
         <form
@@ -80,9 +78,7 @@ export function LoginPage() {
           {login.isError && (
             <div className="rounded-lg bg-ds-error-subtle px-4 py-3">
               <p className="ds-body-2 text-ds-error-pressed">
-                {login.error instanceof Error
-                  ? login.error.message
-                  : '로그인에 실패했습니다'}
+                {login.error instanceof Error ? login.error.message : '로그인에 실패했습니다'}
               </p>
             </div>
           )}

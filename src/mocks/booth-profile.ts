@@ -13,8 +13,7 @@ import type { BoothImage, BoothMenuItem, BoothProfile } from '@/features/booths/
 
 // ---- helpers ----------------------------------------------------------------
 
-const FOOD_PHOTO = (seed: string) =>
-  `https://images.unsplash.com/${seed}?w=400&q=80`;
+const FOOD_PHOTO = (seed: string) => `https://images.unsplash.com/${seed}?w=400&q=80`;
 
 const thumb = (id: number, url: string, isMain = false): BoothImage => ({ id, url, isMain });
 
@@ -426,9 +425,7 @@ const mech: BoothProfile = {
   reservationEnabled: false,
   orderNotice: '',
   thumbnails: [thumb(240, FOOD_PHOTO('photo-1505250469679-203ad9ced0cb'), true)],
-  menuItems: [
-    menu(240, 1, '솜사탕', '핑크 / 블루', '3,000원'),
-  ],
+  menuItems: [menu(240, 1, '솜사탕', '핑크 / 블루', '3,000원')],
 };
 
 const ee: BoothProfile = {
@@ -490,10 +487,7 @@ const studentWelfare: BoothProfile = {
   reservationEnabled: false,
   orderNotice: '응급 상황 시 가장 먼저 찾아주세요.',
   thumbnails: [],
-  menuItems: [
-    menu(280, 1, '생수', '500ml', '무료'),
-    menu(281, 2, '응급처치 키트', '간이', '무료'),
-  ],
+  menuItems: [menu(280, 1, '생수', '500ml', '무료'), menu(281, 2, '응급처치 키트', '간이', '무료')],
 };
 
 const aerospaceEmpty: BoothProfile = {
@@ -519,20 +513,42 @@ const lastYearInactive: BoothProfile = {
   reservationEnabled: false,
   orderNotice: '',
   thumbnails: [],
-  menuItems: [
-    menu(300, 1, '솜사탕', '대형', '3,000원'),
-  ],
+  menuItems: [menu(300, 1, '솜사탕', '대형', '3,000원')],
 };
 
 // ---- export -----------------------------------------------------------------
 
 const ALL_BOOTHS: BoothProfile[] = [
-  filledBooth, emptyBooth, secondFilledBooth,
-  computerScience, designArts, stat, socialWelfare, psych, english, polisci,
-  anthro, history, chem, bio, astro,
-  likelion, yonphoto, mediaArt, koreanMusic, fashionDesign,
-  education, admin, arch, mech, ee, theology, informatics, studentWelfare,
-  aerospaceEmpty, lastYearInactive,
+  filledBooth,
+  emptyBooth,
+  secondFilledBooth,
+  computerScience,
+  designArts,
+  stat,
+  socialWelfare,
+  psych,
+  english,
+  polisci,
+  anthro,
+  history,
+  chem,
+  bio,
+  astro,
+  likelion,
+  yonphoto,
+  mediaArt,
+  koreanMusic,
+  fashionDesign,
+  education,
+  admin,
+  arch,
+  mech,
+  ee,
+  theology,
+  informatics,
+  studentWelfare,
+  aerospaceEmpty,
+  lastYearInactive,
 ];
 
 export const mockBoothsById: Record<number, BoothProfile> = Object.fromEntries(

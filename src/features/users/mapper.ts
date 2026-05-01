@@ -1,11 +1,5 @@
 import type { CreateUserFormValues } from './schema';
-import type {
-  AdminUser,
-  AdminUserDTO,
-  CreatedUser,
-  CreatedUserDTO,
-  CreateUserDTO,
-} from './types';
+import type { AdminUser, AdminUserDTO, CreatedUser, CreatedUserDTO, CreateUserDTO } from './types';
 
 export const toAdminUser = (d: AdminUserDTO): AdminUser => ({
   id: d.id,

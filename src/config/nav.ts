@@ -1,7 +1,14 @@
 import type { LucideIcon } from 'lucide-react';
 import {
-  Users, Store, Calendar, Music, Settings,
-  FileText, Package, Map, MessageCircle,
+  Users,
+  Store,
+  Calendar,
+  Music,
+  Settings,
+  FileText,
+  Package,
+  Map,
+  MessageCircle,
 } from 'lucide-react';
 import type { Permission } from './permissions';
 
@@ -52,10 +59,30 @@ export const MAIN_NAV: NavItem[] = [
     icon: Settings,
     // 상위는 권한 없이도 토글되게 두고, 자식들로 필터링
     children: [
-      { path: '/general/notice', label: '총학생회 공지사항', icon: FileText, requires: 'notice.manage' },
-      { path: '/general/lost-found', label: '분실물 관리', icon: Package, requires: 'lostfound.read' },
-      { path: '/general/booth-layout', label: '부스 배치도 편집', icon: Map, requires: 'boothlayout.manage' },
-      { path: '/general/performance-review', label: '공연 후기 수합', icon: MessageCircle, requires: 'performancereview.read' },
+      {
+        path: '/general/notice',
+        label: '총학생회 공지사항',
+        icon: FileText,
+        requires: 'notice.manage',
+      },
+      {
+        path: '/general/lost-found',
+        label: '분실물 관리',
+        icon: Package,
+        requires: 'lostfound.read',
+      },
+      {
+        path: '/general/booth-layout',
+        label: '부스 배치도 편집',
+        icon: Map,
+        requires: 'boothlayout.manage',
+      },
+      {
+        path: '/general/performance-review',
+        label: '공연 후기 수합',
+        icon: MessageCircle,
+        requires: 'performancereview.read',
+      },
     ],
   },
 ];

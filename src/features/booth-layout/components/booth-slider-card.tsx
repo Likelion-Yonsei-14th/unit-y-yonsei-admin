@@ -35,11 +35,15 @@ export function BoothSliderCard({
     >
       <div className="flex w-full items-center gap-2 font-semibold text-foreground">
         {isMine && <Star size={14} className="shrink-0 text-primary" />}
-        <span className="truncate" title={displayName}>{displayName}</span>
+        <span className="truncate" title={displayName}>
+          {displayName}
+        </span>
         {!canEnter && <Lock size={12} className="ml-auto shrink-0 text-muted-foreground" />}
       </div>
       <div className="flex w-full items-center gap-2 text-xs text-muted-foreground">
-        <span className="truncate" title={displayOrg}>{displayOrg}</span>
+        <span className="truncate" title={displayOrg}>
+          {displayOrg}
+        </span>
         <span className="shrink-0">· #{placement.boothNumber}</span>
       </div>
       {total === 0 ? (

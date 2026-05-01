@@ -46,14 +46,14 @@ export interface PlacementEditorCanvasProps {
 type HandleId = 'nw' | 'n' | 'ne' | 'e' | 'se' | 's' | 'sw' | 'w';
 
 const HANDLE_OFFSETS: Record<HandleId, { dx: string; dy: string; cursor: string }> = {
-  nw: { dx: '0%',   dy: '0%',   cursor: 'nwse-resize' },
-  n:  { dx: '50%',  dy: '0%',   cursor: 'ns-resize'   },
-  ne: { dx: '100%', dy: '0%',   cursor: 'nesw-resize' },
-  e:  { dx: '100%', dy: '50%',  cursor: 'ew-resize'   },
+  nw: { dx: '0%', dy: '0%', cursor: 'nwse-resize' },
+  n: { dx: '50%', dy: '0%', cursor: 'ns-resize' },
+  ne: { dx: '100%', dy: '0%', cursor: 'nesw-resize' },
+  e: { dx: '100%', dy: '50%', cursor: 'ew-resize' },
   se: { dx: '100%', dy: '100%', cursor: 'nwse-resize' },
-  s:  { dx: '50%',  dy: '100%', cursor: 'ns-resize'   },
-  sw: { dx: '0%',   dy: '100%', cursor: 'nesw-resize' },
-  w:  { dx: '0%',   dy: '50%',  cursor: 'ew-resize'   },
+  s: { dx: '50%', dy: '100%', cursor: 'ns-resize' },
+  sw: { dx: '0%', dy: '100%', cursor: 'nesw-resize' },
+  w: { dx: '0%', dy: '50%', cursor: 'ew-resize' },
 };
 
 const CORNER_HANDLES: HandleId[] = ['nw', 'ne', 'se', 'sw'];
@@ -98,8 +98,7 @@ export function PlacementEditorCanvas({
   }, [section.id]);
 
   /** 라이브 transform state (scale + position). 좌표 변환에 사용. */
-  const getTransform = () =>
-    wrapperRef.current?.state ?? { scale: 1, positionX: 0, positionY: 0 };
+  const getTransform = () => wrapperRef.current?.state ?? { scale: 1, positionX: 0, positionY: 0 };
 
   const [dragState, setDragState] = useState<{
     placementId: number;
@@ -210,11 +209,7 @@ export function PlacementEditorCanvas({
     };
   }, [isDragActive, rect, onMovePlacement]);
 
-  const onHandleMouseDown = (
-    e: React.MouseEvent,
-    p: BoothPlacement,
-    handle: HandleId,
-  ) => {
+  const onHandleMouseDown = (e: React.MouseEvent, p: BoothPlacement, handle: HandleId) => {
     e.stopPropagation();
     // preventDefault: 핸들은 이미 선택된 핀에서만 보이므로 click 폴백 selection 경로가
     // 필요 없고, 텍스트 드래그 선택 등 native default 가 거추장스러워 일관되게 차단.
@@ -257,8 +252,8 @@ export function PlacementEditorCanvas({
       bottomPct = Math.min(100, bottomPct);
       // overshoot 방지: 드래그하던 변이 반대 변을 추월하면 MIN 만큼의 폭에서 멈춤.
       // 안 그러면 width=MIN 이지만 중심이 반대편으로 튀어 핀이 "snap" 하는 인상.
-      if (leftPct > rightPct - MIN)  leftPct = rightPct - MIN;
-      if (topPct  > bottomPct - MIN) topPct  = bottomPct - MIN;
+      if (leftPct > rightPct - MIN) leftPct = rightPct - MIN;
+      if (topPct > bottomPct - MIN) topPct = bottomPct - MIN;
       const width = Math.max(MIN, rightPct - leftPct);
       const height = Math.max(MIN, bottomPct - topPct);
       const x = leftPct + width / 2;
@@ -288,10 +283,10 @@ export function PlacementEditorCanvas({
       const step = e.shiftKey ? 1 : 0.1;
       let dxPct = 0;
       let dyPct = 0;
-      if (e.key === 'ArrowLeft')  dxPct = -step;
+      if (e.key === 'ArrowLeft') dxPct = -step;
       else if (e.key === 'ArrowRight') dxPct = step;
-      else if (e.key === 'ArrowUp')    dyPct = -step;
-      else if (e.key === 'ArrowDown')  dyPct = step;
+      else if (e.key === 'ArrowUp') dyPct = -step;
+      else if (e.key === 'ArrowDown') dyPct = step;
       else if (e.key === 'Delete' || e.key === 'Backspace') {
         e.preventDefault();
         onRequestDelete(selectedPlacementId);
@@ -310,10 +305,12 @@ export function PlacementEditorCanvas({
   }, [selectedPlacementId, onNudgePlacement, onRequestDelete, onSelectPlacement]);
 
   // 추가 모드 ON + 운영자 선택 + rect 측정 완료 시에만 crosshair 로 affordance 표시.
-  const cursorClass =
-    isAddMode && selectedBoothId != null && rect ? 'cursor-crosshair' : '';
+  const cursorClass = isAddMode && selectedBoothId != null && rect ? 'cursor-crosshair' : '';
 
   return (
+    // 캔버스 컨테이너 — 좌표 클릭으로 자리 생성하는 작도판 UI 라 native button 으로
+    // 대체할 수 없음. 키보드 흐름은 slider/list 가 담당.
+    // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions
     <div
       ref={containerRef}
       className={`relative h-full w-full overflow-hidden bg-muted ${cursorClass}`}
@@ -330,10 +327,7 @@ export function PlacementEditorCanvas({
       >
         {({ zoomIn, zoomOut, resetTransform }) => (
           <>
-            <TransformComponent
-              wrapperClass="!h-full !w-full"
-              contentClass="!h-full !w-full"
-            >
+            <TransformComponent wrapperClass="!h-full !w-full" contentClass="!h-full !w-full">
               <img
                 ref={imgRef}
                 src={section.imageUrl}
@@ -354,85 +348,88 @@ export function PlacementEditorCanvas({
                   }}
                 >
                   {placements.map((p) => {
-            const isSelected = p.id === selectedPlacementId;
-            const isInGroup = !isSelected && p.boothId === selectedBoothId;
-            const isDragging = dragState?.placementId === p.id;
-            const isResizing = resizeState?.placementId === p.id;
-            const liveX = isDragging
-              ? p.x + dragState!.dxPct
-              : isResizing
-              ? resizeState!.next.x
-              : p.x;
-            const liveY = isDragging
-              ? p.y + dragState!.dyPct
-              : isResizing
-              ? resizeState!.next.y
-              : p.y;
-            const liveW = isResizing ? resizeState!.next.width : p.width;
-            const liveH = isResizing ? resizeState!.next.height : p.height;
-            const pinPxW = (liveW / 100) * rect.width;
-            const pinPxH = (liveH / 100) * rect.height;
-            const borderRadius = computePinRadius(pinPxW, pinPxH);
-            // 변 핸들 중 모서리와 겹칠 위험이 있는 쪽은 숨김 — 모서리는 항상 보장.
-            const showHorizEdges = pinPxW >= EDGE_HANDLE_MIN_PX;
-            const showVertEdges = pinPxH >= EDGE_HANDLE_MIN_PX;
-            const visibleHandles: HandleId[] = [
-              ...CORNER_HANDLES,
-              ...(showHorizEdges ? (['n', 's'] as HandleId[]) : []),
-              ...(showVertEdges ? (['e', 'w'] as HandleId[]) : []),
-            ];
-            return (
-              <button
-                key={p.id}
-                type="button"
-                onMouseDown={(e) => onPinMouseDown(e, p)}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onSelectPlacement(p.id);
-                }}
-                style={{
-                  left: `${liveX}%`,
-                  top: `${liveY}%`,
-                  width: `${liveW}%`,
-                  height: `${liveH}%`,
-                  minWidth: 8,
-                  minHeight: 8,
-                  borderRadius,
-                }}
-                className={`pointer-events-auto absolute flex -translate-x-1/2 -translate-y-1/2 cursor-grab items-center justify-center border-2 text-xs font-semibold shadow-sm transition-all ${
-                  isSelected
-                    ? 'border-primary bg-primary/30 ring-2 ring-primary/40'
-                    : isInGroup
-                    ? 'border-ds-success-pressed bg-ds-success-subtle/70'
-                    : 'border-border bg-background/60 hover:border-ds-border-strong'
-                } ${isDragging ? 'cursor-grabbing' : ''}`}
-                aria-label={`자리 ${p.boothNumber}`}
-              >
-                <span className="truncate">{p.boothNumber}</span>
-                {isSelected && !isDragging && !isResizing && (
-                  <>
-                    {visibleHandles.map((h) => {
-                      const o = HANDLE_OFFSETS[h];
-                      return (
-                        <span
-                          key={h}
-                          onMouseDown={(e) => onHandleMouseDown(e, p, h)}
-                          style={{
-                            left: o.dx,
-                            top: o.dy,
-                            cursor: o.cursor,
-                            transform: 'translate(-50%, -50%)',
-                          }}
-                          className="pointer-events-auto absolute h-2 w-2 rounded-sm border border-primary bg-background"
-                          aria-label={`핸들 ${h}`}
-                        />
-                      );
-                    })}
-                  </>
-                )}
-              </button>
-            );
-          })}
+                    const isSelected = p.id === selectedPlacementId;
+                    const isInGroup = !isSelected && p.boothId === selectedBoothId;
+                    const isDragging = dragState?.placementId === p.id;
+                    const isResizing = resizeState?.placementId === p.id;
+                    const liveX = isDragging
+                      ? p.x + dragState!.dxPct
+                      : isResizing
+                        ? resizeState!.next.x
+                        : p.x;
+                    const liveY = isDragging
+                      ? p.y + dragState!.dyPct
+                      : isResizing
+                        ? resizeState!.next.y
+                        : p.y;
+                    const liveW = isResizing ? resizeState!.next.width : p.width;
+                    const liveH = isResizing ? resizeState!.next.height : p.height;
+                    const pinPxW = (liveW / 100) * rect.width;
+                    const pinPxH = (liveH / 100) * rect.height;
+                    const borderRadius = computePinRadius(pinPxW, pinPxH);
+                    // 변 핸들 중 모서리와 겹칠 위험이 있는 쪽은 숨김 — 모서리는 항상 보장.
+                    const showHorizEdges = pinPxW >= EDGE_HANDLE_MIN_PX;
+                    const showVertEdges = pinPxH >= EDGE_HANDLE_MIN_PX;
+                    const visibleHandles: HandleId[] = [
+                      ...CORNER_HANDLES,
+                      ...(showHorizEdges ? (['n', 's'] as HandleId[]) : []),
+                      ...(showVertEdges ? (['e', 'w'] as HandleId[]) : []),
+                    ];
+                    return (
+                      <button
+                        key={p.id}
+                        type="button"
+                        onMouseDown={(e) => onPinMouseDown(e, p)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onSelectPlacement(p.id);
+                        }}
+                        style={{
+                          left: `${liveX}%`,
+                          top: `${liveY}%`,
+                          width: `${liveW}%`,
+                          height: `${liveH}%`,
+                          minWidth: 8,
+                          minHeight: 8,
+                          borderRadius,
+                        }}
+                        className={`pointer-events-auto absolute flex -translate-x-1/2 -translate-y-1/2 cursor-grab items-center justify-center border-2 text-xs font-semibold shadow-sm transition-all ${
+                          isSelected
+                            ? 'border-primary bg-primary/30 ring-2 ring-primary/40'
+                            : isInGroup
+                              ? 'border-ds-success-pressed bg-ds-success-subtle/70'
+                              : 'border-border bg-background/60 hover:border-ds-border-strong'
+                        } ${isDragging ? 'cursor-grabbing' : ''}`}
+                        aria-label={`자리 ${p.boothNumber}`}
+                      >
+                        <span className="truncate">{p.boothNumber}</span>
+                        {isSelected && !isDragging && !isResizing && (
+                          <>
+                            {visibleHandles.map((h) => {
+                              const o = HANDLE_OFFSETS[h];
+                              return (
+                                // 리사이즈 핸들 — 마우스 드래그 전용. 키보드 리사이즈는
+                                // 부모 button 의 화살표 nudge 가 담당.
+                                // eslint-disable-next-line jsx-a11y/no-static-element-interactions
+                                <span
+                                  key={h}
+                                  onMouseDown={(e) => onHandleMouseDown(e, p, h)}
+                                  style={{
+                                    left: o.dx,
+                                    top: o.dy,
+                                    cursor: o.cursor,
+                                    transform: 'translate(-50%, -50%)',
+                                  }}
+                                  className="pointer-events-auto absolute h-2 w-2 rounded-sm border border-primary bg-background"
+                                  aria-label={`핸들 ${h}`}
+                                />
+                              );
+                            })}
+                          </>
+                        )}
+                      </button>
+                    );
+                  })}
                 </div>
               )}
             </TransformComponent>

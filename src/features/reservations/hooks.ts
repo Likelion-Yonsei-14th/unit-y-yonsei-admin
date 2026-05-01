@@ -1,9 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import {
-  listReservations,
-  setReservationStatus,
-  setReservationsStatusBulk,
-} from './api';
+import { listReservations, setReservationStatus, setReservationsStatusBulk } from './api';
 
 /**
  * 예약 풀 전체 조회. 부스별 필터는 페이지에서 useMemo 로 처리.
