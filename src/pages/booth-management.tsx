@@ -29,9 +29,13 @@ export function BoothManagement() {
   // 페이지에서 단일 진실로 두고 둘에 모두 전달한다. 저장은 BoothInfoForm 에서
   // 다른 필드와 함께 일괄 mutation.
   const [reservationEnabled, setReservationEnabled] = useState(false);
+  // booth 객체 레퍼런스만 바뀌는 refetch 에서 로컬 토글이 서버 값으로 덮이지 않도록
+  // 실제 동기화 트리거 필드만 deps 에 둔다 (저장은 BoothInfoForm 일괄 처리이므로
+  // 편집 중 로컬 상태 유지가 중요).
   useEffect(() => {
     if (booth) setReservationEnabled(booth.reservationEnabled);
-  }, [booth]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- 의도적으로 좁힌 deps. 위 주석 참고.
+  }, [booth?.id, booth?.reservationEnabled]);
 
   // 작성 완료 여부는 저장된 booth 에서만 파생 — 편집 중 입력은 반영되지 않음.
   const boothInfoCompleted = isBoothInfoCompleted(booth);

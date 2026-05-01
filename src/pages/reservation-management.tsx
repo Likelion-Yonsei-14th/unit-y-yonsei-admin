@@ -54,11 +54,13 @@ export function ReservationManagement() {
   const [selectedStatus, setSelectedStatus] = useState<ReservationStatus>('대기자 목록');
   const [searchQuery, setSearchQuery] = useState('');
   // booth 가 비동기로 도착(useBooths) 하므로 초기값은 booth 가 없을 때의 안전한 기본값(true).
-  // 도착 후엔 아래 useEffect 로 한번 동기화. 이후 사용자의 토글은 로컬 상태로 유지.
+  // 도착 후/실 동기화 필드 변경 시에만 setState — booth 객체 레퍼런스만 바뀌는 단순 refetch
+  // 에서는 로컬 토글이 서버 값으로 덮이지 않도록 deps 를 실제 트리거가 되는 필드로 좁힌다.
   const [reservationEnabled, setReservationEnabled] = useState(booth?.reservationEnabled ?? true);
   useEffect(() => {
     if (booth) setReservationEnabled(booth.reservationEnabled);
-  }, [booth]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- 의도적으로 좁힌 deps. booth 통째로 deps 에 두면 refetch 마다 로컬 토글이 덮임.
+  }, [booth?.id, booth?.reservationEnabled]);
   const [selectedReservation, setSelectedReservation] = useState<Reservation | null>(null);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [showStatusChangeModal, setShowStatusChangeModal] = useState(false);
@@ -240,8 +242,15 @@ export function ReservationManagement() {
 
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">예약 가능 ON/OFF</span>
+            <span id="reservation-toggle-label" className="text-sm text-muted-foreground">
+              예약 가능 ON/OFF
+            </span>
             <button
+              type="button"
+              role="switch"
+              aria-checked={reservationEnabled}
+              aria-labelledby="reservation-toggle-label"
+              aria-label={reservationEnabled ? '예약 받기 끄기' : '예약 받기 켜기'}
               onClick={() => setReservationEnabled(!reservationEnabled)}
               className={`
                 relative w-14 h-7 rounded-full transition-all duration-300
@@ -249,6 +258,7 @@ export function ReservationManagement() {
               `}
             >
               <div
+                aria-hidden="true"
                 className={`
                 absolute top-1 w-5 h-5 bg-background rounded-full shadow-md transition-all duration-300
                 ${reservationEnabled ? 'left-8' : 'left-1'}
@@ -375,9 +385,20 @@ export function ReservationManagement() {
                 </tr>
               )}
               {filteredReservations.map((reservation) => (
+                // 행 전체가 상세 모달 트리거. tr 은 native button 이 아니므로
+                // role/tabIndex/Enter·Space 키 핸들러로 키보드/스크린리더 접근성 보강.
                 <tr
                   key={reservation.id}
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`${reservation.name} 예약 상세 보기`}
                   onClick={() => setSelectedReservation(reservation)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      setSelectedReservation(reservation);
+                    }
+                  }}
                   className="hover:bg-muted transition-colors cursor-pointer"
                 >
                   <td className="py-4 text-center">
