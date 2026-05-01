@@ -33,10 +33,26 @@ async function setUserRoleMock(input: { id: number; role: Role }): Promise<Admin
 
 async function createUserMock(values: CreateUserFormValues): Promise<CreatedUser> {
   await new Promise((r) => setTimeout(r, 300));
-  return {
-    id: Date.now(),
+  const id = Date.now();
+  // mock 환경에서도 invalidate 후 새 항목이 목록에 보이도록 in-memory 풀에 반영.
+  // 백엔드 응답에 없는 필드(boothName/performanceTeamName/email/phone 등) 는
+  // 폼 입력값으로 그대로 채우거나 비워둔다 — 실제 백엔드는 join + 디폴트로 보강.
+  const newAdminUser: AdminUser = {
+    id,
     userId: values.userId,
+    role: values.permissionType,
+    affiliation: values.affiliation,
+    boothName: values.permissionType === 'Booth' ? (values.boothName?.trim() ?? '') : '-',
+    performanceTeamName:
+      values.permissionType === 'Performer' ? (values.performanceTeamName?.trim() ?? '') : '-',
+    representative: values.representativeName,
+    email: '',
+    phone: values.representativePhone,
+    infoCompleted: false,
+    active: true,
   };
+  memory.unshift(newAdminUser);
+  return { id, userId: values.userId };
 }
 
 // ---- list / mutations (real) ----
