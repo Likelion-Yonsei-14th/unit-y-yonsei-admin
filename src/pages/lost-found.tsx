@@ -1,7 +1,13 @@
 import { useEffect, useState } from "react";
 import { Plus, Trash2, Edit2, Upload, Package, X } from "lucide-react";
 import { toast } from "sonner";
-import { mockLostItems, type LostItem } from "@/mocks/lost-items";
+import {
+  useCreateLostItem,
+  useDeleteLostItem,
+  useLostItems,
+  useUpdateLostItem,
+} from "@/features/lost-found/hooks";
+import type { LostItem } from "@/features/lost-found/types";
 import { PageHeaderAction } from "@/components/common/page-header-action";
 import {
   AlertDialog,
@@ -14,10 +20,13 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
-const todayString = () => new Date().toISOString().slice(0, 10);
-
 export function LostFoundPage() {
-  const [lostItems, setLostItems] = useState<LostItem[]>(mockLostItems);
+  const lostItemsQuery = useLostItems();
+  const lostItems = lostItemsQuery.data ?? [];
+  const createMutation = useCreateLostItem();
+  const updateMutation = useUpdateLostItem();
+  const deleteMutation = useDeleteLostItem();
+
   const [showForm, setShowForm] = useState(false);
   const [editingItem, setEditingItem] = useState<LostItem | null>(null);
   const [pendingDelete, setPendingDelete] = useState<LostItem | null>(null);
@@ -70,8 +79,10 @@ export function LostFoundPage() {
 
   const confirmDelete = () => {
     if (!pendingDelete) return;
-    setLostItems(lostItems.filter(item => item.id !== pendingDelete.id));
-    toast.success("분실물을 삭제했습니다.");
+    deleteMutation.mutate(pendingDelete.id, {
+      onSuccess: () => toast.success("분실물을 삭제했습니다."),
+      onError: () => toast.error("삭제에 실패했습니다. 잠시 후 다시 시도해주세요."),
+    });
     setPendingDelete(null);
   };
 
@@ -87,35 +98,47 @@ export function LostFoundPage() {
     }
     const description = descriptionDraft.trim() || undefined;
     const hasImage = !!imagePreviewUrl || hasExistingImage;
+    const onAfter = () => {
+      setShowForm(false);
+      setEditingItem(null);
+    };
     if (editingItem) {
-      setLostItems(lostItems.map(item =>
-        item.id === editingItem.id
-          ? {
-              ...item,
-              name: nameDraft.trim(),
-              location: locationDraft.trim(),
-              description,
-              hasImage,
-            }
-          : item,
-      ));
-      toast.success("분실물 정보를 수정했습니다.");
+      updateMutation.mutate(
+        {
+          id: editingItem.id,
+          name: nameDraft.trim(),
+          location: locationDraft.trim(),
+          description,
+          hasImage,
+        },
+        {
+          onSuccess: () => {
+            toast.success("분실물 정보를 수정했습니다.");
+            onAfter();
+          },
+          onError: () => toast.error("수정에 실패했습니다. 잠시 후 다시 시도해주세요."),
+        },
+      );
     } else {
-      const nextId = lostItems.reduce((max, item) => Math.max(max, item.id), 0) + 1;
-      const newItem: LostItem = {
-        id: nextId,
-        name: nameDraft.trim(),
-        location: locationDraft.trim(),
-        date: todayString(),
-        hasImage,
-        description,
-      };
-      setLostItems([newItem, ...lostItems]);
-      toast.success("분실물을 등록했습니다.");
+      createMutation.mutate(
+        {
+          name: nameDraft.trim(),
+          location: locationDraft.trim(),
+          description,
+          hasImage,
+        },
+        {
+          onSuccess: () => {
+            toast.success("분실물을 등록했습니다.");
+            onAfter();
+          },
+          onError: () => toast.error("등록에 실패했습니다. 잠시 후 다시 시도해주세요."),
+        },
+      );
     }
-    setShowForm(false);
-    setEditingItem(null);
   };
+
+  const isSaving = createMutation.isPending || updateMutation.isPending;
 
   return (
     <div className="p-4 md:p-8">
@@ -131,8 +154,27 @@ export function LostFoundPage() {
         )}
       </div>
 
+      {/* 로딩/에러 */}
+      {!showForm && lostItemsQuery.isLoading && (
+        <div className="bg-background rounded-2xl p-12 text-center text-muted-foreground shadow-sm">
+          분실물 목록을 불러오는 중…
+        </div>
+      )}
+      {!showForm && lostItemsQuery.isError && (
+        <div className="bg-ds-error-subtle border border-destructive text-destructive rounded-2xl p-6 text-center">
+          <p className="mb-3">분실물 목록을 가져오지 못했습니다.</p>
+          <button
+            type="button"
+            onClick={() => lostItemsQuery.refetch()}
+            className="px-4 py-2 rounded-lg bg-destructive text-destructive-foreground hover:bg-ds-error-pressed transition-colors"
+          >
+            다시 시도
+          </button>
+        </div>
+      )}
+
       {/* Lost Items List */}
-      {!showForm && (
+      {!showForm && lostItemsQuery.isSuccess && (
         <div className="bg-background rounded-2xl overflow-hidden shadow-sm">
           <div className="overflow-x-auto">
           <table className="w-full min-w-[720px]">
@@ -313,15 +355,17 @@ export function LostFoundPage() {
             <div className="flex justify-end gap-3 pt-4">
               <button
                 onClick={handleCancel}
-                className="px-6 py-3 border border-border text-foreground rounded-lg hover:bg-muted transition-colors"
+                disabled={isSaving}
+                className="px-6 py-3 border border-border text-foreground rounded-lg hover:bg-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 취소
               </button>
               <button
                 onClick={handleSave}
-                className="px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-ds-primary-pressed transition-colors duration-200"
+                disabled={isSaving}
+                className="px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-ds-primary-pressed transition-colors duration-200 disabled:opacity-70 disabled:cursor-not-allowed"
               >
-                {editingItem ? "수정 완료" : "등록"}
+                {isSaving ? "저장 중…" : (editingItem ? "수정 완료" : "등록")}
               </button>
             </div>
           </div>
