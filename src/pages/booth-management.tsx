@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Upload, Plus, Trash2, Check, X, GripVertical, ArrowLeft, Star, Edit, Store } from "lucide-react";
+import { Upload, Plus, Trash2, Check, X, GripVertical, ArrowLeft, Star, Edit, Store, UtensilsCrossed } from "lucide-react";
 import { DndProvider, useDrag, useDrop } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import { toast } from "sonner";
@@ -375,14 +375,10 @@ export function BoothManagement() {
               {boothInfoCompleted ? '작성완료' : '작성필요'}
             </div>
 
-            <div className="mt-8 space-y-4">
+            <div className="mt-8">
               <div className="bg-background/80 backdrop-blur-sm rounded-xl p-4">
-                <div className="w-full h-32 bg-muted rounded-lg flex items-center justify-center text-muted-foreground overflow-hidden">
-                  <img 
-                    src="https://images.unsplash.com/photo-1763256340762-f0ffc4b3ad18?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxmb29kJTIwYm9vdGglMjBsaW5lJTIwYXJ0JTIwaWxsdXN0cmF0aW9ufGVufDF8fHx8MTc3NjIwMDEwNnww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral"
-                    alt="부스 상세 정보"
-                    className="w-full h-full object-cover"
-                  />
+                <div className="w-full h-32 bg-muted rounded-lg flex items-center justify-center text-muted-foreground/50">
+                  <Store size={56} aria-hidden="true" />
                 </div>
               </div>
             </div>
@@ -415,14 +411,10 @@ export function BoothManagement() {
               {menuListCompleted ? '작성완료' : '작성필요'}
             </div>
 
-            <div className="mt-8 space-y-4">
+            <div className="mt-8">
               <div className="bg-background/80 backdrop-blur-sm rounded-xl p-4">
-                <div className="w-full h-32 bg-muted rounded-lg flex items-center justify-center text-muted-foreground overflow-hidden">
-                  <img 
-                    src="https://images.unsplash.com/photo-1545105090-b8a3fe3f87f2?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxyZXN0YXVyYW50JTIwbWVudSUyMGxpbmUlMjBkcmF3aW5nJTIwc2tldGNofGVufDF8fHx8MTc3NjIwMDEwNnww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral"
-                    alt="메뉴 리스트"
-                    className="w-full h-full object-cover"
-                  />
+                <div className="w-full h-32 bg-muted rounded-lg flex items-center justify-center text-muted-foreground/50">
+                  <UtensilsCrossed size={56} aria-hidden="true" />
                 </div>
               </div>
             </div>
