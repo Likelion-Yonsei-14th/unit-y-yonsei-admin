@@ -2,7 +2,7 @@ import { api } from '@/lib/api-client';
 import { env } from '@/lib/env';
 import { useAuthStore } from '@/features/auth/store';
 import { mockPerformanceDetails, mockPerformanceDetailsById } from '@/mocks/performances';
-import { toPerformanceDetail, toPerformanceListItem } from './mapper';
+import { fromPerformanceDetailPatch, toPerformanceDetail, toPerformanceListItem } from './mapper';
 import type {
   PerformanceDetail, PerformanceDetailDTO,
   PerformanceListItem, PerformanceListItemDTO,
@@ -70,7 +70,12 @@ async function getMyPerformanceReal(): Promise<PerformanceDetail | null> {
 }
 
 async function updatePerformanceReal(teamId: number, patch: Partial<PerformanceDetail>): Promise<PerformanceDetail> {
-  const dto = await api.put<PerformanceDetailDTO>(`/performances/${teamId}`, patch);
+  // 백엔드 DTO 는 snake_case 라 camelCase Partial 을 그대로 보내면 필드가 무시될 수 있음.
+  // mapper 의 fromPerformanceDetailPatch 로 전송된 필드만 snake_case 로 매핑.
+  const dto = await api.put<PerformanceDetailDTO>(
+    `/performances/${teamId}`,
+    fromPerformanceDetailPatch(patch),
+  );
   return toPerformanceDetail(dto);
 }
 
