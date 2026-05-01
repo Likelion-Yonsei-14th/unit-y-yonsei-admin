@@ -51,6 +51,25 @@ export function PerformanceManagement() {
   const [setlist, setSetlist] = useState<SetlistItem[]>([]);
   const [editingSetlist, setEditingSetlist] = useState<SetlistItem[]>([]);
 
+  // 직접 createObjectURL 로 만든 blob URL 만 추적 — 서버에서 받은 일반 URL 은 revoke 대상 아님.
+  // 제거/취소/서버 동기화/언마운트 시점에 누수 없이 정리.
+  const blobUrlsRef = useRef<Set<string>>(new Set());
+  useEffect(() => () => {
+    blobUrlsRef.current.forEach((u) => URL.revokeObjectURL(u));
+    blobUrlsRef.current.clear();
+  }, []);
+
+  /** stillUsed 에 없는 추적 blob URL 을 즉시 revoke + ref 에서 제거. */
+  const revokeUnusedBlobs = (stillUsed: Iterable<string>) => {
+    const used = new Set(stillUsed);
+    for (const url of blobUrlsRef.current) {
+      if (!used.has(url)) {
+        URL.revokeObjectURL(url);
+        blobUrlsRef.current.delete(url);
+      }
+    }
+  };
+
   // data 가 도착/변경되면 view 상태를 재동기화. 편집 중엔 덮어쓰지 않는다
   // (서버 refetch 타이밍이 편집 중 사용자의 입력을 날려버리지 않도록).
   useEffect(() => {
@@ -58,6 +77,8 @@ export function PerformanceManagement() {
     setPerformanceData(data);
     setPerformanceImages(data.images);
     setSetlist(data.setlist);
+    // 서버 데이터로 다시 채워질 때 — 더 이상 화면에 없는 blob URL 정리.
+    revokeUnusedBlobs(data.images.map((img) => img.url));
   }, [data, isEditMode]);
 
   // 편집 중 날짜를 바꿨을 때, 기존 stage 가 새 날짜에서 운영되지 않는다면
@@ -82,15 +103,11 @@ export function PerformanceManagement() {
   };
 
   const handleCancel = () => {
+    // 편집 중 업로드했지만 저장하지 않은 blob URL 정리. 다음 handleEdit 가
+    // editingImages 를 performanceImages 로 덮어쓰므로 여기서 끊어도 안전.
+    revokeUnusedBlobs(performanceImages.map((img) => img.url));
     setIsEditMode(false);
   };
-
-  // 직접 createObjectURL 로 만든 blob URL 만 추적 — 서버에서 받은 일반 URL 은 revoke 대상 아님.
-  const blobUrlsRef = useRef<Set<string>>(new Set());
-  useEffect(() => () => {
-    blobUrlsRef.current.forEach((u) => URL.revokeObjectURL(u));
-    blobUrlsRef.current.clear();
-  }, []);
 
   const handleImageUpload = (e: ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
