@@ -100,9 +100,21 @@ export function LoginPage() {
             <div className="ds-caption text-ds-warning-pressed space-y-0.5 font-mono">
               <div>super / super1234 (슈퍼어드민)</div>
               <div>master / master1234 (마스터어드민)</div>
-              <div>booth1 / booth1234 (부스운영자 · 작성 완료)</div>
-              <div>booth2 / booth1234 (부스운영자 · 빈 프로필)</div>
-              <div>performer1 / perf1234 (공연팀)</div>
+              <div className="pt-1 text-[10px] opacity-80">─ Booth · 비밀번호 booth1234 ─</div>
+              <div>booth1 — 문헌정보학과 · 인기 · 다일 운영</div>
+              <div>booth2 — 빈 프로필 (작성 전 데모)</div>
+              <div>booth3 — 경영학과 · 한글탑</div>
+              <div>booth5 — 디자인 와플 · 인기</div>
+              <div>booth7 — 사회복지 닭강정 · 인기</div>
+              <div>booth13 — 화학과 아이스크림 · 인기</div>
+              <div>booth15 — 별빛 카페 · 다중 자리</div>
+              <div>booth28 — 안전 부스 · 모든 날짜</div>
+              <div>booth30 — 비활성 부스</div>
+              <div className="pt-1 text-[10px] opacity-80">─ Performer · 비밀번호 perf1234 ─</div>
+              <div>performer1 — 멋사 · 5/28 백양로</div>
+              <div>performer2 — 송도노인정양로원 · 5/27 송도</div>
+              <div>performer16 — BTL · 5/28 백양로 헤드라이너</div>
+              <div>performer23 — KOMI Squad · 5/29 백양로</div>
             </div>
           </div>
         )}
