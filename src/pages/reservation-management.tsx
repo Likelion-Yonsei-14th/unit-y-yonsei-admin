@@ -1,7 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Navigate, useParams } from "react-router";
 import { Phone, MessageSquare, Check, X, Calendar, RotateCcw, Search } from "lucide-react";
-import { mockReservations, type Reservation, type ReservationState } from "@/mocks/reservations";
+import { toast } from "sonner";
+import {
+  useReservations,
+  useSetReservationStatus,
+  useSetReservationsStatusBulk,
+} from "@/features/reservations/hooks";
+import type { Reservation, ReservationState } from "@/features/reservations/types";
 import { PageHeaderAction } from "@/components/common/page-header-action";
 import {
   AlertDialog,
@@ -36,7 +42,11 @@ export function ReservationManagement() {
   }, [boothId, boothsQuery.data]);
   const { user } = useAuth();
 
-  const [reservations, setReservations] = useState<Reservation[]>(mockReservations);
+  const reservationsQuery = useReservations();
+  const reservations: Reservation[] = reservationsQuery.data ?? [];
+  const setStatusMutation = useSetReservationStatus();
+  const setStatusBulkMutation = useSetReservationsStatusBulk();
+
   const [selectedStatus, setSelectedStatus] = useState<ReservationStatus>("대기자 목록");
   const [searchQuery, setSearchQuery] = useState("");
   // booth 가 비동기로 도착(useBooths) 하므로 초기값은 booth 가 없을 때의 안전한 기본값(true).
@@ -71,7 +81,12 @@ export function ReservationManagement() {
   }, [boothReservations, normalizedQuery]);
 
   const applyStatus = (id: string, status: ReservationState) => {
-    setReservations((prev) => prev.map((r) => (r.id === id ? { ...r, status } : r)));
+    setStatusMutation.mutate(
+      { id, status },
+      {
+        onError: () => toast.error("상태 변경에 실패했습니다. 잠시 후 다시 시도해주세요."),
+      },
+    );
   };
 
   // 대기 순번은 시간 오름차순 기준 고정이라 boothReservations 가 바뀔 때만
@@ -172,11 +187,20 @@ export function ReservationManagement() {
 
   // 벌크 예약 상태 변경 — 모달 자체가 확인 단계 역할이라 여기서 바로 반영.
   const handleStatusChange = (newStatus: ReservationState) => {
-    setReservations((prev) =>
-      prev.map((r) => (selectedIds.includes(r.id) ? { ...r, status: newStatus } : r)),
+    if (selectedIds.length === 0) {
+      setShowStatusChangeModal(false);
+      return;
+    }
+    setStatusBulkMutation.mutate(
+      { ids: selectedIds, status: newStatus },
+      {
+        onSuccess: () => {
+          setShowStatusChangeModal(false);
+          setSelectedIds([]);
+        },
+        onError: () => toast.error("벌크 변경에 실패했습니다. 잠시 후 다시 시도해주세요."),
+      },
     );
-    setShowStatusChangeModal(false);
-    setSelectedIds([]);
   };
 
   return (
