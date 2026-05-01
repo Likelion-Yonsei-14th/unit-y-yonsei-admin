@@ -304,8 +304,9 @@ export function PerformanceManagement() {
 
         <div className="space-y-6">
           <div>
-            <label className="block text-sm font-semibold text-foreground mb-2">공연팀명</label>
+            <label htmlFor="perf-team-name" className="block text-sm font-semibold text-foreground mb-2">공연팀명</label>
             <input
+              id="perf-team-name"
               type="text"
               placeholder="공연팀 이름을 입력하세요"
               className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
@@ -316,8 +317,9 @@ export function PerformanceManagement() {
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-foreground mb-2">공연팀 소개글</label>
+            <label htmlFor="perf-description" className="block text-sm font-semibold text-foreground mb-2">공연팀 소개글</label>
             <textarea
+              id="perf-description"
               rows={5}
               placeholder="동아리 소개, 구성원 소개 등을 작성하세요"
               className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all resize-none"
@@ -328,15 +330,17 @@ export function PerformanceManagement() {
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-foreground mb-2">SNS 링크 (선택)</label>
+            {/* SNS 묶음은 그룹 라벨이라 htmlFor 단일 매칭이 어색함. 각 input 에 aria-label 로 매칭. */}
+            <span className="block text-sm font-semibold text-foreground mb-2">SNS 링크 (선택)</span>
             <div className="space-y-3">
               <div className="flex items-center gap-3">
-                <div className="flex items-center justify-center w-10 h-10 bg-muted text-muted-foreground rounded-lg">
+                <div className="flex items-center justify-center w-10 h-10 bg-muted text-muted-foreground rounded-lg" aria-hidden="true">
                   <Instagram size={20} />
                 </div>
                 <input
                   type="text"
                   placeholder="인스타그램 URL"
+                  aria-label="인스타그램 URL"
                   className="flex-1 px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
                   value={displayData.instagramUrl}
                   onChange={(e) => setEditingData(prev => prev ? { ...prev, instagramUrl: e.target.value } : prev)}
@@ -344,12 +348,13 @@ export function PerformanceManagement() {
                 />
               </div>
               <div className="flex items-center gap-3">
-                <div className="flex items-center justify-center w-10 h-10 bg-muted text-muted-foreground rounded-lg">
+                <div className="flex items-center justify-center w-10 h-10 bg-muted text-muted-foreground rounded-lg" aria-hidden="true">
                   <Youtube size={20} />
                 </div>
                 <input
                   type="text"
                   placeholder="유튜브 URL"
+                  aria-label="유튜브 URL"
                   className="flex-1 px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
                   value={displayData.youtubeUrl}
                   onChange={(e) => setEditingData(prev => prev ? { ...prev, youtubeUrl: e.target.value } : prev)}
@@ -460,9 +465,10 @@ export function PerformanceManagement() {
           return (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-semibold text-foreground mb-2">공연 날짜</label>
+                <label htmlFor="perf-date" className="block text-sm font-semibold text-foreground mb-2">공연 날짜</label>
                 <div className="relative">
                   <select
+                    id="perf-date"
                     className={selectClass}
                     value={displayData.date}
                     onChange={(e) => setEditingData(prev => prev ? { ...prev, date: e.target.value } : prev)}
@@ -483,9 +489,10 @@ export function PerformanceManagement() {
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-semibold text-foreground mb-2">스테이지</label>
+                <label htmlFor="perf-stage" className="block text-sm font-semibold text-foreground mb-2">스테이지</label>
                 <div className="relative">
                   <select
+                    id="perf-stage"
                     className={selectClass}
                     value={displayData.stage}
                     onChange={(e) => setEditingData(prev => prev ? { ...prev, stage: e.target.value as PerformanceStage } : prev)}
@@ -507,8 +514,9 @@ export function PerformanceManagement() {
                 </div>
               </div>
           <div>
-            <label className="block text-sm font-semibold text-foreground mb-2">공연 시작 시간</label>
+            <label htmlFor="perf-start-time" className="block text-sm font-semibold text-foreground mb-2">공연 시작 시간</label>
             <input
+              id="perf-start-time"
               type="time"
               step={300}
               className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
@@ -518,8 +526,9 @@ export function PerformanceManagement() {
             />
           </div>
           <div>
-            <label className="block text-sm font-semibold text-foreground mb-2">공연 종료 시간</label>
+            <label htmlFor="perf-end-time" className="block text-sm font-semibold text-foreground mb-2">공연 종료 시간</label>
             <input
+              id="perf-end-time"
               type="time"
               step={300}
               className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all"

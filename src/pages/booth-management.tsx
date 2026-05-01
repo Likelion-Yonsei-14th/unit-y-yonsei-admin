@@ -65,9 +65,11 @@ function DraggableMenuItem({ item, index, moveItem, onUpdate, onDelete }: Dragga
       </div>
 
       <div className="flex-1 space-y-2">
+        {/* 동적 리스트 행이라 visible label 대신 aria-label 로 매칭. */}
         <input
           type="text"
           placeholder="메뉴명"
+          aria-label="메뉴명"
           value={item.name}
           onChange={(e) => onUpdate(item.id, "name", e.target.value)}
           className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
@@ -75,6 +77,7 @@ function DraggableMenuItem({ item, index, moveItem, onUpdate, onDelete }: Dragga
         <input
           type="text"
           placeholder="메뉴 설명"
+          aria-label="메뉴 설명"
           value={item.description}
           onChange={(e) => onUpdate(item.id, "description", e.target.value)}
           className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
@@ -82,6 +85,7 @@ function DraggableMenuItem({ item, index, moveItem, onUpdate, onDelete }: Dragga
         <input
           type="text"
           placeholder="가격 (예: 5,000원)"
+          aria-label="가격"
           value={item.price}
           onChange={(e) => onUpdate(item.id, "price", e.target.value)}
           className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
@@ -461,9 +465,10 @@ export function BoothManagement() {
           <div className="space-y-6">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-semibold text-foreground mb-2">부스명</label>
+                <label htmlFor="booth-name" className="block text-sm font-semibold text-foreground mb-2">부스명</label>
                 {isEditingBoothInfo ? (
                   <input
+                    id="booth-name"
                     type="text"
                     placeholder="부스 이름을 입력하세요"
                     value={boothName}
@@ -471,15 +476,16 @@ export function BoothManagement() {
                     className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
                   />
                 ) : (
-                  <div className="w-full px-4 py-3 border border-border rounded-lg bg-muted text-foreground">
+                  <div id="booth-name" className="w-full px-4 py-3 border border-border rounded-lg bg-muted text-foreground">
                     {boothName}
                   </div>
                 )}
               </div>
               <div>
-                <label className="block text-sm font-semibold text-foreground mb-2">단체명</label>
+                <label htmlFor="booth-organization" className="block text-sm font-semibold text-foreground mb-2">단체명</label>
                 {isEditingBoothInfo ? (
                   <input
+                    id="booth-organization"
                     type="text"
                     placeholder="단체 이름을 입력하세요"
                     value={organizationName}
@@ -487,7 +493,7 @@ export function BoothManagement() {
                     className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
                   />
                 ) : (
-                  <div className="w-full px-4 py-3 border border-border rounded-lg bg-muted text-foreground">
+                  <div id="booth-organization" className="w-full px-4 py-3 border border-border rounded-lg bg-muted text-foreground">
                     {organizationName}
                   </div>
                 )}
@@ -495,9 +501,10 @@ export function BoothManagement() {
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-foreground mb-2">부스 소개글</label>
+              <label htmlFor="booth-description" className="block text-sm font-semibold text-foreground mb-2">부스 소개글</label>
               {isEditingBoothInfo ? (
                 <textarea
+                  id="booth-description"
                   rows={4}
                   placeholder="부스를 소개하는 내용을 작성하세요"
                   value={boothDescription}
@@ -505,7 +512,7 @@ export function BoothManagement() {
                   className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all resize-none"
                 />
               ) : (
-                <div className="w-full px-4 py-3 border border-border rounded-lg bg-muted text-foreground min-h-[112px]">
+                <div id="booth-description" className="w-full px-4 py-3 border border-border rounded-lg bg-muted text-foreground min-h-[112px]">
                   {boothDescription}
                 </div>
               )}
@@ -575,9 +582,10 @@ export function BoothManagement() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-semibold text-foreground mb-2">대표 메뉴</label>
+                <label htmlFor="booth-signature-menu" className="block text-sm font-semibold text-foreground mb-2">대표 메뉴</label>
                 {isEditingBoothInfo ? (
                   <input
+                    id="booth-signature-menu"
                     type="text"
                     placeholder="대표 메뉴명"
                     value={signatureMenu}
@@ -585,15 +593,16 @@ export function BoothManagement() {
                     className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
                   />
                 ) : (
-                  <div className="w-full px-4 py-3 border border-border rounded-lg bg-muted text-foreground">
+                  <div id="booth-signature-menu" className="w-full px-4 py-3 border border-border rounded-lg bg-muted text-foreground">
                     {signatureMenu}
                   </div>
                 )}
               </div>
               <div>
-                <label className="block text-sm font-semibold text-foreground mb-2">운영 시간</label>
+                <label htmlFor="booth-operating-hours" className="block text-sm font-semibold text-foreground mb-2">운영 시간</label>
                 {isEditingBoothInfo ? (
                   <input
+                    id="booth-operating-hours"
                     type="text"
                     placeholder="예: 10:00 - 18:00"
                     value={operatingHours}
@@ -601,7 +610,7 @@ export function BoothManagement() {
                     className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
                   />
                 ) : (
-                  <div className="w-full px-4 py-3 border border-border rounded-lg bg-muted text-foreground">
+                  <div id="booth-operating-hours" className="w-full px-4 py-3 border border-border rounded-lg bg-muted text-foreground">
                     {operatingHours}
                   </div>
                 )}
@@ -677,9 +686,10 @@ export function BoothManagement() {
           </div>
 
           <div className="mb-6">
-            <label className="block text-sm font-semibold text-foreground mb-2">부스 주문 공지</label>
+            <label htmlFor="booth-order-notice" className="block text-sm font-semibold text-foreground mb-2">부스 주문 공지</label>
             {isEditingMenuList ? (
               <textarea
+                id="booth-order-notice"
                 rows={3}
                 placeholder="예: 테이블 이용 시 메인 메뉴를 하나 이상 주문해주셔야 합니다."
                 value={orderNotice}
@@ -687,7 +697,7 @@ export function BoothManagement() {
                 className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all resize-none"
               />
             ) : (
-              <div className="w-full px-4 py-3 border border-border rounded-lg bg-muted text-foreground">
+              <div id="booth-order-notice" className="w-full px-4 py-3 border border-border rounded-lg bg-muted text-foreground">
                 {orderNotice}
               </div>
             )}

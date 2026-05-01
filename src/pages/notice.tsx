@@ -211,8 +211,9 @@ export function NoticePage() {
 
           <div className="space-y-6">
             <div>
-              <label className="block text-sm font-semibold text-foreground mb-2">공지사항 제목</label>
+              <label htmlFor="notice-title" className="block text-sm font-semibold text-foreground mb-2">공지사항 제목</label>
               <input
+                id="notice-title"
                 type="text"
                 placeholder="공지사항 제목을 입력하세요"
                 value={titleDraft}
@@ -276,8 +277,9 @@ export function NoticePage() {
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-foreground mb-2">본문</label>
+              <label htmlFor="notice-content" className="block text-sm font-semibold text-foreground mb-2">본문</label>
               <textarea
+                id="notice-content"
                 rows={6}
                 placeholder="공지사항 내용을 작성하세요"
                 value={contentDraft}

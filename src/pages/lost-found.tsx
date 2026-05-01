@@ -223,8 +223,9 @@ export function LostFoundPage() {
           <div className="space-y-6">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-semibold text-foreground mb-2">분실물명</label>
+                <label htmlFor="lost-name" className="block text-sm font-semibold text-foreground mb-2">분실물명</label>
                 <input
+                  id="lost-name"
                   type="text"
                   placeholder="분실물 이름을 입력하세요"
                   value={nameDraft}
@@ -233,8 +234,9 @@ export function LostFoundPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-semibold text-foreground mb-2">발견 위치</label>
+                <label htmlFor="lost-location" className="block text-sm font-semibold text-foreground mb-2">발견 위치</label>
                 <input
+                  id="lost-location"
                   type="text"
                   placeholder="발견 위치를 입력하세요"
                   value={locationDraft}
@@ -245,8 +247,9 @@ export function LostFoundPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-foreground mb-2">상세 설명</label>
+              <label htmlFor="lost-description" className="block text-sm font-semibold text-foreground mb-2">상세 설명</label>
               <textarea
+                id="lost-description"
                 rows={4}
                 placeholder="분실물에 대한 상세 설명을 입력하세요"
                 value={descriptionDraft}
