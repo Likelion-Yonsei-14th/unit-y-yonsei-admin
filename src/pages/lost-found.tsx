@@ -131,10 +131,19 @@ export function LostFoundPage() {
               {lostItems.map((item) => (
                 <tr key={item.id} className="hover:bg-muted transition-colors">
                   <td className="px-6 py-4">
-                    <div className="text-sm font-medium text-foreground">{item.name}</div>
-                    {item.description && (
-                      <div className="text-xs text-muted-foreground mt-1">{item.description}</div>
-                    )}
+                    <button
+                      type="button"
+                      onClick={() => handleEdit(item)}
+                      className="text-left w-full group"
+                      aria-label={`${item.name} 수정`}
+                    >
+                      <div className="text-sm font-medium text-foreground group-hover:text-primary group-hover:underline underline-offset-2 transition-colors">
+                        {item.name}
+                      </div>
+                      {item.description && (
+                        <div className="text-xs text-muted-foreground mt-1">{item.description}</div>
+                      )}
+                    </button>
                   </td>
                   <td className="px-6 py-4 text-sm text-muted-foreground">{item.location}</td>
                   <td className="px-6 py-4 text-sm text-muted-foreground">{item.date}</td>

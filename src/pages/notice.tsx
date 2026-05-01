@@ -120,8 +120,17 @@ export function NoticePage() {
               {notices.map((notice) => (
                 <tr key={notice.id} className="hover:bg-muted transition-colors">
                   <td className="px-6 py-4">
-                    <div className="text-sm font-medium text-foreground">{notice.title}</div>
-                    <div className="text-xs text-muted-foreground mt-1 line-clamp-1">{notice.content}</div>
+                    <button
+                      type="button"
+                      onClick={() => handleEdit(notice)}
+                      className="text-left w-full group"
+                      aria-label={`${notice.title} 수정`}
+                    >
+                      <div className="text-sm font-medium text-foreground group-hover:text-primary group-hover:underline underline-offset-2 transition-colors">
+                        {notice.title}
+                      </div>
+                      <div className="text-xs text-muted-foreground mt-1 line-clamp-1">{notice.content}</div>
+                    </button>
                   </td>
                   <td className="px-6 py-4 text-sm text-muted-foreground">{notice.date}</td>
                   <td className="px-6 py-4">
