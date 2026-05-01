@@ -229,7 +229,7 @@ export function UserManagement() {
           ))}
         </div>
 
-        <div className="relative w-80 shrink-0">
+        <div className="relative w-full sm:w-80">
           <Search
             size={16}
             className="absolute left-3 top-1/2 -translate-y-1/2 text-ds-text-disabled pointer-events-none"
