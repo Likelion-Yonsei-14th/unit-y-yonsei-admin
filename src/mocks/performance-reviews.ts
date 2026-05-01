@@ -3,14 +3,56 @@ export interface Review {
   performanceTeam: string;
   favoriteSong: string;
   message: string;
+  /** "yyyy-mm-dd HH:mm" — 통계용으로만 쓰여 시간대 보정은 보류. */
   createdAt: string;
   isHidden: boolean;
 }
 
+/**
+ * 후기 mock. performances.ts 의 teamName 과 거의 일치하도록 작성해
+ * '인기 곡 TOP 5' / '팀별 후기 수' 통계가 자연스럽게 채워지도록 시드.
+ */
 export const mockReviews: Review[] = [
-  { id: 1, performanceTeam: '밴드 A', favoriteSong: '여름밤의 꿈', message: '정말 멋진 공연이었습니다! 특히 여름밤의 꿈은 감동적이었어요. 다음에도 꼭 보고 싶습니다!', createdAt: '2026-05-27 14:30', isHidden: false },
-  { id: 2, performanceTeam: '댄스팀 B', favoriteSong: 'Break Free', message: '에너지 넘치는 무대 너무 좋았어요! 댄서분들 모두 멋졌습니다 👏', createdAt: '2026-05-27 15:45', isHidden: false },
-  { id: 3, performanceTeam: '밴드 A', favoriteSong: 'Starlight', message: 'Starlight 최고! 앵콜 한 번 더 해주세요!', createdAt: '2026-05-27 16:20', isHidden: false },
-  { id: 4, performanceTeam: '보컬팀 C', favoriteSong: '달빛', message: '목소리 정말 좋으세요. 계속 활동 응원합니다!', createdAt: '2026-05-28 13:10', isHidden: false },
-  { id: 5, performanceTeam: '댄스팀 B', favoriteSong: 'Dynamite', message: 'Dynamite 무대 찢었다!! 대박!', createdAt: '2026-05-28 14:50', isHidden: false },
+  // ==== 5/27 송도 ============================================================
+  { id: 1,  performanceTeam: '팔레트',           favoriteSong: '좋니',                message: '어쿠스틱 사운드가 정말 따뜻했어요. 마지막 곡 좋니 듣고 눈물 났어요 ㅠㅠ', createdAt: '2026-05-27 17:35', isHidden: false },
+  { id: 2,  performanceTeam: '하늘소리',         favoriteSong: '걱정말아요 그대',     message: '합창이 이렇게 감동적일 줄 몰랐습니다. 노래로 위로받는 시간이었어요!', createdAt: '2026-05-27 18:05', isHidden: false },
+  { id: 3,  performanceTeam: 'Bluemoon',         favoriteSong: 'Fly Me to the Moon',  message: '재즈 너무 멋졌어요. 송도 야경이랑 잘 어울렸음.', createdAt: '2026-05-27 18:35', isHidden: false },
+  { id: 4,  performanceTeam: '송도노인정양로원', favoriteSong: '좋은 날',             message: 'I Need You 듣고 인생곡 됐어요. 보컬 진짜 좋음', createdAt: '2026-05-27 19:35', isHidden: false },
+  { id: 5,  performanceTeam: '네온하트',         favoriteSong: 'DDU-DU DDU-DU',       message: '댄스 무대 화려했어요! 군무 칼각이라 박수만 쳤네요', createdAt: '2026-05-27 20:35', isHidden: false },
+  { id: 6,  performanceTeam: 'YAGV',             favoriteSong: '오늘 헤어졌어요',     message: '듣고 울었습니다. 권진아 원곡보다 더 잔잔한 느낌이 있었어요', createdAt: '2026-05-27 21:00', isHidden: false },
+  { id: 7,  performanceTeam: '진영밴드',         favoriteSong: '이등병의 편지',       message: '90년대 록 헌정 너무 좋았어요. 부모님이랑 같이 보고 싶었음', createdAt: '2026-05-27 21:30', isHidden: false },
+  { id: 8,  performanceTeam: 'Occlusion',        favoriteSong: '주저하는 연인들을 위해', message: '잔나비 커버 진심 잘하셨어요. 무대 매너도 멋졌습니다 👏', createdAt: '2026-05-27 22:05', isHidden: false },
+  { id: 9,  performanceTeam: 'Occlusion',        favoriteSong: 'Beautiful Stranger', message: '베이스 라인이 죽였어요. 다음에도 꼭 오세요!', createdAt: '2026-05-27 22:10', isHidden: false },
+  { id: 10, performanceTeam: 'Bluemoon',         favoriteSong: 'Autumn Leaves',       message: '재즈 전공한 거 아니죠? 너무 잘하시는데 ㅋㅋ', createdAt: '2026-05-27 18:50', isHidden: false },
+
+  // ==== 5/28 백양로/노천 ====================================================
+  { id: 11, performanceTeam: '재즈필',           favoriteSong: 'So What',             message: 'Take Five 인트로 들으면서 소름 돋았어요!', createdAt: '2026-05-28 16:50', isHidden: false },
+  { id: 12, performanceTeam: '한울림',           favoriteSong: '신모듬',              message: '국악과 사물놀이의 조화가 인상깊었습니다. 백양로에 잘 어울리는 무대였어요.', createdAt: '2026-05-28 17:25', isHidden: false },
+  { id: 13, performanceTeam: '아침향기',         favoriteSong: '그대로 있어주면 돼', message: '폴킴 커버 부드러웠어요. 백양로 17시쯤 분위기랑 딱이었음.', createdAt: '2026-05-28 17:20', isHidden: false },
+  { id: 14, performanceTeam: '청불',             favoriteSong: '벚꽃 엔딩',           message: '벚꽃 엔딩 봄도 아닌데 들으니까 마음이 두근두근 했어요.', createdAt: '2026-05-28 17:50', isHidden: false },
+  { id: 15, performanceTeam: 'BTL',              favoriteSong: 'Hype Boy',            message: '진짜 K-Pop 아이돌급이에요!! 몸치인 저도 따라 췄음 ㅋㅋㅋ', createdAt: '2026-05-28 18:35', isHidden: false },
+  { id: 16, performanceTeam: 'BTL',              favoriteSong: 'LOVE DIVE',           message: '댄스 라인이랑 카메라 워크가 진짜 무대를 사로잡았어요. 영상 어디서 볼 수 있나요?', createdAt: '2026-05-28 18:40', isHidden: false },
+  { id: 17, performanceTeam: 'BTL',              favoriteSong: 'CRAZY',               message: 'CRAZY 칼군무 보고 미쳤다 했어요. 박수만 쳤네요', createdAt: '2026-05-28 18:42', isHidden: false },
+  { id: 18, performanceTeam: '마음소리',         favoriteSong: 'Lemon Tree',          message: 'A cappella 진짜 신기해요. 사람 목소리만으로 이런 소리가 나오다니!', createdAt: '2026-05-28 17:50', isHidden: false },
+  { id: 19, performanceTeam: 'Lyrical',          favoriteSong: '눈사람',              message: '발라드는 역시 라이브가 진리. 보컬 진짜 좋아요', createdAt: '2026-05-28 18:20', isHidden: false },
+  { id: 20, performanceTeam: '우주산책',         favoriteSong: '우주를 줄게',         message: '몽환적이고 따뜻했어요. 별빛 카페 음료 마시면서 보면 딱일 듯', createdAt: '2026-05-28 19:35', isHidden: false },
+  { id: 21, performanceTeam: 'PURPLE',           favoriteSong: 'I AM',                message: '8명이 무대 꽉 채웠어요!! 엔딩 포즈가 인상적이었어요', createdAt: '2026-05-28 20:35', isHidden: false },
+  { id: 22, performanceTeam: '멋쟁이사자처럼 연세대', favoriteSong: 'Dynamite',          message: '개발자 동아리가 이 정도 무대를?! 진짜 깜짝 놀랐어요. Spring Day 들으면서 따라 불렀음', createdAt: '2026-05-28 14:35', isHidden: false },
+  { id: 23, performanceTeam: '멋쟁이사자처럼 연세대', favoriteSong: 'Spring Day',        message: 'Spring Day 마지막에 다같이 부른 거 진짜 감동이었어요 ㅠㅠ', createdAt: '2026-05-28 14:40', isHidden: false },
+
+  // ==== 5/29 ================================================================
+  { id: 24, performanceTeam: '페르세우스',       favoriteSong: '일어나',              message: '록 사운드가 백양로를 흔들어 놨어요! 25년 활동의 내공이 보였습니다.', createdAt: '2026-05-29 15:35', isHidden: false },
+  { id: 25, performanceTeam: 'Echo',             favoriteSong: '시티팝',              message: '시티팝 무드 너무 좋아요. 신예라 들어보지 못했던 팀인데 인스타 팔로우 했어요', createdAt: '2026-05-29 16:35', isHidden: false },
+  { id: 26, performanceTeam: 'Echo',             favoriteSong: 'Plastic Love',        message: '여름밤에 듣고 싶은 곡들. 분위기 너무 좋았어요!', createdAt: '2026-05-29 16:40', isHidden: false },
+  { id: 27, performanceTeam: 'KOMI Squad',       favoriteSong: 'UNFORGIVEN',          message: 'Magnetic 무대 보고 ILLIT 영혼 강림한 줄 알았어요. 9인 군무가 이 정도라니!', createdAt: '2026-05-29 18:35', isHidden: false },
+  { id: 28, performanceTeam: 'KOMI Squad',       favoriteSong: 'DRAMA',               message: '의상 너무 예쁘고 카리스마 무대였어요!', createdAt: '2026-05-29 18:40', isHidden: false },
+  { id: 29, performanceTeam: '연세 인디 콜라보', favoriteSong: 'Antifreeze',          message: '검정치마 라이브를 백양로에서 듣게 될 줄이야!! 인생 무대였습니다.', createdAt: '2026-05-29 20:00', isHidden: false },
+  { id: 30, performanceTeam: '연세 인디 콜라보', favoriteSong: '이게 사랑일까',       message: '브로콜리 너마저 + 검정치마 + 쟈니브로 한 무대에 다 모여서 진짜 감격이었어요', createdAt: '2026-05-29 20:15', isHidden: false },
+  { id: 31, performanceTeam: 'SoWhat',           favoriteSong: 'So What',             message: '실음과 학생들답게 안정적이었어요!', createdAt: '2026-05-29 16:20', isHidden: false },
+  { id: 32, performanceTeam: 'FEVER',            favoriteSong: 'CANDY',               message: 'H.O.T 커버 ㅋㅋ 부모님 세대 노래라서 더 신기했음', createdAt: '2026-05-29 16:50', isHidden: false },
+  { id: 33, performanceTeam: '오즈',             favoriteSong: 'Pirates of the Caribbean', message: '윈드 앙상블 처음 들어봤는데 영화 OST가 라이브로 들으니 더 웅장했어요', createdAt: '2026-05-29 17:20', isHidden: false },
+
+  // ==== 운영팀이 숨김 처리한 후기 (욕설/스팸 등) =============================
+  { id: 34, performanceTeam: 'BTL',              favoriteSong: 'Hype Boy',            message: '[운영팀에 의해 숨김처리됨 - 부적절한 표현]', createdAt: '2026-05-28 19:00', isHidden: true },
+  { id: 35, performanceTeam: 'KOMI Squad',       favoriteSong: 'DRAMA',               message: '[운영팀에 의해 숨김처리됨 - 도배]', createdAt: '2026-05-29 18:50', isHidden: true },
 ];
