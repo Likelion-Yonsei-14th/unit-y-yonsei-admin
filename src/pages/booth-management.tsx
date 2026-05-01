@@ -1,303 +1,41 @@
-import { useEffect, useRef, useState } from "react";
-import { Upload, Plus, Trash2, Check, X, GripVertical, ArrowLeft, Star, Edit, Store, UtensilsCrossed } from "lucide-react";
-import { DndProvider, useDrag, useDrop } from "react-dnd";
-import { HTML5Backend } from "react-dnd-html5-backend";
-import { toast } from "sonner";
+import { useEffect, useState } from "react";
+import { Store } from "lucide-react";
 import { useMyBoothProfile, useUpdateMyBoothProfile } from "@/features/booths/hooks";
-import {
-  isBoothInfoCompleted, isMenuListCompleted,
-  type BoothImage, type BoothMenuItem,
-} from "@/features/booths/types";
+import { isBoothInfoCompleted, isMenuListCompleted } from "@/features/booths/types";
+import { BoothInfoForm } from "@/features/booths/components/booth-info-form";
+import { BoothStatusCards } from "@/features/booths/components/booth-status-cards";
+import { MenuListForm } from "@/features/booths/components/menu-list-form";
 
-const ItemType = "MENU_ITEM";
-
-interface DraggableMenuItemProps {
-  item: BoothMenuItem;
-  index: number;
-  moveItem: (fromIndex: number, toIndex: number) => void;
-  onUpdate: (id: number, field: keyof BoothMenuItem, value: string | boolean) => void;
-  onDelete: (id: number) => void;
-}
-
-function DraggableMenuItem({ item, index, moveItem, onUpdate, onDelete }: DraggableMenuItemProps) {
-  const [{ isDragging }, drag, preview] = useDrag({
-    type: ItemType,
-    item: { index },
-    collect: (monitor) => ({
-      isDragging: monitor.isDragging(),
-    }),
-  });
-
-  const [, drop] = useDrop({
-    accept: ItemType,
-    hover: (draggedItem: { index: number }) => {
-      if (draggedItem.index !== index) {
-        moveItem(draggedItem.index, index);
-        draggedItem.index = index;
-      }
-    },
-  });
-
-  return (
-    <div
-      ref={(node) => preview(drop(node))}
-      className={`flex items-center gap-4 p-4 border border-border rounded-lg transition-all ${
-        isDragging ? "opacity-50" : "opacity-100"
-      } hover:border-primary`}
-    >
-      <div
-        ref={drag}
-        className="cursor-move text-ds-text-disabled hover:text-muted-foreground transition-colors"
-      >
-        <GripVertical size={20} />
-      </div>
-
-      <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-semibold text-sm flex-shrink-0">
-        {item.order}
-      </div>
-
-      <div className="w-20 h-20 bg-muted rounded-lg flex-shrink-0 flex items-center justify-center overflow-hidden">
-        {item.image ? (
-          <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
-        ) : (
-          <Upload size={24} className="text-ds-text-disabled" />
-        )}
-      </div>
-
-      <div className="flex-1 space-y-2">
-        {/* 동적 리스트 행이라 visible label 대신 aria-label 로 매칭. */}
-        <input
-          type="text"
-          placeholder="메뉴명"
-          aria-label="메뉴명"
-          value={item.name}
-          onChange={(e) => onUpdate(item.id, "name", e.target.value)}
-          className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
-        />
-        <input
-          type="text"
-          placeholder="메뉴 설명"
-          aria-label="메뉴 설명"
-          value={item.description}
-          onChange={(e) => onUpdate(item.id, "description", e.target.value)}
-          className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
-        />
-        <input
-          type="text"
-          placeholder="가격 (예: 5,000원)"
-          aria-label="가격"
-          value={item.price}
-          onChange={(e) => onUpdate(item.id, "price", e.target.value)}
-          className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
-        />
-      </div>
-
-      <div className="flex items-center gap-2">
-        <span className="text-sm text-muted-foreground">품절</span>
-        <button
-          onClick={() => onUpdate(item.id, "soldOut", !item.soldOut)}
-          className={`relative w-12 h-6 rounded-full transition-colors ${
-            item.soldOut ? "bg-destructive" : "bg-ds-border-strong"
-          }`}
-        >
-          <div
-            className={`absolute top-1 w-4 h-4 bg-background rounded-full shadow-md transition-all duration-300 ${
-              item.soldOut ? "left-7" : "left-1"
-            }`}
-          />
-        </button>
-      </div>
-
-      <button
-        onClick={() => onDelete(item.id)}
-        className="p-2 text-destructive hover:bg-ds-error-subtle rounded-lg transition-colors"
-      >
-        <Trash2 size={18} />
-      </button>
-    </div>
-  );
-}
-
+/**
+ * Booth 역할 사용자의 자기 부스 관리 페이지.
+ *
+ * 컨테이너 책임:
+ *  - booth 데이터 fetch + 로딩/에러 분기
+ *  - 두 폼(부스 정보 / 메뉴 리스트) 의 표시 토글
+ *  - 헤더의 부스 운영 ON/OFF 토글 + BoothInfoForm 의 토글 동기화
+ *
+ * 폼 내부 state(필드/이미지/메뉴) 는 각 sub-component 가 직접 들고 있어
+ * 페이지가 비대해지지 않도록 분리됨.
+ */
 export function BoothManagement() {
-  // 이 페이지는 RequirePermission('booth.update.own')으로 가드 → Booth 역할만 진입.
+  // 이 페이지는 RequirePermission('booth.update.own') 으로 가드 → Booth 역할만 진입.
   const { data: booth, isPending, isError } = useMyBoothProfile();
   const updateProfile = useUpdateMyBoothProfile();
 
-  // "작성 완료" 여부는 저장된 데이터에서 파생 — 편집 중 입력은 반영되지 않음
-  // (저장 전까지는 불완전한 입력으로 취급). 파일 상단의 helper 참고.
-  const boothInfoCompleted = isBoothInfoCompleted(booth);
-  const menuListCompleted = isMenuListCompleted(booth);
-
   const [showBoothInfoForm, setShowBoothInfoForm] = useState(false);
   const [showMenuListForm, setShowMenuListForm] = useState(false);
-  const [isEditingBoothInfo, setIsEditingBoothInfo] = useState(false);
-  const [isEditingMenuList, setIsEditingMenuList] = useState(false);
 
-  // 폼 state — booth 로드 후 아래 useEffect에서 하이드레이션.
+  // 부스 운영 ON/OFF — 헤더 토글과 BoothInfoForm 의 토글이 같은 값을 가리키므로
+  // 페이지에서 단일 진실로 두고 둘에 모두 전달한다. 저장은 BoothInfoForm 에서
+  // 다른 필드와 함께 일괄 mutation.
   const [reservationEnabled, setReservationEnabled] = useState(false);
-  const [boothImages, setBoothImages] = useState<BoothImage[]>([]);
-  const [boothName, setBoothName] = useState("");
-  const [organizationName, setOrganizationName] = useState("");
-  const [boothDescription, setBoothDescription] = useState("");
-  const [signatureMenu, setSignatureMenu] = useState("");
-  const [operatingHours, setOperatingHours] = useState("");
-  const [orderNotice, setOrderNotice] = useState("");
-  const [menuItems, setMenuItems] = useState<BoothMenuItem[]>([]);
-
-  // 이 컴포넌트에서 직접 createObjectURL 로 만든 blob URL 만 추적 — 서버에서
-  // 받은 일반 URL 은 revoke 대상이 아니다. 제거/동기화/언마운트 시점에 누수 없이 정리.
-  const blobUrlsRef = useRef<Set<string>>(new Set());
-  useEffect(() => () => {
-    blobUrlsRef.current.forEach((u) => URL.revokeObjectURL(u));
-    blobUrlsRef.current.clear();
-  }, []);
-
   useEffect(() => {
-    if (!booth) return;
-    setReservationEnabled(booth.reservationEnabled);
-    setBoothImages(booth.thumbnails);
-    setBoothName(booth.name);
-    setOrganizationName(booth.organizationName);
-    setBoothDescription(booth.description);
-    setSignatureMenu(booth.signatureMenu);
-    setOperatingHours(booth.operatingHours);
-    setOrderNotice(booth.orderNotice);
-    setMenuItems(booth.menuItems);
-    // 서버 데이터로 다시 채워질 때 — 화면에서 사라진 blob URL 즉시 revoke (저장→refetch 경로 누수 차단).
-    const stillUsed = new Set(booth.thumbnails.map((img) => img.url));
-    for (const url of blobUrlsRef.current) {
-      if (!stillUsed.has(url)) {
-        URL.revokeObjectURL(url);
-        blobUrlsRef.current.delete(url);
-      }
-    }
-  }, [booth]);
+    if (booth) setReservationEnabled(booth.reservationEnabled);
+  }, [booth?.id, booth?.reservationEnabled]);
 
-  /** 작성 전(=완료 안 된) 카드 클릭 시 바로 편집 모드로 진입. */
-  const openBoothInfoForm = () => {
-    setShowBoothInfoForm(true);
-    if (!boothInfoCompleted) setIsEditingBoothInfo(true);
-  };
-  const openMenuListForm = () => {
-    setShowMenuListForm(true);
-    if (!menuListCompleted) setIsEditingMenuList(true);
-  };
-
-  const handleSaveBoothInfo = () => {
-    updateProfile.mutate(
-      {
-        name: boothName,
-        organizationName,
-        description: boothDescription,
-        signatureMenu,
-        operatingHours,
-        reservationEnabled,
-        thumbnails: boothImages,
-      },
-      {
-        onSuccess: () => {
-          setIsEditingBoothInfo(false);
-          toast.success("부스 정보를 저장했습니다.");
-        },
-        onError: () => {
-          toast.error("저장에 실패했습니다. 잠시 후 다시 시도해주세요.");
-        },
-      },
-    );
-  };
-
-  const handleSaveMenuList = () => {
-    updateProfile.mutate(
-      { orderNotice, menuItems },
-      {
-        onSuccess: () => {
-          setIsEditingMenuList(false);
-          toast.success("메뉴 리스트를 저장했습니다.");
-        },
-        onError: () => {
-          toast.error("저장에 실패했습니다. 잠시 후 다시 시도해주세요.");
-        },
-      },
-    );
-  };
-
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (files) {
-      const newImages: BoothImage[] = Array.from(files).map((file, index) => {
-        const url = URL.createObjectURL(file);
-        blobUrlsRef.current.add(url);
-        return {
-          id: Date.now() + index,
-          url,
-          isMain: boothImages.length === 0 && index === 0,
-        };
-      });
-      setBoothImages([...boothImages, ...newImages]);
-    }
-  };
-
-  const setMainImage = (id: number) => {
-    setBoothImages(boothImages.map(img => ({
-      ...img,
-      isMain: img.id === id,
-    })));
-  };
-
-  const removeImage = (id: number) => {
-    const target = boothImages.find((img) => img.id === id);
-    if (target && blobUrlsRef.current.has(target.url)) {
-      URL.revokeObjectURL(target.url);
-      blobUrlsRef.current.delete(target.url);
-    }
-    const filtered = boothImages.filter(img => img.id !== id);
-    if (filtered.length > 0 && !filtered.some(img => img.isMain)) {
-      filtered[0].isMain = true;
-    }
-    setBoothImages(filtered);
-  };
-
-  const moveItem = (fromIndex: number, toIndex: number) => {
-    const updatedItems = [...menuItems];
-    const [movedItem] = updatedItems.splice(fromIndex, 1);
-    updatedItems.splice(toIndex, 0, movedItem);
-
-    const reorderedItems = updatedItems.map((item, idx) => ({
-      ...item,
-      order: idx + 1,
-    }));
-
-    setMenuItems(reorderedItems);
-  };
-
-  const addMenuItem = () => {
-    const newItem: BoothMenuItem = {
-      id: Date.now(),
-      order: menuItems.length + 1,
-      name: "",
-      description: "",
-      price: "",
-      image: null,
-      soldOut: false,
-    };
-    setMenuItems([...menuItems, newItem]);
-  };
-
-  const updateMenuItem = (id: number, field: keyof BoothMenuItem, value: string | boolean) => {
-    setMenuItems(menuItems.map((item) => (item.id === id ? { ...item, [field]: value } : item)));
-  };
-
-  const deleteMenuItem = (id: number) => {
-    const filtered = menuItems.filter((item) => item.id !== id);
-    const reordered = filtered.map((item, idx) => ({ ...item, order: idx + 1 }));
-    setMenuItems(reordered);
-  };
-
-  const toggleSoldOut = (id: number) => {
-    setMenuItems(menuItems.map((item) =>
-      item.id === id ? { ...item, soldOut: !item.soldOut } : item
-    ));
-  };
+  // 작성 완료 여부는 저장된 booth 에서만 파생 — 편집 중 입력은 반영되지 않음.
+  const boothInfoCompleted = isBoothInfoCompleted(booth);
+  const menuListCompleted = isMenuListCompleted(booth);
 
   if (isPending) {
     return (
@@ -333,12 +71,10 @@ export function BoothManagement() {
           <span className="text-sm text-muted-foreground">부스 운영 ON/OFF</span>
           <button
             onClick={() => setReservationEnabled(!reservationEnabled)}
+            aria-label={reservationEnabled ? "부스 운영 끄기" : "부스 운영 켜기"}
             className={`
               relative w-14 h-7 rounded-full transition-all duration-300
-              ${reservationEnabled
-                ? 'bg-primary shadow-lg'
-                : 'bg-ds-border-strong'
-              }
+              ${reservationEnabled ? 'bg-primary shadow-lg' : 'bg-ds-border-strong'}
             `}
           >
             <div className={`
@@ -349,417 +85,34 @@ export function BoothManagement() {
         </div>
       </div>
 
-      {/* Status Cards */}
       {!showBoothInfoForm && !showMenuListForm && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-8">
-          <button
-            onClick={openBoothInfoForm}
-            className={`
-            relative overflow-hidden rounded-2xl p-8 transition-all duration-300 text-left cursor-pointer hover:scale-105
-            ${boothInfoCompleted
-              ? 'bg-ds-success-subtle border-2 border-ds-success-subtle hover:border-ds-success'
-              : 'bg-ds-error-subtle border-2 border-ds-error-subtle hover:border-ds-error'
-            }
-          `}>
-            <div className="flex items-start justify-between mb-4">
-              <h3 className="text-xl font-bold text-foreground">
-                부스 상세 정보<br />작성
-              </h3>
-              <div className={`
-                w-16 h-16 rounded-full flex items-center justify-center text-2xl font-bold
-                ${boothInfoCompleted
-                  ? 'bg-ds-success text-white shadow-lg'
-                  : 'bg-destructive text-destructive-foreground shadow-lg'
-                }
-              `}>
-                {boothInfoCompleted ? <Check size={32} /> : <X size={32} />}
-              </div>
-            </div>
-            <div className={`text-sm font-medium ${boothInfoCompleted ? 'text-ds-success-pressed' : 'text-ds-error-pressed'}`}>
-              {boothInfoCompleted ? '작성완료' : '작성필요'}
-            </div>
-
-            <div className="mt-8">
-              <div className="bg-background/80 backdrop-blur-sm rounded-xl p-4">
-                <div className="w-full h-32 bg-muted rounded-lg flex items-center justify-center text-muted-foreground/50">
-                  <Store size={56} aria-hidden="true" />
-                </div>
-              </div>
-            </div>
-          </button>
-
-          <button
-            onClick={openMenuListForm}
-            className={`
-            relative overflow-hidden rounded-2xl p-8 transition-all duration-300 text-left cursor-pointer hover:scale-105
-            ${menuListCompleted
-              ? 'bg-ds-success-subtle border-2 border-ds-success-subtle hover:border-ds-success'
-              : 'bg-ds-error-subtle border-2 border-ds-error-subtle hover:border-ds-error'
-            }
-          `}>
-            <div className="flex items-start justify-between mb-4">
-              <h3 className="text-xl font-bold text-foreground">
-                메뉴 리스트<br />작성
-              </h3>
-              <div className={`
-                w-16 h-16 rounded-full flex items-center justify-center text-2xl font-bold
-                ${menuListCompleted
-                  ? 'bg-ds-success text-white shadow-lg'
-                  : 'bg-destructive text-destructive-foreground shadow-lg'
-                }
-              `}>
-                {menuListCompleted ? <Check size={32} /> : <X size={32} />}
-              </div>
-            </div>
-            <div className={`text-sm font-medium ${menuListCompleted ? 'text-ds-success-pressed' : 'text-ds-error-pressed'}`}>
-              {menuListCompleted ? '작성완료' : '작성필요'}
-            </div>
-
-            <div className="mt-8">
-              <div className="bg-background/80 backdrop-blur-sm rounded-xl p-4">
-                <div className="w-full h-32 bg-muted rounded-lg flex items-center justify-center text-muted-foreground/50">
-                  <UtensilsCrossed size={56} aria-hidden="true" />
-                </div>
-              </div>
-            </div>
-          </button>
-        </div>
+        <BoothStatusCards
+          boothInfoCompleted={boothInfoCompleted}
+          menuListCompleted={menuListCompleted}
+          onOpenBoothInfo={() => setShowBoothInfoForm(true)}
+          onOpenMenuList={() => setShowMenuListForm(true)}
+        />
       )}
 
-      {/* Booth Details - View/Edit Mode */}
       {showBoothInfoForm && (
-        <div className="bg-background rounded-2xl p-4 md:p-8 mb-6 shadow-sm">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-bold text-foreground">부스 상세 정보</h2>
-            <div className="flex items-center gap-3">
-              {!isEditingBoothInfo ? (
-                <button 
-                  onClick={() => setIsEditingBoothInfo(true)}
-                  className="flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-ds-primary-pressed transition-colors duration-200"
-                >
-                  <Edit size={18} />
-                  편집
-                </button>
-              ) : (
-                <button
-                  onClick={handleSaveBoothInfo}
-                  disabled={updateProfile.isPending}
-                  className="px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-ds-primary-pressed transition-colors duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
-                >
-                  {updateProfile.isPending ? '저장 중…' : '저장'}
-                </button>
-              )}
-              <button 
-                onClick={() => {
-                  setShowBoothInfoForm(false);
-                  setIsEditingBoothInfo(false);
-                }}
-                className="flex items-center gap-2 px-4 py-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors"
-              >
-                <ArrowLeft size={18} />
-                <span className="text-sm font-medium">이전으로</span>
-              </button>
-            </div>
-          </div>
-
-          <div className="space-y-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-              <div>
-                <label htmlFor="booth-name" className="block text-sm font-semibold text-foreground mb-2">부스명</label>
-                {isEditingBoothInfo ? (
-                  <input
-                    id="booth-name"
-                    type="text"
-                    placeholder="부스 이름을 입력하세요"
-                    value={boothName}
-                    onChange={(e) => setBoothName(e.target.value)}
-                    className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
-                  />
-                ) : (
-                  <div id="booth-name" className="w-full px-4 py-3 border border-border rounded-lg bg-muted text-foreground">
-                    {boothName}
-                  </div>
-                )}
-              </div>
-              <div>
-                <label htmlFor="booth-organization" className="block text-sm font-semibold text-foreground mb-2">단체명</label>
-                {isEditingBoothInfo ? (
-                  <input
-                    id="booth-organization"
-                    type="text"
-                    placeholder="단체 이름을 입력하세요"
-                    value={organizationName}
-                    onChange={(e) => setOrganizationName(e.target.value)}
-                    className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
-                  />
-                ) : (
-                  <div id="booth-organization" className="w-full px-4 py-3 border border-border rounded-lg bg-muted text-foreground">
-                    {organizationName}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div>
-              <label htmlFor="booth-description" className="block text-sm font-semibold text-foreground mb-2">부스 소개글</label>
-              {isEditingBoothInfo ? (
-                <textarea
-                  id="booth-description"
-                  rows={4}
-                  placeholder="부스를 소개하는 내용을 작성하세요"
-                  value={boothDescription}
-                  onChange={(e) => setBoothDescription(e.target.value)}
-                  className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all resize-none"
-                />
-              ) : (
-                <div id="booth-description" className="w-full px-4 py-3 border border-border rounded-lg bg-muted text-foreground min-h-[112px]">
-                  {boothDescription}
-                </div>
-              )}
-            </div>
-
-            {isEditingBoothInfo && (
-              <div>
-                <label className="block text-sm font-semibold text-foreground mb-2">부스 썸네일</label>
-                
-                <label className="block border-2 border-dashed border-ds-border-strong rounded-lg p-8 text-center hover:border-primary transition-colors cursor-pointer">
-                  <input 
-                    type="file" 
-                    multiple 
-                    accept="image/*"
-                    onChange={handleImageUpload}
-                    className="hidden"
-                  />
-                  <Upload className="mx-auto mb-3 text-ds-text-disabled" size={32} />
-                  <p className="text-sm text-muted-foreground mb-1">이미지를 드래그하거나 클릭하여 업로드</p>
-                  <p className="text-xs text-muted-foreground">여러 장의 이미지를 선택할 수 있습니다</p>
-                </label>
-                
-                {boothImages.length > 0 && (
-                  <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                    {boothImages.map((image) => (
-                      <div
-                        key={image.id}
-                        className={`relative group aspect-square rounded-lg overflow-hidden border-2 transition-all ${
-                          image.isMain ? 'border-primary' : 'border-border'
-                        }`}
-                      >
-                        <img 
-                          src={image.url} 
-                          alt="부스 이미지" 
-                          className="w-full h-full object-cover"
-                        />
-                        
-                        {image.isMain && (
-                          <div className="absolute top-2 left-2 px-2 py-1 bg-primary text-primary-foreground text-xs font-semibold rounded-full flex items-center gap-1 shadow-lg">
-                            <Star size={12} fill="white" />
-                            대표
-                          </div>
-                        )}
-                        
-                        <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-all duration-200 flex items-center justify-center gap-2">
-                          {!image.isMain && (
-                            <button
-                              onClick={() => setMainImage(image.id)}
-                              className="opacity-0 group-hover:opacity-100 px-3 py-1.5 bg-background text-foreground rounded-lg text-xs font-medium hover:bg-primary hover:text-primary-foreground transition-all"
-                            >
-                              대표로 설정
-                            </button>
-                          )}
-                          <button
-                            onClick={() => removeImage(image.id)}
-                            className="opacity-0 group-hover:opacity-100 p-2 bg-destructive text-destructive-foreground rounded-lg hover:bg-ds-error-pressed transition-all"
-                          >
-                            <Trash2 size={14} />
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-              <div>
-                <label htmlFor="booth-signature-menu" className="block text-sm font-semibold text-foreground mb-2">대표 메뉴</label>
-                {isEditingBoothInfo ? (
-                  <input
-                    id="booth-signature-menu"
-                    type="text"
-                    placeholder="대표 메뉴명"
-                    value={signatureMenu}
-                    onChange={(e) => setSignatureMenu(e.target.value)}
-                    className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
-                  />
-                ) : (
-                  <div id="booth-signature-menu" className="w-full px-4 py-3 border border-border rounded-lg bg-muted text-foreground">
-                    {signatureMenu}
-                  </div>
-                )}
-              </div>
-              <div>
-                <label htmlFor="booth-operating-hours" className="block text-sm font-semibold text-foreground mb-2">운영 시간</label>
-                {isEditingBoothInfo ? (
-                  <input
-                    id="booth-operating-hours"
-                    type="text"
-                    placeholder="예: 10:00 - 18:00"
-                    value={operatingHours}
-                    onChange={(e) => setOperatingHours(e.target.value)}
-                    className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
-                  />
-                ) : (
-                  <div id="booth-operating-hours" className="w-full px-4 py-3 border border-border rounded-lg bg-muted text-foreground">
-                    {operatingHours}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3 pt-4">
-              <span className="text-sm font-semibold text-foreground">부스 운영 여부</span>
-              <button
-                onClick={() => isEditingBoothInfo && setReservationEnabled(!reservationEnabled)}
-                disabled={!isEditingBoothInfo}
-                className={`
-                  relative w-14 h-7 rounded-full transition-all duration-300
-                  ${reservationEnabled
-                    ? 'bg-ds-success shadow-lg'
-                    : 'bg-ds-border-strong'
-                  }
-                  ${!isEditingBoothInfo ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
-                `}
-              >
-                <div className={`
-                  absolute top-1 w-5 h-5 bg-background rounded-full shadow-md transition-all duration-300
-                  ${reservationEnabled ? 'left-8' : 'left-1'}
-                `} />
-              </button>
-            </div>
-          </div>
-        </div>
+        <BoothInfoForm
+          booth={booth}
+          reservationEnabled={reservationEnabled}
+          onReservationEnabledChange={setReservationEnabled}
+          // 작성 안 된 부스 카드 클릭 → 바로 편집 모드로.
+          initiallyEditing={!boothInfoCompleted}
+          updateMutation={updateProfile}
+          onClose={() => setShowBoothInfoForm(false)}
+        />
       )}
 
-      {/* Menu List - View/Edit Mode */}
       {showMenuListForm && (
-        <div className="bg-background rounded-2xl p-4 md:p-8 shadow-sm">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-bold text-foreground">메뉴 리스트</h2>
-            <div className="flex items-center gap-3">
-              {isEditingMenuList && (
-                <button 
-                  onClick={addMenuItem}
-                  className="px-4 py-2 bg-muted text-foreground rounded-lg hover:bg-ds-border-strong transition-all duration-200 flex items-center gap-2 text-sm">
-                  <Plus size={16} />
-                  메뉴 추가
-                </button>
-              )}
-              {!isEditingMenuList ? (
-                <button 
-                  onClick={() => setIsEditingMenuList(true)}
-                  className="flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-ds-primary-pressed transition-colors duration-200"
-                >
-                  <Edit size={18} />
-                  편집
-                </button>
-              ) : (
-                <button
-                  onClick={handleSaveMenuList}
-                  disabled={updateProfile.isPending}
-                  className="px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-ds-primary-pressed transition-colors duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
-                >
-                  {updateProfile.isPending ? '저장 중…' : '저장'}
-                </button>
-              )}
-              <button 
-                onClick={() => {
-                  setShowMenuListForm(false);
-                  setIsEditingMenuList(false);
-                }}
-                className="flex items-center gap-2 px-4 py-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors"
-              >
-                <ArrowLeft size={18} />
-                <span className="text-sm font-medium">이전으로</span>
-              </button>
-            </div>
-          </div>
-
-          <div className="mb-6">
-            <label htmlFor="booth-order-notice" className="block text-sm font-semibold text-foreground mb-2">부스 주문 공지</label>
-            {isEditingMenuList ? (
-              <textarea
-                id="booth-order-notice"
-                rows={3}
-                placeholder="예: 테이블 이용 시 메인 메뉴를 하나 이상 주문해주셔야 합니다."
-                value={orderNotice}
-                onChange={(e) => setOrderNotice(e.target.value)}
-                className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all resize-none"
-              />
-            ) : (
-              <div id="booth-order-notice" className="w-full px-4 py-3 border border-border rounded-lg bg-muted text-foreground">
-                {orderNotice}
-              </div>
-            )}
-            <p className="text-xs text-muted-foreground mt-1">주문 시 고객에게 안내될 공지사항을 입력하세요.</p>
-          </div>
-
-          {isEditingMenuList ? (
-            <DndProvider backend={HTML5Backend}>
-              <div className="space-y-4">
-                {menuItems.map((item, index) => (
-                  <DraggableMenuItem
-                    key={item.id}
-                    item={item}
-                    index={index}
-                    moveItem={moveItem}
-                    onUpdate={updateMenuItem}
-                    onDelete={deleteMenuItem}
-                  />
-                ))}
-              </div>
-            </DndProvider>
-          ) : (
-            <div className="space-y-4">
-              {menuItems.map((item) => (
-                <div key={item.id} className="flex items-center gap-4 p-4 rounded-lg bg-muted">
-                  <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-semibold text-sm flex-shrink-0">
-                    {item.order}
-                  </div>
-
-                  <div className="w-20 h-20 bg-muted rounded-lg flex-shrink-0 flex items-center justify-center overflow-hidden">
-                    {item.image ? (
-                      <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
-                    ) : (
-                      <Upload size={24} className="text-ds-text-disabled" />
-                    )}
-                  </div>
-
-                  <div className="flex-1">
-                    <div className="font-semibold text-foreground mb-1">{item.name}</div>
-                    <div className="text-sm text-muted-foreground mb-1">{item.description}</div>
-                    <div className="text-sm font-medium text-primary">{item.price}</div>
-                  </div>
-
-                  <div className="flex items-center gap-3">
-                    <button
-                      onClick={() => toggleSoldOut(item.id)}
-                      className={`
-                        px-4 py-2 rounded-lg text-sm font-medium transition-colors
-                        ${item.soldOut
-                          ? 'bg-ds-error-subtle text-ds-error-pressed'
-                          : 'bg-ds-success-subtle text-ds-success-pressed'
-                        }
-                      `}
-                    >
-                      {item.soldOut ? '품절' : '판매중'}
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+        <MenuListForm
+          booth={booth}
+          initiallyEditing={!menuListCompleted}
+          updateMutation={updateProfile}
+          onClose={() => setShowMenuListForm(false)}
+        />
       )}
     </div>
   );
