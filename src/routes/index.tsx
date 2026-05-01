@@ -7,8 +7,11 @@ import { useAuth } from '@/features/auth/hooks';
 import { AppLayout } from '@/components/layout/app-layout';
 
 /**
- * 로그인 직후 `/`에 접근했을 때 역할에 맞는 기본 페이지로 리다이렉트.
- * RequireAuth 하위에 있으므로 user가 null인 경우는 고려하지 않아도 된다.
+ * 로그인 직후 `/`에 접근했을 때:
+ *  - Super/Master: 통합 대시보드 (KPI + 최근 공지/분실물/인기곡)
+ *  - Booth/Performer: 본인 도메인 페이지로 즉시 리다이렉트 (대시보드 안 봐도 되는 역할)
+ *
+ * RequireAuth 하위에 있으므로 user 가 null 인 경우는 고려하지 않아도 된다.
  */
 function DefaultLanding() {
   const { user } = useAuth();
@@ -20,7 +23,7 @@ function DefaultLanding() {
     case 'Super':
     case 'Master':
     default:
-      return <Navigate to="/users" replace />;
+      return <DashboardPage />;
   }
 }
 
@@ -66,6 +69,8 @@ import { BoothLayoutPage } from '@/pages/booth-layout';
 import { PerformanceReviewPage } from '@/pages/performance-review';
 import { CreateAdmin } from '@/pages/create-admin';
 import { LoginPage } from '@/pages/login';
+import { NotFoundPage } from '@/pages/not-found';
+import { DashboardPage } from '@/pages/dashboard';
 
 /**
  * 라우터 정의.
@@ -208,7 +213,10 @@ export const router = createBrowserRouter([
           </RequirePermission>
         ),
       },
+
+      // 매칭 안 되는 경로는 AppLayout(사이드바 유지) 안에서 NotFound 표시.
+      // 미로그인 사용자는 RequireAuth 가 먼저 잡아 /login 으로 보낸다.
+      { path: '*', element: <NotFoundPage /> },
     ],
   },
-  { path: '*', element: <Navigate to="/" replace /> },
 ]);

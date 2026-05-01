@@ -28,6 +28,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { TableSkeleton } from '@/components/common/table-skeleton';
 
 export function PerformanceReviewPage() {
   const reviewsQuery = useReviews();
@@ -103,7 +104,9 @@ export function PerformanceReviewPage() {
 
   if (reviewsQuery.isLoading) {
     return (
-      <div className="p-4 md:p-8 text-center text-muted-foreground">공연 후기를 불러오는 중…</div>
+      <div className="p-4 md:p-8">
+        <TableSkeleton rows={6} />
+      </div>
     );
   }
 

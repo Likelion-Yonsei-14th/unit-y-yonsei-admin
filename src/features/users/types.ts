@@ -10,9 +10,13 @@ export interface AdminUser {
   userId: string;
   role: Role;
   affiliation: string;
-  /** Booth 역할이면 부스명, 아니면 '-' */
+  /** Booth 역할이면 보유 부스 id. picker / 좌표 / 예약 페이지가 이 값으로 매칭. */
+  boothId: number | null;
+  /** Booth 역할이면 부스명, 아니면 '-' (표시용). */
   boothName: string;
-  /** Performer 역할이면 공연팀명, 아니면 '-' */
+  /** Performer 역할이면 보유 공연팀 id. */
+  performanceTeamId: number | null;
+  /** Performer 역할이면 공연팀명, 아니면 '-' (표시용). */
   performanceTeamName: string;
   representative: string;
   email: string;
@@ -28,7 +32,9 @@ export interface AdminUserDTO {
   user_id: string;
   role: Role;
   affiliation: string;
+  booth_id: number | null;
   booth_name: string;
+  performance_team_id: number | null;
   performance_team_name: string;
   representative: string;
   email: string;

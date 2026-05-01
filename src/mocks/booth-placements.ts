@@ -193,6 +193,18 @@ export const mockBoothPlacements: BoothPlacementDTO[] = [
     width: 4,
     height: 5,
   },
+  // booth_id 15(별빛 카페) — 모든 날짜 운영. picker/좌표 페이지에서 다중 자리 케이스 검증 시드.
+  {
+    id: 17,
+    booth_id: 15,
+    date: '2026-05-27',
+    section: 'global',
+    booth_number: '14',
+    x: 73,
+    y: 50,
+    width: 5,
+    height: 6,
+  },
 
   // ---- 5/28 백양로(baekyang) 추가 — 좁고 긴 캔버스 (1:3.55) -------------------
   // x: 35-55%, y: 5-95% 사이에 분산. width 7-10%, height 1.5-3% (좁게).
@@ -316,6 +328,17 @@ export const mockBoothPlacements: BoothPlacementDTO[] = [
     y: 5,
     width: 6,
     height: 1.8,
+  },
+  {
+    id: 31,
+    booth_id: 15,
+    date: '2026-05-28',
+    section: 'baekyang',
+    booth_number: '12',
+    x: 41.59,
+    y: 83,
+    width: 8,
+    height: 2.2,
   },
 
   // ---- 5/28 한글탑(hangeul) 추가 --------------------------------------------
@@ -496,6 +519,17 @@ export const mockBoothPlacements: BoothPlacementDTO[] = [
     y: 5,
     width: 6,
     height: 1.8,
+  },
+  {
+    id: 61,
+    booth_id: 15,
+    date: '2026-05-29',
+    section: 'baekyang',
+    booth_number: '11',
+    x: 41.59,
+    y: 83,
+    width: 8,
+    height: 2.2,
   },
 
   // ---- 5/29 한글탑 -----------------------------------------------------------

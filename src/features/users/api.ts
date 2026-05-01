@@ -35,14 +35,16 @@ async function createUserMock(values: CreateUserFormValues): Promise<CreatedUser
   await new Promise((r) => setTimeout(r, 300));
   const id = Date.now();
   // mock 환경에서도 invalidate 후 새 항목이 목록에 보이도록 in-memory 풀에 반영.
-  // 백엔드 응답에 없는 필드(boothName/performanceTeamName/email/phone 등) 는
-  // 폼 입력값으로 그대로 채우거나 비워둔다 — 실제 백엔드는 join + 디폴트로 보강.
+  // 백엔드 응답에 없는 필드(boothId/teamId 등) 는 mock 에서 생성 직후 null —
+  // 실제 백엔드는 booth/performance_team 행을 같이 만들고 FK 채워서 내려줌.
   const newAdminUser: AdminUser = {
     id,
     userId: values.userId,
     role: values.permissionType,
     affiliation: values.affiliation,
+    boothId: null,
     boothName: values.permissionType === 'Booth' ? (values.boothName?.trim() ?? '') : '-',
+    performanceTeamId: null,
     performanceTeamName:
       values.permissionType === 'Performer' ? (values.performanceTeamName?.trim() ?? '') : '-',
     representative: values.representativeName,

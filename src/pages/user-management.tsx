@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { useAdminUsers, useSetUserActive, useSetUserRole } from '@/features/users/hooks';
 import type { AdminUser as User } from '@/features/users/types';
 import { PageHeaderAction } from '@/components/common/page-header-action';
+import { TableSkeleton } from '@/components/common/table-skeleton';
 import { useAuth } from '@/features/auth/hooks';
 import { Switch } from '@/components/ui/switch';
 import {
@@ -201,7 +202,9 @@ export function UserManagement() {
 
   if (usersQuery.isLoading) {
     return (
-      <div className="p-4 md:p-8 text-center text-muted-foreground">유저 정보를 불러오는 중…</div>
+      <div className="p-4 md:p-8">
+        <TableSkeleton rows={6} />
+      </div>
     );
   }
 
