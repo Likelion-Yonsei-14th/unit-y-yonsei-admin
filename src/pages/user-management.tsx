@@ -229,7 +229,7 @@ export function UserManagement() {
           ))}
         </div>
 
-        <div className="relative w-72">
+        <div className="relative w-80 shrink-0">
           <Search
             size={16}
             className="absolute left-3 top-1/2 -translate-y-1/2 text-ds-text-disabled pointer-events-none"
@@ -238,7 +238,7 @@ export function UserManagement() {
             type="search"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="유저 ID·이름·소속·부스/공연팀명 검색"
+            placeholder="ID·이름·소속·부스/팀명 검색"
             aria-label="유저 검색"
             className="w-full h-10 pl-9 pr-9 text-sm bg-background border border-border rounded-full focus:outline-none focus:ring-2 focus:ring-ring placeholder:text-ds-text-disabled"
           />
