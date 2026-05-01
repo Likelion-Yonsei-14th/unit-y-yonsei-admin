@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Upload, Plus, Trash2, Check, X, GripVertical, ArrowLeft, Star, Edit, Store } from "lucide-react";
 import { DndProvider, useDrag, useDrop } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
@@ -201,14 +201,26 @@ export function BoothManagement() {
     );
   };
 
+  // 이 컴포넌트에서 직접 createObjectURL 로 만든 blob URL 만 추적 — 서버에서
+  // 받은 일반 URL 은 revoke 대상이 아니다. 제거/언마운트 시 누수 없이 정리.
+  const blobUrlsRef = useRef<Set<string>>(new Set());
+  useEffect(() => () => {
+    blobUrlsRef.current.forEach((u) => URL.revokeObjectURL(u));
+    blobUrlsRef.current.clear();
+  }, []);
+
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (files) {
-      const newImages: BoothImage[] = Array.from(files).map((file, index) => ({
-        id: Date.now() + index,
-        url: URL.createObjectURL(file),
-        isMain: boothImages.length === 0 && index === 0,
-      }));
+      const newImages: BoothImage[] = Array.from(files).map((file, index) => {
+        const url = URL.createObjectURL(file);
+        blobUrlsRef.current.add(url);
+        return {
+          id: Date.now() + index,
+          url,
+          isMain: boothImages.length === 0 && index === 0,
+        };
+      });
       setBoothImages([...boothImages, ...newImages]);
     }
   };
@@ -221,6 +233,11 @@ export function BoothManagement() {
   };
 
   const removeImage = (id: number) => {
+    const target = boothImages.find((img) => img.id === id);
+    if (target && blobUrlsRef.current.has(target.url)) {
+      URL.revokeObjectURL(target.url);
+      blobUrlsRef.current.delete(target.url);
+    }
     const filtered = boothImages.filter(img => img.id !== id);
     if (filtered.length > 0 && !filtered.some(img => img.isMain)) {
       filtered[0].isMain = true;

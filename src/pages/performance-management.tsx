@@ -1,4 +1,4 @@
-import { useEffect, useState, type ChangeEvent } from "react";
+import { useEffect, useRef, useState, type ChangeEvent } from "react";
 import { useParams, Link } from "react-router";
 import { ArrowLeft, Plus, Trash2, Instagram, Youtube, Music, Check, Edit, X, Star, Upload, ChevronDown } from "lucide-react";
 import { useAuth } from "@/features/auth/hooks";
@@ -85,14 +85,25 @@ export function PerformanceManagement() {
     setIsEditMode(false);
   };
 
+  // 직접 createObjectURL 로 만든 blob URL 만 추적 — 서버에서 받은 일반 URL 은 revoke 대상 아님.
+  const blobUrlsRef = useRef<Set<string>>(new Set());
+  useEffect(() => () => {
+    blobUrlsRef.current.forEach((u) => URL.revokeObjectURL(u));
+    blobUrlsRef.current.clear();
+  }, []);
+
   const handleImageUpload = (e: ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (files) {
-      const newImages: PerformanceImage[] = Array.from(files).map((file, index) => ({
-        id: Date.now() + index,
-        url: URL.createObjectURL(file),
-        isMain: editingImages.length === 0 && index === 0,
-      }));
+      const newImages: PerformanceImage[] = Array.from(files).map((file, index) => {
+        const url = URL.createObjectURL(file);
+        blobUrlsRef.current.add(url);
+        return {
+          id: Date.now() + index,
+          url,
+          isMain: editingImages.length === 0 && index === 0,
+        };
+      });
       setEditingImages([...editingImages, ...newImages]);
     }
   };
@@ -105,6 +116,11 @@ export function PerformanceManagement() {
   };
 
   const removeImage = (id: number) => {
+    const target = editingImages.find((img) => img.id === id);
+    if (target && blobUrlsRef.current.has(target.url)) {
+      URL.revokeObjectURL(target.url);
+      blobUrlsRef.current.delete(target.url);
+    }
     const filtered = editingImages.filter(img => img.id !== id);
     if (filtered.length > 0 && !filtered.some(img => img.isMain)) {
       filtered[0].isMain = true;
