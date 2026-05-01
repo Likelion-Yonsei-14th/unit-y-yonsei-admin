@@ -77,7 +77,7 @@ export function CreateAdmin() {
   const getPermissionBadgeColor = (type: PermissionType) => {
     switch (type) {
       case "Super":
-        return "bg-ds-violet-500";
+        return "bg-ds-secondary-a";
       case "Master":
         return "bg-primary";
       case "Booth":
