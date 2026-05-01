@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { MessageCircle, Filter, Trash2, Eye, EyeOff, Calendar, Music, Heart, TrendingUp, Search } from "lucide-react";
 import { mockReviews, type Review } from "@/mocks/performance-reviews";
 import {
@@ -19,7 +19,11 @@ export function PerformanceReviewPage() {
   const [showHidden, setShowHidden] = useState(false);
   const [pendingDelete, setPendingDelete] = useState<Review | null>(null);
 
-  const performanceTeams = ["전체", ...Array.from(new Set(mockReviews.map(r => r.performanceTeam)))];
+  // reviews 가 바뀌어도 같은 팀명이면 참조가 유지되도록 memoize. stats deps 도 안정.
+  const performanceTeams = useMemo(
+    () => ["전체", ...Array.from(new Set(reviews.map(r => r.performanceTeam)))],
+    [reviews],
+  );
 
   const filteredReviews = reviews.filter(review => {
     const matchesTeam = selectedTeam === "전체" || review.performanceTeam === selectedTeam;
@@ -42,8 +46,9 @@ export function PerformanceReviewPage() {
     setPendingDelete(null);
   };
 
-  // 통계 계산
-  const stats = {
+  // 통계 계산 — reviews 가 바뀔 때만 재계산. 검색/필터 토글 같은 잡음 렌더에서 N²
+  // 정렬+reduce 가 매번 돌면 후기 수가 늘어날수록 무시 못 할 비용이 됨.
+  const stats = useMemo(() => ({
     total: reviews.length,
     hidden: reviews.filter(r => r.isHidden).length,
     byTeam: performanceTeams.slice(1).map(team => ({
@@ -58,7 +63,7 @@ export function PerformanceReviewPage() {
     )
       .sort((a, b) => b[1] - a[1])
       .slice(0, 5),
-  };
+  }), [reviews, performanceTeams]);
 
   return (
     <div className="p-4 md:p-8">
