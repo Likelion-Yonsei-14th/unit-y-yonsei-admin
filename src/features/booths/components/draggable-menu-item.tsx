@@ -90,14 +90,19 @@ export function DraggableMenuItem({ item, index, moveItem, onUpdate, onDelete }:
       </div>
 
       <div className="flex items-center gap-2">
-        <span className="text-sm text-muted-foreground">품절</span>
+        <span id={`menu-${item.id}-soldout-label`} className="text-sm text-muted-foreground">품절</span>
         <button
+          type="button"
+          role="switch"
+          aria-checked={item.soldOut}
+          aria-labelledby={`menu-${item.id}-soldout-label`}
           onClick={() => onUpdate(item.id, "soldOut", !item.soldOut)}
           className={`relative w-12 h-6 rounded-full transition-colors ${
             item.soldOut ? "bg-destructive" : "bg-ds-border-strong"
           }`}
         >
           <div
+            aria-hidden="true"
             className={`absolute top-1 w-4 h-4 bg-background rounded-full shadow-md transition-all duration-300 ${
               item.soldOut ? "left-7" : "left-1"
             }`}
@@ -106,10 +111,12 @@ export function DraggableMenuItem({ item, index, moveItem, onUpdate, onDelete }:
       </div>
 
       <button
+        type="button"
+        aria-label={item.name ? `${item.name} 메뉴 삭제` : '메뉴 삭제'}
         onClick={() => onDelete(item.id)}
         className="p-2 text-destructive hover:bg-ds-error-subtle rounded-lg transition-colors"
       >
-        <Trash2 size={18} />
+        <Trash2 size={18} aria-hidden="true" />
       </button>
     </div>
   );
