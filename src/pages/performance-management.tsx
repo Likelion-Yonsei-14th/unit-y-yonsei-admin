@@ -169,13 +169,15 @@ export function PerformanceManagement() {
   const handleSave = () => {
     if (!editingData) return;
     // 편집 중인 모든 영역(프로필+타임테이블+셋리스트+이미지) 을 한 번에 patch.
+    // teamId 는 URL 파라미터로만 전달 — 바디에 중복 포함하면 백엔드 검증에 걸리거나 무시될 수 있다.
+    const { teamId, ...rest } = editingData;
     const patch: Partial<PerformanceDetail> = {
-      ...editingData,
+      ...rest,
       images: editingImages,
       setlist: editingSetlist,
     };
     updateMutation.mutate(
-      { teamId: editingData.teamId, patch },
+      { teamId, patch },
       {
         onSuccess: (saved) => {
           // 캐시는 hooks 의 onSuccess 가 갱신함. 여기서는 로컬 view state 를 서버 응답으로 동기화.
