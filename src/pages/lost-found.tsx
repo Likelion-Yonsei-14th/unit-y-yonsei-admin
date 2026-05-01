@@ -41,24 +41,20 @@ export function LostFoundPage() {
       setDescriptionDraft("");
       setHasExistingImage(false);
     }
-    setImagePreviewUrl((prev) => {
-      if (prev) URL.revokeObjectURL(prev);
-      return null;
-    });
+    setImagePreviewUrl(null);
   }, [editingItem, showForm]);
 
-  useEffect(() => () => {
-    setImagePreviewUrl((prev) => {
-      if (prev) URL.revokeObjectURL(prev);
-      return null;
-    });
-  }, []);
+  // 현재 미리보기 URL 수명 관리 — URL 이 바뀌거나 unmount 되면 revoke.
+  // cleanup 안에서 setState 를 호출하지 않아 StrictMode 에서도 안전.
+  useEffect(() => {
+    if (!imagePreviewUrl) return;
+    return () => {
+      URL.revokeObjectURL(imagePreviewUrl);
+    };
+  }, [imagePreviewUrl]);
 
   const handleImageChange = (file: File | null) => {
-    setImagePreviewUrl((prev) => {
-      if (prev) URL.revokeObjectURL(prev);
-      return file ? URL.createObjectURL(file) : null;
-    });
+    setImagePreviewUrl(file ? URL.createObjectURL(file) : null);
     if (file) setHasExistingImage(false);
   };
 

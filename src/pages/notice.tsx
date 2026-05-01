@@ -41,26 +41,21 @@ export function NoticePage() {
       setContentDraft("");
       setHasExistingImage(false);
     }
-    // 새 미리보기는 폼 진입 시 항상 초기화 — 이전 폼의 잔재가 다음 폼에 남지 않게.
-    setImagePreviewUrl((prev) => {
-      if (prev) URL.revokeObjectURL(prev);
-      return null;
-    });
+    // 새 미리보기는 폼 진입 시 항상 초기화 — revoke 는 아래 cleanup effect 가 책임.
+    setImagePreviewUrl(null);
   }, [editingNotice, showForm]);
 
-  // 컴포넌트 unmount 시 마지막 object URL 정리.
-  useEffect(() => () => {
-    setImagePreviewUrl((prev) => {
-      if (prev) URL.revokeObjectURL(prev);
-      return null;
-    });
-  }, []);
+  // 현재 미리보기 URL 의 수명을 관리. URL 이 바뀌거나 컴포넌트가 unmount 되면 revoke.
+  // setState 를 cleanup 에서 호출하지 않아 StrictMode 의 mount/unmount 시뮬레이션에서도 안전.
+  useEffect(() => {
+    if (!imagePreviewUrl) return;
+    return () => {
+      URL.revokeObjectURL(imagePreviewUrl);
+    };
+  }, [imagePreviewUrl]);
 
   const handleImageChange = (file: File | null) => {
-    setImagePreviewUrl((prev) => {
-      if (prev) URL.revokeObjectURL(prev);
-      return file ? URL.createObjectURL(file) : null;
-    });
+    setImagePreviewUrl(file ? URL.createObjectURL(file) : null);
     if (file) setHasExistingImage(false);
   };
 
