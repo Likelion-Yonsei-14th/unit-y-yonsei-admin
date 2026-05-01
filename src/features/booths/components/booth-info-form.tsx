@@ -86,10 +86,12 @@ export function BoothInfoForm({
       blobUrlsRef.current.delete(target.url);
     }
     const filtered = boothImages.filter((img) => img.id !== id);
-    if (filtered.length > 0 && !filtered.some((img) => img.isMain)) {
-      filtered[0].isMain = true;
-    }
-    setBoothImages(filtered);
+    // 불변 처리 — 기존 객체를 mutate 하지 않고 새 객체로 첫 항목 isMain 만 갱신.
+    const next =
+      filtered.length > 0 && !filtered.some((img) => img.isMain)
+        ? filtered.map((img, i) => (i === 0 ? { ...img, isMain: true } : img))
+        : filtered;
+    setBoothImages(next);
   };
 
   const handleSave = () => {
