@@ -137,6 +137,30 @@ export function ReservationManagement() {
     }
   }, [someFilteredSelected]);
 
+  // 예약 풀 로딩/에러 분기 — 데이터 부재(빈 목록) 와 통신 실패를 구분해 보여준다.
+  // booth 가드(아래 early-return) 보다 먼저 검사해 잘못된 redirect 를 막는다.
+  if (reservationsQuery.isLoading) {
+    return (
+      <div className="p-4 md:p-8 text-center text-muted-foreground">예약 정보를 불러오는 중…</div>
+    );
+  }
+  if (reservationsQuery.isError) {
+    return (
+      <div className="p-4 md:p-8">
+        <div className="bg-ds-error-subtle border border-destructive text-destructive rounded-2xl p-6 text-center">
+          <p className="mb-3">예약 정보를 가져오지 못했습니다.</p>
+          <button
+            type="button"
+            onClick={() => reservationsQuery.refetch()}
+            className="px-4 py-2 rounded-lg bg-destructive text-destructive-foreground hover:bg-ds-error-pressed transition-colors"
+          >
+            다시 시도
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   // 훅 호출 이후에 조건부 리턴 — Rules of Hooks 위반 방지.
   // Booth 계정이 본인 소속이 아닌 부스 URL 을 직접 입력한 경우 자기 부스로 튕김.
   // boothId 미할당(이론상 엣지) 계정은 `/reservations` 의 entry 로 보내
