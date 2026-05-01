@@ -94,7 +94,7 @@ export function AppLayout() {
         className={`
           bg-background border-r border-border flex flex-col transition-transform duration-300 ease-in-out
           fixed inset-y-0 left-0 z-40
-          md:static md:translate-x-0 md:transition-all
+          md:relative md:translate-x-0 md:transition-all
           ${isMobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
           ${isCollapsed ? 'w-60 md:w-16' : 'w-60'}
         `}
