@@ -164,7 +164,7 @@ export function ReservationManagement() {
 
   return (
     <div className="p-4 md:p-8">
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-6 md:mb-8">
         <div>
           <div className="text-sm text-muted-foreground mb-1">{boothHeaderLabel} 예약 현황</div>
           <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">

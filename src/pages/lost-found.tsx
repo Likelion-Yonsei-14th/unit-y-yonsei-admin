@@ -123,7 +123,7 @@ export function LostFoundPage() {
 
   return (
     <div className="p-4 md:p-8">
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-6 md:mb-8">
         <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
           <Package size={32} />
           분실물 관리
