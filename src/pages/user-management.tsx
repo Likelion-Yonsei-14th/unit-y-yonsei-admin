@@ -183,8 +183,8 @@ export function UserManagement() {
   const roleBadgeSize = "h-7 data-[size=sm]:h-7 rounded-full text-xs font-medium";
 
   return (
-    <div className="p-8">
-      <div className="flex items-center justify-between mb-8">
+    <div className="p-4 md:p-8">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-6 md:mb-8">
         <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
           <Users size={32} />
           유저 관리
@@ -229,7 +229,7 @@ export function UserManagement() {
           ))}
         </div>
 
-        <div className="relative w-72">
+        <div className="relative w-full sm:w-80">
           <Search
             size={16}
             className="absolute left-3 top-1/2 -translate-y-1/2 text-ds-text-disabled pointer-events-none"
@@ -238,7 +238,7 @@ export function UserManagement() {
             type="search"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="유저 ID·이름·소속·부스/공연팀명 검색"
+            placeholder="ID·이름·소속·부스/팀명 검색"
             aria-label="유저 검색"
             className="w-full h-10 pl-9 pr-9 text-sm bg-background border border-border rounded-full focus:outline-none focus:ring-2 focus:ring-ring placeholder:text-ds-text-disabled"
           />
@@ -263,7 +263,8 @@ export function UserManagement() {
         부스/공연팀처럼 특정 필터에서 전부 비게 되는 컬럼이 생기면 지터가 발생.
       */}
       <div className="bg-background rounded-xl overflow-hidden shadow-sm">
-        <table className="w-full table-fixed">
+        <div className="overflow-x-auto">
+        <table className="w-full min-w-[1100px] table-fixed">
           <thead className="bg-muted">
             <tr>
               <th className="w-[5%] px-6 py-4 text-left text-sm font-semibold text-foreground">No.</th>
@@ -390,6 +391,7 @@ export function UserManagement() {
             })}
           </tbody>
         </table>
+        </div>
       </div>
 
       {/* 비활성화 확인 — 차단 방향은 파괴성이 커서 경고 패널을 동반한다 */}

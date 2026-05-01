@@ -163,8 +163,8 @@ export function ReservationManagement() {
   };
 
   return (
-    <div className="p-8">
-      <div className="flex items-center justify-between mb-8">
+    <div className="p-4 md:p-8">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-6 md:mb-8">
         <div>
           <div className="text-sm text-muted-foreground mb-1">{boothHeaderLabel} 예약 현황</div>
           <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
@@ -262,7 +262,8 @@ export function ReservationManagement() {
         table-fixed + 명시 폭으로 컬럼을 고정한다. (user-management 와 동일 패턴)
       */}
       <div className="bg-background rounded-xl overflow-hidden shadow-sm">
-        <table className="w-full table-fixed">
+        <div className="overflow-x-auto">
+        <table className="w-full min-w-[800px] table-fixed">
           <thead className="bg-muted">
             <tr>
               <th className="w-[4%] py-4 text-center">
@@ -356,6 +357,7 @@ export function ReservationManagement() {
             ))}
           </tbody>
         </table>
+        </div>
       </div>
 
       {/* Reservation Detail Modal */}
@@ -365,7 +367,7 @@ export function ReservationManagement() {
           onClick={() => setSelectedReservation(null)}
         >
           <div
-            className="bg-background rounded-2xl p-8 max-w-md w-full mx-4 shadow-2xl"
+            className="bg-background rounded-2xl p-4 md:p-8 max-w-md w-full mx-4 shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-start justify-between mb-6">
@@ -393,7 +395,7 @@ export function ReservationManagement() {
                 <div className="text-sm text-muted-foreground mb-1">연락처</div>
                 <div className="text-lg font-semibold text-foreground">{selectedReservation.contact}</div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <div className="text-sm text-muted-foreground mb-1">예약 시간</div>
                   <div className="text-lg font-semibold text-foreground">{selectedReservation.time}</div>
@@ -472,7 +474,7 @@ export function ReservationManagement() {
           onClick={() => setShowStatusChangeModal(false)}
         >
           <div
-            className="bg-background rounded-2xl p-8 max-w-md w-full mx-4 shadow-2xl"
+            className="bg-background rounded-2xl p-4 md:p-8 max-w-md w-full mx-4 shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             <h3 className="text-2xl font-bold text-foreground mb-4">예약 상태 변경</h3>

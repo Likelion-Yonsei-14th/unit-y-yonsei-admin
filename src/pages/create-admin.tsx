@@ -90,7 +90,7 @@ export function CreateAdmin() {
   };
 
   return (
-    <div className="p-8 max-w-4xl mx-auto">
+    <div className="p-4 md:p-8 max-w-4xl mx-auto">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
           <UserPlus size={32} />
@@ -110,7 +110,7 @@ export function CreateAdmin() {
       )}
 
       <form onSubmit={handleSubmit}>
-        <div className="bg-background rounded-2xl p-8 shadow-sm space-y-6">
+        <div className="bg-background rounded-2xl p-4 md:p-8 shadow-sm space-y-6">
           {/* Warning Notice */}
           <div className="flex items-start gap-3 p-4 bg-ds-primary-subtle border border-ds-primary rounded-lg">
             <Shield size={20} className="text-primary flex-shrink-0 mt-0.5" />
@@ -126,7 +126,7 @@ export function CreateAdmin() {
           </div>
 
           {/* Basic Info */}
-          <div className="grid grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             <div>
               <label className="block text-sm font-semibold text-foreground mb-2">
                 유저 ID <span className="text-destructive">*</span>
@@ -181,7 +181,7 @@ export function CreateAdmin() {
             <label className="block text-sm font-semibold text-foreground mb-3">
               권한 유형 <span className="text-destructive">*</span>
             </label>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {(["Super", "Master", "Booth", "Performer"] as PermissionType[]).map((type) => (
                 <button
                   key={type}
@@ -250,7 +250,7 @@ export function CreateAdmin() {
           )}
 
           {/* Representative Info */}
-          <div className="grid grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             <div>
               <label className="block text-sm font-semibold text-foreground mb-2">
                 대표자명 <span className="text-destructive">*</span>

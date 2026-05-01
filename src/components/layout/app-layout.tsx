@@ -1,7 +1,7 @@
 import { Outlet, Link, useLocation } from 'react-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
-  LogOut, ChevronLeft, ChevronRight, ChevronDown,
+  LogOut, ChevronLeft, ChevronRight, ChevronDown, Menu, X,
 } from 'lucide-react';
 import { MAIN_NAV, FOOTER_NAV, type NavItem } from '@/config/nav';
 import { useAuth, useLogout } from '@/features/auth/hooks';
@@ -20,9 +20,16 @@ import { CsFloatingButton } from '@/components/common/cs-floating-button';
 export function AppLayout() {
   const location = useLocation();
   const [isCollapsed, setIsCollapsed] = useState(false);
+  // 모바일 drawer 열림 상태. md 이상에서는 사이드바가 항상 노출되므로 무시된다.
+  const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [expandedMenus, setExpandedMenus] = useState<Set<string>>(new Set());
   const { user, can } = useAuth();
   const logout = useLogout();
+
+  // 라우트가 바뀌면 모바일 drawer 자동 닫기 — 링크 클릭 후 화면이 가려지는 문제 방지.
+  useEffect(() => {
+    setIsMobileOpen(false);
+  }, [location.pathname]);
 
   const toggleMenu = (path: string) => {
     setExpandedMenus(prev => {
@@ -74,16 +81,37 @@ export function AppLayout() {
 
   return (
     <div className="flex h-screen bg-muted">
+      {/* 모바일 backdrop — drawer 가 열렸을 때만 등장. md 이상에서는 절대 보이지 않는다. */}
+      {isMobileOpen && (
+        <div
+          className="fixed inset-0 z-30 bg-black/40 md:hidden"
+          onClick={() => setIsMobileOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
       <aside
         className={`
-          bg-background border-r border-border flex flex-col transition-all duration-300 ease-in-out relative
-          ${isCollapsed ? 'w-16' : 'w-60'}
+          bg-background border-r border-border flex flex-col transition-transform duration-300 ease-in-out
+          fixed inset-y-0 left-0 z-40
+          md:relative md:translate-x-0 md:transition-all
+          ${isMobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
+          ${isCollapsed ? 'w-60 md:w-16' : 'w-60'}
         `}
       >
-        {/* 토글 버튼 */}
+        {/* 모바일 닫기 버튼 — drawer 헤더 우측. md 이상에서는 숨김. */}
+        <button
+          onClick={() => setIsMobileOpen(false)}
+          className="absolute right-3 top-3 inline-flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground hover:bg-muted md:hidden"
+          aria-label="메뉴 닫기"
+        >
+          <X size={18} />
+        </button>
+
+        {/* 데스크톱 collapse 토글 — 모바일 drawer 에서는 의미가 없으므로 숨김. */}
         <button
           onClick={() => setIsCollapsed(v => !v)}
-          className="absolute -right-3 top-6 bg-background border border-border rounded-full p-1 shadow-md hover:shadow-lg transition-shadow z-10"
+          className="absolute -right-3 top-6 bg-background border border-border rounded-full p-1 shadow-md hover:shadow-lg transition-shadow z-10 hidden md:block"
           aria-label={isCollapsed ? '사이드바 펼치기' : '사이드바 접기'}
         >
           {isCollapsed
@@ -287,8 +315,22 @@ export function AppLayout() {
       </aside>
 
       {/* 메인 콘텐츠 */}
-      <main className="flex-1 overflow-auto">
-        <Outlet />
+      <main className="flex-1 overflow-auto flex flex-col">
+        {/* 모바일 전용 상단 바 — drawer 열기 + 어드민 라벨. md 이상에서는 숨김. */}
+        <div className="md:hidden sticky top-0 z-20 flex items-center gap-3 border-b border-border bg-background/95 px-4 py-3 backdrop-blur">
+          <button
+            type="button"
+            onClick={() => setIsMobileOpen(true)}
+            aria-label="메뉴 열기"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-md text-foreground hover:bg-muted"
+          >
+            <Menu size={20} />
+          </button>
+          <span className="text-sm font-semibold text-foreground">대동제 어드민</span>
+        </div>
+        <div className="flex-1">
+          <Outlet />
+        </div>
       </main>
 
       {/* 로그인 이후 전역 플로팅 CS 문의 버튼 */}

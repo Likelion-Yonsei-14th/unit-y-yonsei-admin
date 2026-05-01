@@ -272,7 +272,7 @@ export function BoothManagement() {
 
   if (isPending) {
     return (
-      <div className="p-8 flex items-center justify-center min-h-[60vh]">
+      <div className="p-4 md:p-8 flex items-center justify-center min-h-[60vh]">
         <div className="h-10 w-10 animate-spin rounded-full border-4 border-muted border-t-primary" />
       </div>
     );
@@ -280,7 +280,7 @@ export function BoothManagement() {
 
   if (isError || !booth) {
     return (
-      <div className="p-8">
+      <div className="p-4 md:p-8">
         <h1 className="text-xl font-semibold text-foreground">부스 정보를 불러오지 못했습니다.</h1>
         <p className="mt-2 text-sm text-muted-foreground">잠시 후 다시 시도해 주세요.</p>
       </div>
@@ -288,8 +288,8 @@ export function BoothManagement() {
   }
 
   return (
-    <div className="p-8">
-      <div className="flex items-center justify-between mb-8">
+    <div className="p-4 md:p-8">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-6 md:mb-8">
         <div>
           {booth.organizationName && (
             <div className="text-sm text-muted-foreground mb-1">{booth.organizationName} 부스 예약 관리</div>
@@ -322,7 +322,7 @@ export function BoothManagement() {
 
       {/* Status Cards */}
       {!showBoothInfoForm && !showMenuListForm && (
-        <div className="grid grid-cols-2 gap-6 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-8">
           <button
             onClick={openBoothInfoForm}
             className={`
@@ -407,7 +407,7 @@ export function BoothManagement() {
 
       {/* Booth Details - View/Edit Mode */}
       {showBoothInfoForm && (
-        <div className="bg-background rounded-2xl p-8 mb-6 shadow-sm">
+        <div className="bg-background rounded-2xl p-4 md:p-8 mb-6 shadow-sm">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-bold text-foreground">부스 상세 정보</h2>
             <div className="flex items-center gap-3">
@@ -442,7 +442,7 @@ export function BoothManagement() {
           </div>
 
           <div className="space-y-6">
-            <div className="grid grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-semibold text-foreground mb-2">부스명</label>
                 {isEditingBoothInfo ? (
@@ -512,7 +512,7 @@ export function BoothManagement() {
                 </label>
                 
                 {boothImages.length > 0 && (
-                  <div className="mt-4 grid grid-cols-4 gap-4">
+                  <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
                     {boothImages.map((image) => (
                       <div
                         key={image.id}
@@ -556,7 +556,7 @@ export function BoothManagement() {
               </div>
             )}
 
-            <div className="grid grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-semibold text-foreground mb-2">대표 메뉴</label>
                 {isEditingBoothInfo ? (
@@ -617,7 +617,7 @@ export function BoothManagement() {
 
       {/* Menu List - View/Edit Mode */}
       {showMenuListForm && (
-        <div className="bg-background rounded-2xl p-8 shadow-sm">
+        <div className="bg-background rounded-2xl p-4 md:p-8 shadow-sm">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-bold text-foreground">메뉴 리스트</h2>
             <div className="flex items-center gap-3">

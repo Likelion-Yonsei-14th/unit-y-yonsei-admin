@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Plus, Trash2, Edit2, Upload, Package } from "lucide-react";
+import { Plus, Trash2, Edit2, Upload, Package, X } from "lucide-react";
 import { toast } from "sonner";
 import { mockLostItems, type LostItem } from "@/mocks/lost-items";
 import { PageHeaderAction } from "@/components/common/page-header-action";
@@ -25,7 +25,8 @@ export function LostFoundPage() {
   const [nameDraft, setNameDraft] = useState("");
   const [locationDraft, setLocationDraft] = useState("");
   const [descriptionDraft, setDescriptionDraft] = useState("");
-  const [hasImageDraft, setHasImageDraft] = useState(false);
+  const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
+  const [hasExistingImage, setHasExistingImage] = useState(false);
 
   useEffect(() => {
     if (!showForm) return;
@@ -33,14 +34,29 @@ export function LostFoundPage() {
       setNameDraft(editingItem.name);
       setLocationDraft(editingItem.location);
       setDescriptionDraft(editingItem.description ?? "");
-      setHasImageDraft(editingItem.hasImage);
+      setHasExistingImage(editingItem.hasImage);
     } else {
       setNameDraft("");
       setLocationDraft("");
       setDescriptionDraft("");
-      setHasImageDraft(false);
+      setHasExistingImage(false);
     }
+    setImagePreviewUrl(null);
   }, [editingItem, showForm]);
+
+  // 현재 미리보기 URL 수명 관리 — URL 이 바뀌거나 unmount 되면 revoke.
+  // cleanup 안에서 setState 를 호출하지 않아 StrictMode 에서도 안전.
+  useEffect(() => {
+    if (!imagePreviewUrl) return;
+    return () => {
+      URL.revokeObjectURL(imagePreviewUrl);
+    };
+  }, [imagePreviewUrl]);
+
+  const handleImageChange = (file: File | null) => {
+    setImagePreviewUrl(file ? URL.createObjectURL(file) : null);
+    if (file) setHasExistingImage(false);
+  };
 
   const handleCreateNew = () => {
     setEditingItem(null);
@@ -70,6 +86,7 @@ export function LostFoundPage() {
       return;
     }
     const description = descriptionDraft.trim() || undefined;
+    const hasImage = !!imagePreviewUrl || hasExistingImage;
     if (editingItem) {
       setLostItems(lostItems.map(item =>
         item.id === editingItem.id
@@ -78,7 +95,7 @@ export function LostFoundPage() {
               name: nameDraft.trim(),
               location: locationDraft.trim(),
               description,
-              hasImage: hasImageDraft,
+              hasImage,
             }
           : item,
       ));
@@ -90,7 +107,7 @@ export function LostFoundPage() {
         name: nameDraft.trim(),
         location: locationDraft.trim(),
         date: todayString(),
-        hasImage: hasImageDraft,
+        hasImage,
         description,
       };
       setLostItems([newItem, ...lostItems]);
@@ -101,8 +118,8 @@ export function LostFoundPage() {
   };
 
   return (
-    <div className="p-8">
-      <div className="flex items-center justify-between mb-8">
+    <div className="p-4 md:p-8">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-6 md:mb-8">
         <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
           <Package size={32} />
           분실물 관리
@@ -117,7 +134,8 @@ export function LostFoundPage() {
       {/* Lost Items List */}
       {!showForm && (
         <div className="bg-background rounded-2xl overflow-hidden shadow-sm">
-          <table className="w-full">
+          <div className="overflow-x-auto">
+          <table className="w-full min-w-[720px]">
             <thead className="bg-muted">
               <tr>
                 <th className="px-6 py-4 text-left text-sm font-semibold text-foreground">분실물명</th>
@@ -131,10 +149,19 @@ export function LostFoundPage() {
               {lostItems.map((item) => (
                 <tr key={item.id} className="hover:bg-muted transition-colors">
                   <td className="px-6 py-4">
-                    <div className="text-sm font-medium text-foreground">{item.name}</div>
-                    {item.description && (
-                      <div className="text-xs text-muted-foreground mt-1">{item.description}</div>
-                    )}
+                    <button
+                      type="button"
+                      onClick={() => handleEdit(item)}
+                      className="text-left w-full group"
+                      aria-label={`${item.name} 수정`}
+                    >
+                      <div className="text-sm font-medium text-foreground group-hover:text-primary group-hover:underline underline-offset-2 transition-colors">
+                        {item.name}
+                      </div>
+                      {item.description && (
+                        <div className="text-xs text-muted-foreground mt-1">{item.description}</div>
+                      )}
+                    </button>
                   </td>
                   <td className="px-6 py-4 text-sm text-muted-foreground">{item.location}</td>
                   <td className="px-6 py-4 text-sm text-muted-foreground">{item.date}</td>
@@ -169,6 +196,7 @@ export function LostFoundPage() {
               ))}
             </tbody>
           </table>
+          </div>
           {lostItems.length === 0 && (
             <div className="text-center py-12 text-ds-text-disabled">
               <p>등록된 분실물이 없습니다.</p>
@@ -179,7 +207,7 @@ export function LostFoundPage() {
 
       {/* Lost Item Form */}
       {showForm && (
-        <div className="bg-background rounded-2xl p-8 shadow-sm">
+        <div className="bg-background rounded-2xl p-4 md:p-8 shadow-sm">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-bold text-foreground">
               {editingItem ? "분실물 수정" : "분실물 등록"}
@@ -193,7 +221,7 @@ export function LostFoundPage() {
           </div>
 
           <div className="space-y-6">
-            <div className="grid grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-semibold text-foreground mb-2">분실물명</label>
                 <input
@@ -229,18 +257,54 @@ export function LostFoundPage() {
 
             <div>
               <label className="block text-sm font-semibold text-foreground mb-2">분실물 사진</label>
-              <label className="block border-2 border-dashed border-ds-border-strong rounded-lg p-8 text-center hover:border-primary transition-colors cursor-pointer">
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={(e) => setHasImageDraft(!!e.target.files?.length)}
-                />
-                <Upload className="mx-auto mb-3 text-ds-text-disabled" size={32} />
-                <p className="text-sm text-muted-foreground">
-                  {hasImageDraft ? "사진이 첨부되었습니다." : "분실물 사진을 업로드하세요"}
-                </p>
-              </label>
+              {imagePreviewUrl ? (
+                <div className="relative inline-block max-w-full overflow-hidden rounded-lg border border-border bg-muted">
+                  <img
+                    src={imagePreviewUrl}
+                    alt="첨부한 분실물 사진 미리보기"
+                    className="block max-h-80 w-auto max-w-full object-contain"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => handleImageChange(null)}
+                    aria-label="사진 제거"
+                    className="absolute right-2 top-2 inline-flex h-7 w-7 items-center justify-center rounded-full bg-background/90 text-muted-foreground shadow-sm hover:bg-background hover:text-destructive"
+                  >
+                    <X size={14} />
+                  </button>
+                </div>
+              ) : hasExistingImage ? (
+                <div className="flex items-center justify-between rounded-lg border border-border bg-muted px-4 py-3 text-sm text-muted-foreground">
+                  <span>기존 사진이 첨부되어 있습니다.</span>
+                  <label className="cursor-pointer rounded-md border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground hover:border-ds-border-strong">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => handleImageChange(e.target.files?.[0] ?? null)}
+                    />
+                    사진 변경
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setHasExistingImage(false)}
+                    className="text-xs font-medium text-destructive hover:underline"
+                  >
+                    사진 제거
+                  </button>
+                </div>
+              ) : (
+                <label className="block cursor-pointer rounded-lg border-2 border-dashed border-ds-border-strong p-8 text-center transition-colors hover:border-primary">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => handleImageChange(e.target.files?.[0] ?? null)}
+                  />
+                  <Upload className="mx-auto mb-3 text-ds-text-disabled" size={32} />
+                  <p className="text-sm text-muted-foreground">분실물 사진을 업로드하세요</p>
+                </label>
+              )}
             </div>
 
             <div className="flex justify-end gap-3 pt-4">
