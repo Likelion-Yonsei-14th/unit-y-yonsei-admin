@@ -1,4 +1,4 @@
-import { Check, Store, UtensilsCrossed, X } from "lucide-react";
+import { Check, Store, UtensilsCrossed, X } from 'lucide-react';
 
 interface StatusCardProps {
   title: React.ReactNode;
@@ -13,9 +13,10 @@ function StatusCard({ title, completed, decoration, onClick }: StatusCardProps) 
       onClick={onClick}
       className={`
         relative overflow-hidden rounded-2xl p-8 transition-all duration-300 text-left cursor-pointer hover:scale-105
-        ${completed
-          ? 'bg-ds-success-subtle border-2 border-ds-success-subtle hover:border-ds-success'
-          : 'bg-ds-error-subtle border-2 border-ds-error-subtle hover:border-ds-error'
+        ${
+          completed
+            ? 'bg-ds-success-subtle border-2 border-ds-success-subtle hover:border-ds-success'
+            : 'bg-ds-error-subtle border-2 border-ds-error-subtle hover:border-ds-error'
         }
       `}
     >
@@ -24,16 +25,15 @@ function StatusCard({ title, completed, decoration, onClick }: StatusCardProps) 
         <div
           className={`
             w-16 h-16 rounded-full flex items-center justify-center text-2xl font-bold shadow-lg
-            ${completed
-              ? 'bg-ds-success text-white'
-              : 'bg-destructive text-destructive-foreground'
-            }
+            ${completed ? 'bg-ds-success text-white' : 'bg-destructive text-destructive-foreground'}
           `}
         >
           {completed ? <Check size={32} /> : <X size={32} />}
         </div>
       </div>
-      <div className={`text-sm font-medium ${completed ? 'text-ds-success-pressed' : 'text-ds-error-pressed'}`}>
+      <div
+        className={`text-sm font-medium ${completed ? 'text-ds-success-pressed' : 'text-ds-error-pressed'}`}
+      >
         {completed ? '작성완료' : '작성필요'}
       </div>
 
@@ -68,13 +68,25 @@ export function BoothStatusCards({
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-8">
       <StatusCard
-        title={<>부스 상세 정보<br />작성</>}
+        title={
+          <>
+            부스 상세 정보
+            <br />
+            작성
+          </>
+        }
         completed={boothInfoCompleted}
         decoration={<Store size={56} aria-hidden="true" />}
         onClick={onOpenBoothInfo}
       />
       <StatusCard
-        title={<>메뉴 리스트<br />작성</>}
+        title={
+          <>
+            메뉴 리스트
+            <br />
+            작성
+          </>
+        }
         completed={menuListCompleted}
         decoration={<UtensilsCrossed size={56} aria-hidden="true" />}
         onClick={onOpenMenuList}

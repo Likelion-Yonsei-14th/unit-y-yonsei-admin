@@ -1,11 +1,11 @@
-import { useEffect, useState } from "react";
-import { ArrowLeft, Edit, Plus, Upload } from "lucide-react";
-import { DndProvider } from "react-dnd";
-import { HTML5Backend } from "react-dnd-html5-backend";
-import { toast } from "sonner";
-import type { UseMutationResult } from "@tanstack/react-query";
-import type { BoothMenuItem, BoothProfile } from "@/features/booths/types";
-import { DraggableMenuItem } from "./draggable-menu-item";
+import { useEffect, useState } from 'react';
+import { ArrowLeft, Edit, Plus, Upload } from 'lucide-react';
+import { DndProvider } from 'react-dnd';
+import { HTML5Backend } from 'react-dnd-html5-backend';
+import { toast } from 'sonner';
+import type { UseMutationResult } from '@tanstack/react-query';
+import type { BoothMenuItem, BoothProfile } from '@/features/booths/types';
+import { DraggableMenuItem } from './draggable-menu-item';
 
 interface Props {
   booth: BoothProfile;
@@ -48,9 +48,9 @@ export function MenuListForm({ booth, initiallyEditing, updateMutation, onClose 
     const newItem: BoothMenuItem = {
       id: Date.now(),
       order: menuItems.length + 1,
-      name: "",
-      description: "",
-      price: "",
+      name: '',
+      description: '',
+      price: '',
       image: null,
       soldOut: false,
     };
@@ -67,9 +67,9 @@ export function MenuListForm({ booth, initiallyEditing, updateMutation, onClose 
   };
 
   const toggleSoldOut = (id: number) => {
-    setMenuItems(menuItems.map((item) =>
-      item.id === id ? { ...item, soldOut: !item.soldOut } : item
-    ));
+    setMenuItems(
+      menuItems.map((item) => (item.id === id ? { ...item, soldOut: !item.soldOut } : item)),
+    );
   };
 
   const handleSave = () => {
@@ -78,10 +78,10 @@ export function MenuListForm({ booth, initiallyEditing, updateMutation, onClose 
       {
         onSuccess: () => {
           setIsEditing(false);
-          toast.success("메뉴 리스트를 저장했습니다.");
+          toast.success('메뉴 리스트를 저장했습니다.');
         },
         onError: () => {
-          toast.error("저장에 실패했습니다. 잠시 후 다시 시도해주세요.");
+          toast.error('저장에 실패했습니다. 잠시 후 다시 시도해주세요.');
         },
       },
     );
@@ -95,7 +95,8 @@ export function MenuListForm({ booth, initiallyEditing, updateMutation, onClose 
           {isEditing && (
             <button
               onClick={addMenuItem}
-              className="px-4 py-2 bg-muted text-foreground rounded-lg hover:bg-ds-border-strong transition-all duration-200 flex items-center gap-2 text-sm">
+              className="px-4 py-2 bg-muted text-foreground rounded-lg hover:bg-ds-border-strong transition-all duration-200 flex items-center gap-2 text-sm"
+            >
               <Plus size={16} />
               메뉴 추가
             </button>
@@ -128,7 +129,12 @@ export function MenuListForm({ booth, initiallyEditing, updateMutation, onClose 
       </div>
 
       <div className="mb-6">
-        <label htmlFor="booth-order-notice" className="block text-sm font-semibold text-foreground mb-2">부스 주문 공지</label>
+        <label
+          htmlFor="booth-order-notice"
+          className="block text-sm font-semibold text-foreground mb-2"
+        >
+          부스 주문 공지
+        </label>
         {isEditing ? (
           <textarea
             id="booth-order-notice"
@@ -139,11 +145,16 @@ export function MenuListForm({ booth, initiallyEditing, updateMutation, onClose 
             className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all resize-none"
           />
         ) : (
-          <div id="booth-order-notice" className="w-full px-4 py-3 border border-border rounded-lg bg-muted text-foreground">
+          <div
+            id="booth-order-notice"
+            className="w-full px-4 py-3 border border-border rounded-lg bg-muted text-foreground"
+          >
             {orderNotice}
           </div>
         )}
-        <p className="text-xs text-muted-foreground mt-1">주문 시 고객에게 안내될 공지사항을 입력하세요.</p>
+        <p className="text-xs text-muted-foreground mt-1">
+          주문 시 고객에게 안내될 공지사항을 입력하세요.
+        </p>
       </div>
 
       {isEditing ? (
@@ -188,9 +199,10 @@ export function MenuListForm({ booth, initiallyEditing, updateMutation, onClose 
                   onClick={() => toggleSoldOut(item.id)}
                   className={`
                     px-4 py-2 rounded-lg text-sm font-medium transition-colors
-                    ${item.soldOut
-                      ? 'bg-ds-error-subtle text-ds-error-pressed'
-                      : 'bg-ds-success-subtle text-ds-success-pressed'
+                    ${
+                      item.soldOut
+                        ? 'bg-ds-error-subtle text-ds-error-pressed'
+                        : 'bg-ds-success-subtle text-ds-success-pressed'
                     }
                   `}
                 >

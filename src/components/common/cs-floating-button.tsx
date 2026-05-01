@@ -1,5 +1,5 @@
-import { MessageCircle } from "lucide-react";
-import { env } from "@/lib/env";
+import { MessageCircle } from 'lucide-react';
+import { env } from '@/lib/env';
 
 /**
  * 우하단에 고정 노출되는 플로팅 CS 문의 버튼.
@@ -16,7 +16,7 @@ export function CsFloatingButton() {
 
   if (!url) {
     if (import.meta.env.DEV) {
-      console.info("[cs] VITE_KAKAO_CS_URL 미설정 — CS 플로팅 버튼 숨김");
+      console.info('[cs] VITE_KAKAO_CS_URL 미설정 — CS 플로팅 버튼 숨김');
     }
     return null;
   }

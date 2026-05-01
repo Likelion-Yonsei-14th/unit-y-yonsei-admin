@@ -14,9 +14,7 @@ export interface MapSectionTabsProps {
 
 /** 5/27 (화) 형태 라벨. KST 자정 기준 — UTC 자정 파싱 회피. */
 function dateLabel(d: string): string {
-  const day = ['일', '월', '화', '수', '목', '금', '토'][
-    new Date(`${d}T00:00:00+09:00`).getDay()
-  ];
+  const day = ['일', '월', '화', '수', '목', '금', '토'][new Date(`${d}T00:00:00+09:00`).getDay()];
   const m = Number(d.slice(5, 7));
   const dd = Number(d.slice(8, 10));
   return `${m}/${dd} (${day})`;

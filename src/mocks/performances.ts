@@ -9,7 +9,11 @@
  * 목록/상세 mock 간 식별자 일관성을 유지한다.
  */
 
-import type { PerformanceDetail, PerformanceImage, SetlistItem } from '@/features/performances/types';
+import type {
+  PerformanceDetail,
+  PerformanceImage,
+  SetlistItem,
+} from '@/features/performances/types';
 
 const setlist = (...items: Array<[string, string]>): SetlistItem[] =>
   items.map(([songName, artist], i) => ({ id: i + 1, order: i + 1, songName, artist }));
@@ -308,11 +312,7 @@ export const mockPerformanceDetails: PerformanceDetail[] = [
     startTime: '18:00',
     endTime: '18:30',
     images: PHOTO('photo-1485178575877-1a13bf489dfe'),
-    setlist: setlist(
-      ['DRAMA', 'aespa'],
-      ['UNFORGIVEN', 'LE SSERAFIM'],
-      ['Magnetic', 'ILLIT'],
-    ),
+    setlist: setlist(['DRAMA', 'aespa'], ['UNFORGIVEN', 'LE SSERAFIM'], ['Magnetic', 'ILLIT']),
   },
   {
     teamId: 24,
@@ -370,9 +370,13 @@ export const mockPerformanceDetails: PerformanceDetail[] = [
     startTime: '17:00',
     endTime: '17:15',
     images: [],
-    setlist: setlist(['Pirates of the Caribbean', 'Hans Zimmer'], ['How Far I\'ll Go', 'Auli\'i Cravalho']),
+    setlist: setlist(
+      ['Pirates of the Caribbean', 'Hans Zimmer'],
+      ["How Far I'll Go", "Auli'i Cravalho"],
+    ),
   },
 ];
 
-export const mockPerformanceDetailsById: Record<number, PerformanceDetail> =
-  Object.fromEntries(mockPerformanceDetails.map(p => [p.teamId, p]));
+export const mockPerformanceDetailsById: Record<number, PerformanceDetail> = Object.fromEntries(
+  mockPerformanceDetails.map((p) => [p.teamId, p]),
+);

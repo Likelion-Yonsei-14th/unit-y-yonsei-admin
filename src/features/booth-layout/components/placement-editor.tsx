@@ -324,8 +324,8 @@ export function PlacementEditor({ booths }: PlacementEditorProps) {
           <AlertDialogHeader>
             <AlertDialogTitle>자리 삭제</AlertDialogTitle>
             <AlertDialogDescription>
-              자리 "{pendingDelete?.boothNumber}" 를 삭제합니다. Cmd/Ctrl+Z 로
-              되돌릴 수 있지만 직후 같은 booth_number 가 재사용되면 충돌할 수 있습니다.
+              자리 &ldquo;{pendingDelete?.boothNumber}&rdquo; 를 삭제합니다. Cmd/Ctrl+Z 로 되돌릴 수
+              있지만 직후 같은 booth_number 가 재사용되면 충돌할 수 있습니다.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -351,9 +351,8 @@ export function PlacementEditor({ booths }: PlacementEditorProps) {
           <AlertDialogHeader>
             <AlertDialogTitle>전날 좌표 복제</AlertDialogTitle>
             <AlertDialogDescription>
-              {previousDateOf(selectedDate)} {section.label} 좌표를 {selectedDate}{' '}
-              {section.label} 로 덮어씁니다. 현재 ({selectedDate}, {section.label})
-              에 있는 좌표는 모두 사라집니다.
+              {previousDateOf(selectedDate)} {section.label} 좌표를 {selectedDate} {section.label}{' '}
+              로 덮어씁니다. 현재 ({selectedDate}, {section.label}) 에 있는 좌표는 모두 사라집니다.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

@@ -1,23 +1,23 @@
-import { defineConfig } from 'vite'
-import path from 'path'
-import { fileURLToPath } from 'node:url'
-import tailwindcss from '@tailwindcss/vite'
-import react from '@vitejs/plugin-react'
+import { defineConfig } from 'vite';
+import path from 'path';
+import { fileURLToPath } from 'node:url';
+import tailwindcss from '@tailwindcss/vite';
+import react from '@vitejs/plugin-react';
 
 // package.json이 "type": "module"이라 ESM 컨텍스트에서 로드된다.
 // ESM에는 __dirname이 없으므로 import.meta.url에서 파생해서 쓴다.
-const __dirname = path.dirname(fileURLToPath(import.meta.url))
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 function figmaAssetResolver() {
   return {
     name: 'figma-asset-resolver',
     resolveId(id: string) {
       if (id.startsWith('figma:asset/')) {
-        const filename = id.replace('figma:asset/', '')
-        return path.resolve(__dirname, 'src/assets', filename)
+        const filename = id.replace('figma:asset/', '');
+        return path.resolve(__dirname, 'src/assets', filename);
       }
     },
-  }
+  };
 }
 
 export default defineConfig({
@@ -37,4 +37,4 @@ export default defineConfig({
 
   // File types to support raw imports. Never add .css, .tsx, or .ts files to this.
   assetsInclude: ['**/*.svg', '**/*.csv'],
-})
+});

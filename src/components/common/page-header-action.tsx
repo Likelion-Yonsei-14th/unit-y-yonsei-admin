@@ -24,13 +24,7 @@ interface Props extends Omit<ComponentProps<'button'>, 'className'> {
   className?: string;
 }
 
-export function PageHeaderAction({
-  tone = 'blue',
-  icon,
-  children,
-  className,
-  ...props
-}: Props) {
+export function PageHeaderAction({ tone = 'blue', icon, children, className, ...props }: Props) {
   return (
     <Button
       type="button"

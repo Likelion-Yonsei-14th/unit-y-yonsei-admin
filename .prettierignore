@@ -1,0 +1,9 @@
+dist
+dist-types
+node_modules
+pnpm-lock.yaml
+src/components/ui
+src/components/figma
+src/styles/index.css
+src/styles/tailwind.css
+*.md

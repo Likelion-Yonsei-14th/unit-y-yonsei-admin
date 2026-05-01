@@ -1,10 +1,10 @@
-import { useEffect, useRef } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { UserPlus, Check, Shield, FileText, X } from "lucide-react";
-import { useCreateUser } from "@/features/users/hooks";
-import { createUserSchema, type CreateUserFormValues } from "@/features/users/schema";
-import type { Role } from "@/types/role";
+import { useEffect, useRef } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { UserPlus, Check, Shield, FileText, X } from 'lucide-react';
+import { useCreateUser } from '@/features/users/hooks';
+import { createUserSchema, type CreateUserFormValues } from '@/features/users/schema';
+import type { Role } from '@/types/role';
 
 const PERMISSION_OPTIONS: Array<{
   value: Role;
@@ -12,24 +12,34 @@ const PERMISSION_OPTIONS: Array<{
   description: string;
   badgeClass: string;
 }> = [
-  { value: "Super", label: "Super", description: "모든 권한 보유", badgeClass: "bg-ds-secondary-a" },
-  { value: "Master", label: "Master", description: "전체 관리 권한", badgeClass: "bg-primary" },
-  { value: "Booth", label: "Booth", description: "부스 관리 권한", badgeClass: "bg-ds-success" },
-  { value: "Performer", label: "Performer", description: "공연 관리 권한", badgeClass: "bg-ds-warning" },
+  {
+    value: 'Super',
+    label: 'Super',
+    description: '모든 권한 보유',
+    badgeClass: 'bg-ds-secondary-a',
+  },
+  { value: 'Master', label: 'Master', description: '전체 관리 권한', badgeClass: 'bg-primary' },
+  { value: 'Booth', label: 'Booth', description: '부스 관리 권한', badgeClass: 'bg-ds-success' },
+  {
+    value: 'Performer',
+    label: 'Performer',
+    description: '공연 관리 권한',
+    badgeClass: 'bg-ds-warning',
+  },
 ];
 
 const EMPTY_FORM: CreateUserFormValues = {
-  userId: "",
-  tempPassword: "",
-  affiliation: "",
+  userId: '',
+  tempPassword: '',
+  affiliation: '',
   // 빈 문자열은 enum 매칭에 실패해 첫 zod parse 시 'permissionType' 에러를 띄운다.
   // (사용자가 카드를 클릭하면 setValue 로 정상 enum 값이 들어감)
-  permissionType: "" as unknown as Role,
-  representativeName: "",
-  representativePhone: "",
-  boothName: "",
-  performanceTeamName: "",
-  internalMemo: "",
+  permissionType: '' as unknown as Role,
+  representativeName: '',
+  representativePhone: '',
+  boothName: '',
+  performanceTeamName: '',
+  internalMemo: '',
 };
 
 export function CreateAdmin() {
@@ -45,12 +55,12 @@ export function CreateAdmin() {
   } = useForm<CreateUserFormValues>({
     resolver: zodResolver(createUserSchema),
     defaultValues: EMPTY_FORM,
-    mode: "onSubmit",
+    mode: 'onSubmit',
   });
 
-  const permissionType = watch("permissionType");
-  const needsBoothName = permissionType === "Booth";
-  const needsPerformanceTeamName = permissionType === "Performer";
+  const permissionType = watch('permissionType');
+  const needsBoothName = permissionType === 'Booth';
+  const needsPerformanceTeamName = permissionType === 'Performer';
 
   // 성공 알림 3초 뒤 폼 초기화 타이머 — 다음 submit / unmount 시 반드시 정리해야
   // 이미 입력 중인 값을 뒤늦게 날리거나, unmount 후 작업이 발생하지 않는다.
@@ -85,12 +95,18 @@ export function CreateAdmin() {
           <UserPlus size={32} />
           신규 어드민 계정 생성
         </h1>
-        <p className="text-muted-foreground mt-2">외부 요청을 받아 새로운 어드민 계정을 생성합니다. 생성된 계정 정보는 요청자에게 전달됩니다.</p>
+        <p className="text-muted-foreground mt-2">
+          외부 요청을 받아 새로운 어드민 계정을 생성합니다. 생성된 계정 정보는 요청자에게
+          전달됩니다.
+        </p>
       </div>
 
       {/* 성공/실패 알림 — mutation 결과만을 신뢰 (이전: 무조건 success 토스트로 거짓말). */}
       {isSuccess && (
-        <div role="status" className="mb-6 flex items-center gap-2 px-4 py-3 bg-ds-success-subtle border border-ds-success text-ds-success-pressed rounded-lg shadow-lg">
+        <div
+          role="status"
+          className="mb-6 flex items-center gap-2 px-4 py-3 bg-ds-success-subtle border border-ds-success text-ds-success-pressed rounded-lg shadow-lg"
+        >
           <div className="w-6 h-6 bg-ds-success rounded-full flex items-center justify-center">
             <Check size={14} className="text-white" />
           </div>
@@ -98,7 +114,10 @@ export function CreateAdmin() {
         </div>
       )}
       {createMutation.isError && (
-        <div role="alert" className="mb-6 flex items-center gap-2 px-4 py-3 bg-ds-error-subtle border border-destructive text-destructive rounded-lg shadow-lg">
+        <div
+          role="alert"
+          className="mb-6 flex items-center gap-2 px-4 py-3 bg-ds-error-subtle border border-destructive text-destructive rounded-lg shadow-lg"
+        >
           <X size={16} />
           <span className="font-medium">계정 생성에 실패했습니다. 잠시 후 다시 시도해주세요.</span>
         </div>
@@ -131,16 +150,23 @@ export function CreateAdmin() {
                 type="text"
                 placeholder="example_user"
                 aria-invalid={!!errors.userId}
-                {...register("userId")}
+                {...register('userId')}
                 className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 transition-all ${
-                  errors.userId ? 'border-destructive focus:ring-destructive' : 'border-border focus:ring-ring'
+                  errors.userId
+                    ? 'border-destructive focus:ring-destructive'
+                    : 'border-border focus:ring-ring'
                 }`}
               />
-              {errors.userId && <p className="text-destructive text-xs mt-1">{errors.userId.message}</p>}
+              {errors.userId && (
+                <p className="text-destructive text-xs mt-1">{errors.userId.message}</p>
+              )}
             </div>
 
             <div>
-              <label htmlFor="temp-password" className="block text-sm font-semibold text-foreground mb-2">
+              <label
+                htmlFor="temp-password"
+                className="block text-sm font-semibold text-foreground mb-2"
+              >
                 임시 비밀번호 <span className="text-destructive">*</span>
               </label>
               <input
@@ -148,17 +174,24 @@ export function CreateAdmin() {
                 type="password"
                 placeholder="최소 8자 이상"
                 aria-invalid={!!errors.tempPassword}
-                {...register("tempPassword")}
+                {...register('tempPassword')}
                 className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 transition-all ${
-                  errors.tempPassword ? 'border-destructive focus:ring-destructive' : 'border-border focus:ring-ring'
+                  errors.tempPassword
+                    ? 'border-destructive focus:ring-destructive'
+                    : 'border-border focus:ring-ring'
                 }`}
               />
-              {errors.tempPassword && <p className="text-destructive text-xs mt-1">{errors.tempPassword.message}</p>}
+              {errors.tempPassword && (
+                <p className="text-destructive text-xs mt-1">{errors.tempPassword.message}</p>
+              )}
             </div>
           </div>
 
           <div>
-            <label htmlFor="affiliation" className="block text-sm font-semibold text-foreground mb-2">
+            <label
+              htmlFor="affiliation"
+              className="block text-sm font-semibold text-foreground mb-2"
+            >
               소속 <span className="text-destructive">*</span>
             </label>
             <input
@@ -166,20 +199,31 @@ export function CreateAdmin() {
               type="text"
               placeholder="예: 문헌정보학과, 멋쟁이사자처럼, 총학생회 등"
               aria-invalid={!!errors.affiliation}
-              {...register("affiliation")}
+              {...register('affiliation')}
               className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 transition-all ${
-                errors.affiliation ? 'border-destructive focus:ring-destructive' : 'border-border focus:ring-ring'
+                errors.affiliation
+                  ? 'border-destructive focus:ring-destructive'
+                  : 'border-border focus:ring-ring'
               }`}
             />
-            {errors.affiliation && <p className="text-destructive text-xs mt-1">{errors.affiliation.message}</p>}
+            {errors.affiliation && (
+              <p className="text-destructive text-xs mt-1">{errors.affiliation.message}</p>
+            )}
           </div>
 
           {/* Permission Type — radiogroup 으로 의미 매칭 */}
           <div>
-            <span id="permission-label" className="block text-sm font-semibold text-foreground mb-3">
+            <span
+              id="permission-label"
+              className="block text-sm font-semibold text-foreground mb-3"
+            >
               권한 유형 <span className="text-destructive">*</span>
             </span>
-            <div role="radiogroup" aria-labelledby="permission-label" className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div
+              role="radiogroup"
+              aria-labelledby="permission-label"
+              className="grid grid-cols-1 sm:grid-cols-2 gap-4"
+            >
               {PERMISSION_OPTIONS.map((option) => {
                 const selected = permissionType === option.value;
                 return (
@@ -188,12 +232,15 @@ export function CreateAdmin() {
                     type="button"
                     role="radio"
                     aria-checked={selected}
-                    onClick={() => setValue("permissionType", option.value, { shouldValidate: true })}
+                    onClick={() =>
+                      setValue('permissionType', option.value, { shouldValidate: true })
+                    }
                     className={`
                       p-4 rounded-lg border-2 transition-all text-left
-                      ${selected
-                        ? `border-transparent ${option.badgeClass} text-white shadow-lg`
-                        : 'border-border hover:border-ds-border-strong bg-background'
+                      ${
+                        selected
+                          ? `border-transparent ${option.badgeClass} text-white shadow-lg`
+                          : 'border-border hover:border-ds-border-strong bg-background'
                       }
                     `}
                   >
@@ -201,20 +248,27 @@ export function CreateAdmin() {
                       <Shield size={18} />
                       <span className="font-bold">{option.label}</span>
                     </div>
-                    <p className={`text-xs ${selected ? 'text-white/90' : 'text-muted-foreground'}`}>
+                    <p
+                      className={`text-xs ${selected ? 'text-white/90' : 'text-muted-foreground'}`}
+                    >
                       {option.description}
                     </p>
                   </button>
                 );
               })}
             </div>
-            {errors.permissionType && <p className="text-destructive text-xs mt-1">{errors.permissionType.message}</p>}
+            {errors.permissionType && (
+              <p className="text-destructive text-xs mt-1">{errors.permissionType.message}</p>
+            )}
           </div>
 
           {/* Booth Name - Conditional */}
           {needsBoothName && (
             <div className="p-4 bg-ds-success-subtle border border-ds-success rounded-lg">
-              <label htmlFor="booth-name-input" className="block text-sm font-semibold text-ds-success-pressed mb-2">
+              <label
+                htmlFor="booth-name-input"
+                className="block text-sm font-semibold text-ds-success-pressed mb-2"
+              >
                 부스명 <span className="text-destructive">*</span>
               </label>
               <input
@@ -222,19 +276,26 @@ export function CreateAdmin() {
                 type="text"
                 placeholder="운영할 부스 이름을 입력하세요"
                 aria-invalid={!!errors.boothName}
-                {...register("boothName")}
+                {...register('boothName')}
                 className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 transition-all bg-background ${
-                  errors.boothName ? 'border-destructive focus:ring-destructive' : 'border-ds-success focus:ring-ds-success'
+                  errors.boothName
+                    ? 'border-destructive focus:ring-destructive'
+                    : 'border-ds-success focus:ring-ds-success'
                 }`}
               />
-              {errors.boothName && <p className="text-destructive text-xs mt-1">{errors.boothName.message}</p>}
+              {errors.boothName && (
+                <p className="text-destructive text-xs mt-1">{errors.boothName.message}</p>
+              )}
             </div>
           )}
 
           {/* Performance Team Name - Conditional */}
           {needsPerformanceTeamName && (
             <div className="p-4 bg-ds-warning-subtle border border-ds-warning rounded-lg">
-              <label htmlFor="performance-team-name-input" className="block text-sm font-semibold text-ds-warning-pressed mb-2">
+              <label
+                htmlFor="performance-team-name-input"
+                className="block text-sm font-semibold text-ds-warning-pressed mb-2"
+              >
                 공연팀명 <span className="text-destructive">*</span>
               </label>
               <input
@@ -242,19 +303,28 @@ export function CreateAdmin() {
                 type="text"
                 placeholder="공연팀 이름을 입력하세요"
                 aria-invalid={!!errors.performanceTeamName}
-                {...register("performanceTeamName")}
+                {...register('performanceTeamName')}
                 className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 transition-all bg-background ${
-                  errors.performanceTeamName ? 'border-destructive focus:ring-destructive' : 'border-ds-warning focus:ring-ds-warning'
+                  errors.performanceTeamName
+                    ? 'border-destructive focus:ring-destructive'
+                    : 'border-ds-warning focus:ring-ds-warning'
                 }`}
               />
-              {errors.performanceTeamName && <p className="text-destructive text-xs mt-1">{errors.performanceTeamName.message}</p>}
+              {errors.performanceTeamName && (
+                <p className="text-destructive text-xs mt-1">
+                  {errors.performanceTeamName.message}
+                </p>
+              )}
             </div>
           )}
 
           {/* Representative Info */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             <div>
-              <label htmlFor="representative-name" className="block text-sm font-semibold text-foreground mb-2">
+              <label
+                htmlFor="representative-name"
+                className="block text-sm font-semibold text-foreground mb-2"
+              >
                 대표자명 <span className="text-destructive">*</span>
               </label>
               <input
@@ -262,16 +332,23 @@ export function CreateAdmin() {
                 type="text"
                 placeholder="홍길동"
                 aria-invalid={!!errors.representativeName}
-                {...register("representativeName")}
+                {...register('representativeName')}
                 className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 transition-all ${
-                  errors.representativeName ? 'border-destructive focus:ring-destructive' : 'border-border focus:ring-ring'
+                  errors.representativeName
+                    ? 'border-destructive focus:ring-destructive'
+                    : 'border-border focus:ring-ring'
                 }`}
               />
-              {errors.representativeName && <p className="text-destructive text-xs mt-1">{errors.representativeName.message}</p>}
+              {errors.representativeName && (
+                <p className="text-destructive text-xs mt-1">{errors.representativeName.message}</p>
+              )}
             </div>
 
             <div>
-              <label htmlFor="representative-phone" className="block text-sm font-semibold text-foreground mb-2">
+              <label
+                htmlFor="representative-phone"
+                className="block text-sm font-semibold text-foreground mb-2"
+              >
                 대표자 전화번호 <span className="text-destructive">*</span>
               </label>
               <input
@@ -279,18 +356,27 @@ export function CreateAdmin() {
                 type="tel"
                 placeholder="010-1234-5678"
                 aria-invalid={!!errors.representativePhone}
-                {...register("representativePhone")}
+                {...register('representativePhone')}
                 className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 transition-all ${
-                  errors.representativePhone ? 'border-destructive focus:ring-destructive' : 'border-border focus:ring-ring'
+                  errors.representativePhone
+                    ? 'border-destructive focus:ring-destructive'
+                    : 'border-border focus:ring-ring'
                 }`}
               />
-              {errors.representativePhone && <p className="text-destructive text-xs mt-1">{errors.representativePhone.message}</p>}
+              {errors.representativePhone && (
+                <p className="text-destructive text-xs mt-1">
+                  {errors.representativePhone.message}
+                </p>
+              )}
             </div>
           </div>
 
           {/* Internal Memo */}
           <div>
-            <label htmlFor="internal-memo" className="block text-sm font-semibold text-foreground mb-2 flex items-center gap-2">
+            <label
+              htmlFor="internal-memo"
+              className="block text-sm font-semibold text-foreground mb-2 flex items-center gap-2"
+            >
               <FileText size={16} />
               내부 메모
             </label>
@@ -299,12 +385,16 @@ export function CreateAdmin() {
               rows={4}
               placeholder="요청 경로, 검토 내용, 특이사항 등을 기록해주세요. (예: 카카오톡으로 요청받음 - 문헌정보학과 부스 운영 확인 완료)"
               aria-invalid={!!errors.internalMemo}
-              {...register("internalMemo")}
+              {...register('internalMemo')}
               className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 transition-all resize-none ${
-                errors.internalMemo ? 'border-destructive focus:ring-destructive' : 'border-border focus:ring-ring'
+                errors.internalMemo
+                  ? 'border-destructive focus:ring-destructive'
+                  : 'border-border focus:ring-ring'
               }`}
             />
-            {errors.internalMemo && <p className="text-destructive text-xs mt-1">{errors.internalMemo.message}</p>}
+            {errors.internalMemo && (
+              <p className="text-destructive text-xs mt-1">{errors.internalMemo.message}</p>
+            )}
             <p className="text-xs text-muted-foreground mt-1">
               계정 생성 이력 관리를 위한 내부 메모입니다. 요청자에게 공개되지 않습니다.
             </p>
@@ -331,7 +421,7 @@ export function CreateAdmin() {
             className="px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-ds-primary-pressed transition-colors duration-200 flex items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
           >
             <UserPlus size={18} />
-            {createMutation.isPending ? "생성 중…" : "계정 생성"}
+            {createMutation.isPending ? '생성 중…' : '계정 생성'}
           </button>
         </div>
       </form>

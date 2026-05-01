@@ -1,8 +1,12 @@
 import type {
-  PerformanceDetail, PerformanceDetailDTO,
-  PerformanceListItem, PerformanceListItemDTO,
-  PerformanceImage, PerformanceImageDTO,
-  SetlistItem, SetlistItemDTO,
+  PerformanceDetail,
+  PerformanceDetailDTO,
+  PerformanceListItem,
+  PerformanceListItemDTO,
+  PerformanceImage,
+  PerformanceImageDTO,
+  SetlistItem,
+  SetlistItemDTO,
 } from './types';
 
 export const toPerformanceListItem = (d: PerformanceListItemDTO): PerformanceListItem => ({
@@ -64,14 +68,18 @@ export const fromPerformanceDetailPatch = (
 ): Partial<PerformanceDetailDTO> => {
   const dto: Partial<PerformanceDetailDTO> = {};
   if ('teamName' in patch && patch.teamName !== undefined) dto.team_name = patch.teamName;
-  if ('description' in patch && patch.description !== undefined) dto.description = patch.description;
-  if ('instagramUrl' in patch && patch.instagramUrl !== undefined) dto.instagram_url = patch.instagramUrl;
+  if ('description' in patch && patch.description !== undefined)
+    dto.description = patch.description;
+  if ('instagramUrl' in patch && patch.instagramUrl !== undefined)
+    dto.instagram_url = patch.instagramUrl;
   if ('youtubeUrl' in patch && patch.youtubeUrl !== undefined) dto.youtube_url = patch.youtubeUrl;
   if ('date' in patch && patch.date !== undefined) dto.date = patch.date;
   if ('stage' in patch && patch.stage !== undefined) dto.stage = patch.stage;
   if ('startTime' in patch && patch.startTime !== undefined) dto.start_time = patch.startTime;
   if ('endTime' in patch && patch.endTime !== undefined) dto.end_time = patch.endTime;
-  if ('images' in patch && patch.images !== undefined) dto.images = patch.images.map(fromPerformanceImage);
-  if ('setlist' in patch && patch.setlist !== undefined) dto.setlist = patch.setlist.map(fromSetlistItem);
+  if ('images' in patch && patch.images !== undefined)
+    dto.images = patch.images.map(fromPerformanceImage);
+  if ('setlist' in patch && patch.setlist !== undefined)
+    dto.setlist = patch.setlist.map(fromSetlistItem);
   return dto;
 };

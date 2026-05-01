@@ -1,7 +1,10 @@
 import type {
-  BoothImage, BoothImageDTO,
-  BoothMenuItem, BoothMenuItemDTO,
-  BoothProfile, BoothProfileDTO,
+  BoothImage,
+  BoothImageDTO,
+  BoothMenuItem,
+  BoothMenuItemDTO,
+  BoothProfile,
+  BoothProfileDTO,
 } from './types';
 
 export const toBoothImage = (d: BoothImageDTO): BoothImage => ({

@@ -1,3 +1,6 @@
+// 라우터 정의 + 라우트 진입 분기 컴포넌트들이 한 파일에 공존하는 구조.
+// 분리하면 파일이 잘게 쪼개지는 손해가 더 커서 fast-refresh 룰만 끔 (HMR 영향 한정).
+/* eslint-disable react-refresh/only-export-components */
 import { createBrowserRouter, Navigate, useParams } from 'react-router';
 import { RequireAuth, RequireGuest, RequirePermission } from '@/features/auth/guard';
 import { useAuth } from '@/features/auth/hooks';

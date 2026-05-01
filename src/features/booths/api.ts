@@ -10,14 +10,14 @@ import type { BoothProfile, BoothProfileDTO } from './types';
 // Super/Master는 이 훅 대신 다른 경로로 조회해야 함 (아직 미구현).
 
 async function getMyBoothProfileMock(): Promise<BoothProfile | null> {
-  await new Promise(r => setTimeout(r, 150));
+  await new Promise((r) => setTimeout(r, 150));
   const user = useAuthStore.getState().user;
   if (!user || user.role !== 'Booth' || user.boothId == null) return null;
   return mockBoothsById[user.boothId] ?? null;
 }
 
 async function updateMyBoothProfileMock(patch: Partial<BoothProfile>): Promise<BoothProfile> {
-  await new Promise(r => setTimeout(r, 200));
+  await new Promise((r) => setTimeout(r, 200));
   const user = useAuthStore.getState().user;
   if (!user || user.role !== 'Booth' || user.boothId == null) {
     throw new Error('Booth 역할이 아닙니다.');
@@ -57,5 +57,7 @@ async function listBoothsReal(): Promise<BoothProfile[]> {
 // ---- 분기 export ----
 
 export const getMyBoothProfile = env.USE_MOCK ? getMyBoothProfileMock : getMyBoothProfileReal;
-export const updateMyBoothProfile = env.USE_MOCK ? updateMyBoothProfileMock : updateMyBoothProfileReal;
+export const updateMyBoothProfile = env.USE_MOCK
+  ? updateMyBoothProfileMock
+  : updateMyBoothProfileReal;
 export const listBooths = env.USE_MOCK ? listBoothsMock : listBoothsReal;

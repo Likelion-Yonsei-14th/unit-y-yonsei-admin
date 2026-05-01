@@ -5,8 +5,9 @@
 @import url('https://cdn.jsdelivr.net/gh/sunn-us/SUIT/fonts/variable/woff2/SUIT-Variable.css');
 
 :root {
-  --font-sans: 'SUIT Variable', -apple-system, BlinkMacSystemFont, system-ui,
-    'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+  --font-sans:
+    'SUIT Variable', -apple-system, BlinkMacSystemFont, system-ui, 'Apple SD Gothic Neo',
+    'Malgun Gothic', sans-serif;
 }
 
 html,
@@ -17,5 +18,7 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
-  font-feature-settings: 'kern' 1, 'calt' 1;
+  font-feature-settings:
+    'kern' 1,
+    'calt' 1;
 }

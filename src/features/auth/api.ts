@@ -29,23 +29,32 @@ const MOCK_USERS: Record<string, { password: string; user: CurrentUserDTO }> = {
   booth1: {
     password: 'booth1234',
     user: {
-      id: 10, user_id: 'booth1', role: 'Booth',
-      name: '부스운영자1', booth_id: 1,
+      id: 10,
+      user_id: 'booth1',
+      role: 'Booth',
+      name: '부스운영자1',
+      booth_id: 1,
     },
   },
   booth2: {
     // 작성 전 상태 데모용 — 프로필 필드가 전부 비어있는 mock 부스
     password: 'booth1234',
     user: {
-      id: 11, user_id: 'booth2', role: 'Booth',
-      name: '부스운영자2', booth_id: 2,
+      id: 11,
+      user_id: 'booth2',
+      role: 'Booth',
+      name: '부스운영자2',
+      booth_id: 2,
     },
   },
   performer1: {
     password: 'perf1234',
     user: {
-      id: 20, user_id: 'performer1', role: 'Performer',
-      name: '공연팀1', performance_team_id: 1,
+      id: 20,
+      user_id: 'performer1',
+      role: 'Performer',
+      name: '공연팀1',
+      performance_team_id: 1,
     },
   },
 };
@@ -53,7 +62,7 @@ const MOCK_USERS: Record<string, { password: string; user: CurrentUserDTO }> = {
 const MOCK_TOKEN_KEY = 'daedongje.mock.user_id';
 
 async function loginMock(payload: LoginPayload): Promise<CurrentUser> {
-  await new Promise(r => setTimeout(r, 300)); // 네트워크 흉내
+  await new Promise((r) => setTimeout(r, 300)); // 네트워크 흉내
   const record = MOCK_USERS[payload.userId];
   if (!record || record.password !== payload.password) {
     // real 분기와 동일한 에러 타입을 던져 호출자(폼 onError, instanceof 분기 등) 가
@@ -66,7 +75,7 @@ async function loginMock(payload: LoginPayload): Promise<CurrentUser> {
 }
 
 async function fetchMeMock(): Promise<CurrentUser> {
-  await new Promise(r => setTimeout(r, 100));
+  await new Promise((r) => setTimeout(r, 100));
   const userId = localStorage.getItem(MOCK_TOKEN_KEY);
   if (!userId || !MOCK_USERS[userId]) {
     // 401 — api-client.ts 의 onUnauthorized 가 발화되도록 status 까지 맞춤.

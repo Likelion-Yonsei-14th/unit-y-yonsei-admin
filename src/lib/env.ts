@@ -10,7 +10,7 @@ const schema = z.object({
   VITE_USE_MOCK: z
     .enum(['true', 'false'])
     .default('true')
-    .transform(v => v === 'true'),
+    .transform((v) => v === 'true'),
   /**
    * CS 문의용 오픈카카오 채팅방 URL.
    * 값이 비면 플로팅 CS 버튼을 아예 렌더하지 않는다 — 링크 없는 버튼을 클릭
@@ -21,7 +21,7 @@ const schema = z.object({
   VITE_KAKAO_CS_URL: z
     .union([z.string().url(), z.literal('')])
     .optional()
-    .transform(v => (v ? v : undefined)),
+    .transform((v) => (v ? v : undefined)),
 });
 
 const parsed = schema.safeParse(import.meta.env);

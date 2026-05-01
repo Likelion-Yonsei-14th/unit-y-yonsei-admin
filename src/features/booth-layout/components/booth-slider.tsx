@@ -113,6 +113,9 @@ export function BoothSlider({
   if (booths.length === 0) return null;
 
   return (
+    // 슬라이더 컨테이너 — 화살표 키로 탐색하는 게 의도된 키보드 인터랙션 영역.
+    // role='group' 으로 묶고 tabIndex 로 포커스 가능하게 하는 게 시맨틱 적합.
+    /* eslint-disable jsx-a11y/no-noninteractive-element-interactions, jsx-a11y/no-noninteractive-tabindex */
     <div
       className="relative"
       tabIndex={0}
@@ -120,6 +123,7 @@ export function BoothSlider({
       role="group"
       aria-label="부스 슬라이더"
     >
+      {/* eslint-enable jsx-a11y/no-noninteractive-element-interactions, jsx-a11y/no-noninteractive-tabindex */}
       <button
         type="button"
         onClick={() => focusByOffset(-1)}
@@ -150,11 +154,7 @@ export function BoothSlider({
         {booths.map((b) => {
           const boothId = b.placement.boothId;
           return (
-            <div
-              key={boothId}
-              ref={(el) => registerCard(boothId, el)}
-              className="snap-center"
-            >
+            <div key={boothId} ref={(el) => registerCard(boothId, el)} className="snap-center">
               <BoothSliderCard
                 booth={b}
                 isFocused={boothId === focusedBoothId}

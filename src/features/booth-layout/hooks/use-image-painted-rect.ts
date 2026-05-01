@@ -40,8 +40,8 @@ export function useImagePaintedRect(
       aspectRatio && aspectRatio > 0
         ? aspectRatio
         : img && img.naturalWidth > 0 && img.naturalHeight > 0
-        ? img.naturalWidth / img.naturalHeight
-        : null;
+          ? img.naturalWidth / img.naturalHeight
+          : null;
     if (!aspect) {
       setRect(null);
       return;

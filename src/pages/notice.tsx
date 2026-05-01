@@ -1,9 +1,14 @@
-import { useEffect, useState } from "react";
-import { Upload, Plus, Trash2, Edit2, FileText, X } from "lucide-react";
-import { toast } from "sonner";
-import { useCreateNotice, useDeleteNotice, useNotices, useUpdateNotice } from "@/features/notices/hooks";
-import type { Notice } from "@/features/notices/types";
-import { PageHeaderAction } from "@/components/common/page-header-action";
+import { useEffect, useState } from 'react';
+import { Upload, Plus, Trash2, Edit2, FileText, X } from 'lucide-react';
+import { toast } from 'sonner';
+import {
+  useCreateNotice,
+  useDeleteNotice,
+  useNotices,
+  useUpdateNotice,
+} from '@/features/notices/hooks';
+import type { Notice } from '@/features/notices/types';
+import { PageHeaderAction } from '@/components/common/page-header-action';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -13,7 +18,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+} from '@/components/ui/alert-dialog';
 
 export function NoticePage() {
   const noticesQuery = useNotices();
@@ -27,8 +32,8 @@ export function NoticePage() {
   const [pendingDelete, setPendingDelete] = useState<Notice | null>(null);
 
   // 폼 입력 상태 (controlled)
-  const [titleDraft, setTitleDraft] = useState("");
-  const [contentDraft, setContentDraft] = useState("");
+  const [titleDraft, setTitleDraft] = useState('');
+  const [contentDraft, setContentDraft] = useState('');
   // 새로 첨부한 이미지의 object URL — 미리보기 + cleanup 대상.
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
   // 편집 진입 시 기존 이미지 보유 여부 — 새 파일을 올리지 않고 그대로 저장하면 유지된다.
@@ -41,8 +46,8 @@ export function NoticePage() {
       setContentDraft(editingNotice.content);
       setHasExistingImage(editingNotice.hasImage);
     } else {
-      setTitleDraft("");
-      setContentDraft("");
+      setTitleDraft('');
+      setContentDraft('');
       setHasExistingImage(false);
     }
     // 새 미리보기는 폼 진입 시 항상 초기화 — revoke 는 아래 cleanup effect 가 책임.
@@ -78,10 +83,10 @@ export function NoticePage() {
     const target = pendingDelete;
     deleteMutation.mutate(target.id, {
       onSuccess: () => {
-        toast.success("공지사항을 삭제했습니다.");
+        toast.success('공지사항을 삭제했습니다.');
       },
       onError: () => {
-        toast.error("삭제에 실패했습니다. 잠시 후 다시 시도해주세요.");
+        toast.error('삭제에 실패했습니다. 잠시 후 다시 시도해주세요.');
       },
     });
     setPendingDelete(null);
@@ -94,7 +99,7 @@ export function NoticePage() {
 
   const handleSave = () => {
     if (!titleDraft.trim() || !contentDraft.trim()) {
-      toast.error("제목과 본문을 모두 입력해주세요.");
+      toast.error('제목과 본문을 모두 입력해주세요.');
       return;
     }
     const hasImage = !!imagePreviewUrl || hasExistingImage;
@@ -107,10 +112,10 @@ export function NoticePage() {
         { id: editingNotice.id, title: titleDraft.trim(), content: contentDraft.trim(), hasImage },
         {
           onSuccess: () => {
-            toast.success("공지사항을 수정했습니다.");
+            toast.success('공지사항을 수정했습니다.');
             onAfter();
           },
-          onError: () => toast.error("수정에 실패했습니다. 잠시 후 다시 시도해주세요."),
+          onError: () => toast.error('수정에 실패했습니다. 잠시 후 다시 시도해주세요.'),
         },
       );
     } else {
@@ -118,10 +123,10 @@ export function NoticePage() {
         { title: titleDraft.trim(), content: contentDraft.trim(), hasImage },
         {
           onSuccess: () => {
-            toast.success("공지사항을 등록했습니다.");
+            toast.success('공지사항을 등록했습니다.');
             onAfter();
           },
-          onError: () => toast.error("등록에 실패했습니다. 잠시 후 다시 시도해주세요."),
+          onError: () => toast.error('등록에 실패했습니다. 잠시 후 다시 시도해주세요.'),
         },
       );
     }
@@ -166,63 +171,73 @@ export function NoticePage() {
       {!showForm && noticesQuery.isSuccess && (
         <div className="bg-background rounded-2xl overflow-hidden shadow-sm">
           <div className="overflow-x-auto">
-          <table className="w-full min-w-[640px]">
-            <thead className="bg-muted">
-              <tr>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-foreground">제목</th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-foreground">등록일</th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-foreground">이미지</th>
-                <th className="px-6 py-4 text-center text-sm font-semibold text-foreground">액션</th>
-              </tr>
-            </thead>
-            <tbody>
-              {notices.map((notice) => (
-                <tr key={notice.id} className="hover:bg-muted transition-colors">
-                  <td className="px-6 py-4">
-                    <button
-                      type="button"
-                      onClick={() => handleEdit(notice)}
-                      className="text-left w-full group"
-                      aria-label={`${notice.title} 수정`}
-                    >
-                      <div className="text-sm font-medium text-foreground group-hover:text-primary group-hover:underline underline-offset-2 transition-colors">
-                        {notice.title}
-                      </div>
-                      <div className="text-xs text-muted-foreground mt-1 line-clamp-1">{notice.content}</div>
-                    </button>
-                  </td>
-                  <td className="px-6 py-4 text-sm text-muted-foreground">{notice.date}</td>
-                  <td className="px-6 py-4">
-                    {notice.hasImage ? (
-                      <span className="inline-block px-3 py-1 bg-ds-success-subtle text-ds-success-pressed rounded-full text-xs font-medium">
-                        있음
-                      </span>
-                    ) : (
-                      <span className="inline-block px-3 py-1 bg-muted text-muted-foreground rounded-full text-xs font-medium">
-                        없음
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-6 py-4 text-center">
-                    <div className="flex items-center justify-center gap-2">
-                      <button
-                        onClick={() => handleEdit(notice)}
-                        className="p-2 text-primary hover:bg-ds-primary-subtle rounded-lg transition-colors"
-                      >
-                        <Edit2 size={16} />
-                      </button>
-                      <button
-                        onClick={() => setPendingDelete(notice)}
-                        className="p-2 text-destructive hover:bg-ds-error-subtle rounded-lg transition-colors"
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
-                  </td>
+            <table className="w-full min-w-[640px]">
+              <thead className="bg-muted">
+                <tr>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-foreground">
+                    제목
+                  </th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-foreground">
+                    등록일
+                  </th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-foreground">
+                    이미지
+                  </th>
+                  <th className="px-6 py-4 text-center text-sm font-semibold text-foreground">
+                    액션
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {notices.map((notice) => (
+                  <tr key={notice.id} className="hover:bg-muted transition-colors">
+                    <td className="px-6 py-4">
+                      <button
+                        type="button"
+                        onClick={() => handleEdit(notice)}
+                        className="text-left w-full group"
+                        aria-label={`${notice.title} 수정`}
+                      >
+                        <div className="text-sm font-medium text-foreground group-hover:text-primary group-hover:underline underline-offset-2 transition-colors">
+                          {notice.title}
+                        </div>
+                        <div className="text-xs text-muted-foreground mt-1 line-clamp-1">
+                          {notice.content}
+                        </div>
+                      </button>
+                    </td>
+                    <td className="px-6 py-4 text-sm text-muted-foreground">{notice.date}</td>
+                    <td className="px-6 py-4">
+                      {notice.hasImage ? (
+                        <span className="inline-block px-3 py-1 bg-ds-success-subtle text-ds-success-pressed rounded-full text-xs font-medium">
+                          있음
+                        </span>
+                      ) : (
+                        <span className="inline-block px-3 py-1 bg-muted text-muted-foreground rounded-full text-xs font-medium">
+                          없음
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      <div className="flex items-center justify-center gap-2">
+                        <button
+                          onClick={() => handleEdit(notice)}
+                          className="p-2 text-primary hover:bg-ds-primary-subtle rounded-lg transition-colors"
+                        >
+                          <Edit2 size={16} />
+                        </button>
+                        <button
+                          onClick={() => setPendingDelete(notice)}
+                          className="p-2 text-destructive hover:bg-ds-error-subtle rounded-lg transition-colors"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
           {notices.length === 0 && (
             <div className="text-center py-12 text-ds-text-disabled">
@@ -237,7 +252,7 @@ export function NoticePage() {
         <div className="bg-background rounded-2xl p-4 md:p-8 shadow-sm">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-bold text-foreground">
-              {editingNotice ? "공지사항 수정" : "새 공지사항 작성"}
+              {editingNotice ? '공지사항 수정' : '새 공지사항 작성'}
             </h2>
             <button
               onClick={handleCancel}
@@ -249,7 +264,12 @@ export function NoticePage() {
 
           <div className="space-y-6">
             <div>
-              <label htmlFor="notice-title" className="block text-sm font-semibold text-foreground mb-2">공지사항 제목</label>
+              <label
+                htmlFor="notice-title"
+                className="block text-sm font-semibold text-foreground mb-2"
+              >
+                공지사항 제목
+              </label>
               <input
                 id="notice-title"
                 type="text"
@@ -261,7 +281,10 @@ export function NoticePage() {
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-foreground mb-2">카드뉴스 이미지</label>
+              {/* 그룹 타이틀 — file input 은 아래 wrapping label 안. */}
+              <span className="block text-sm font-semibold text-foreground mb-2">
+                카드뉴스 이미지
+              </span>
               {imagePreviewUrl ? (
                 <div className="relative inline-block max-w-full overflow-hidden rounded-lg border border-border bg-muted">
                   <img
@@ -309,13 +332,20 @@ export function NoticePage() {
                     onChange={(e) => handleImageChange(e.target.files?.[0] ?? null)}
                   />
                   <Upload className="mx-auto mb-3 text-ds-text-disabled" size={32} />
-                  <p className="text-sm text-muted-foreground">인스타그램 카드뉴스 이미지를 업로드하세요</p>
+                  <p className="text-sm text-muted-foreground">
+                    인스타그램 카드뉴스 이미지를 업로드하세요
+                  </p>
                 </label>
               )}
             </div>
 
             <div>
-              <label htmlFor="notice-content" className="block text-sm font-semibold text-foreground mb-2">본문</label>
+              <label
+                htmlFor="notice-content"
+                className="block text-sm font-semibold text-foreground mb-2"
+              >
+                본문
+              </label>
               <textarea
                 id="notice-content"
                 rows={6}
@@ -339,7 +369,7 @@ export function NoticePage() {
                 disabled={isSaving}
                 className="px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-ds-primary-pressed transition-colors duration-200 disabled:opacity-70 disabled:cursor-not-allowed"
               >
-                {isSaving ? "저장 중…" : (editingNotice ? "수정 완료" : "공지사항 등록")}
+                {isSaving ? '저장 중…' : editingNotice ? '수정 완료' : '공지사항 등록'}
               </button>
             </div>
           </div>
@@ -357,7 +387,8 @@ export function NoticePage() {
           <AlertDialogHeader>
             <AlertDialogTitle>공지사항 삭제</AlertDialogTitle>
             <AlertDialogDescription>
-              "{pendingDelete?.title}" 공지사항을 삭제합니다. 삭제 후에는 복구할 수 없습니다.
+              &ldquo;{pendingDelete?.title}&rdquo; 공지사항을 삭제합니다. 삭제 후에는 복구할 수
+              없습니다.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

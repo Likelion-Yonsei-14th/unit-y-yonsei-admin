@@ -1,8 +1,8 @@
-import { useEffect, useRef, useState } from "react";
-import { ArrowLeft, Edit, Star, Trash2, Upload } from "lucide-react";
-import { toast } from "sonner";
-import type { UseMutationResult } from "@tanstack/react-query";
-import type { BoothImage, BoothProfile } from "@/features/booths/types";
+import { useEffect, useRef, useState } from 'react';
+import { ArrowLeft, Edit, Star, Trash2, Upload } from 'lucide-react';
+import { toast } from 'sonner';
+import type { UseMutationResult } from '@tanstack/react-query';
+import type { BoothImage, BoothProfile } from '@/features/booths/types';
 
 interface Props {
   booth: BoothProfile;
@@ -38,10 +38,13 @@ export function BoothInfoForm({
 
   // 직접 createObjectURL 로 만든 blob URL 만 추적 — 서버 URL 은 revoke 대상 아님.
   const blobUrlsRef = useRef<Set<string>>(new Set());
-  useEffect(() => () => {
-    blobUrlsRef.current.forEach((u) => URL.revokeObjectURL(u));
-    blobUrlsRef.current.clear();
-  }, []);
+  useEffect(
+    () => () => {
+      blobUrlsRef.current.forEach((u) => URL.revokeObjectURL(u));
+      blobUrlsRef.current.clear();
+    },
+    [],
+  );
 
   // 서버 데이터로 다시 채워질 때 — 화면에서 사라진 blob URL 즉시 revoke + form state hydrate.
   useEffect(() => {
@@ -108,10 +111,10 @@ export function BoothInfoForm({
       {
         onSuccess: () => {
           setIsEditing(false);
-          toast.success("부스 정보를 저장했습니다.");
+          toast.success('부스 정보를 저장했습니다.');
         },
         onError: () => {
-          toast.error("저장에 실패했습니다. 잠시 후 다시 시도해주세요.");
+          toast.error('저장에 실패했습니다. 잠시 후 다시 시도해주세요.');
         },
       },
     );
@@ -152,7 +155,12 @@ export function BoothInfoForm({
       <div className="space-y-6">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
           <div>
-            <label htmlFor="booth-name" className="block text-sm font-semibold text-foreground mb-2">부스명</label>
+            <label
+              htmlFor="booth-name"
+              className="block text-sm font-semibold text-foreground mb-2"
+            >
+              부스명
+            </label>
             {isEditing ? (
               <input
                 id="booth-name"
@@ -163,13 +171,21 @@ export function BoothInfoForm({
                 className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
               />
             ) : (
-              <div id="booth-name" className="w-full px-4 py-3 border border-border rounded-lg bg-muted text-foreground">
+              <div
+                id="booth-name"
+                className="w-full px-4 py-3 border border-border rounded-lg bg-muted text-foreground"
+              >
                 {boothName}
               </div>
             )}
           </div>
           <div>
-            <label htmlFor="booth-organization" className="block text-sm font-semibold text-foreground mb-2">단체명</label>
+            <label
+              htmlFor="booth-organization"
+              className="block text-sm font-semibold text-foreground mb-2"
+            >
+              단체명
+            </label>
             {isEditing ? (
               <input
                 id="booth-organization"
@@ -180,7 +196,10 @@ export function BoothInfoForm({
                 className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
               />
             ) : (
-              <div id="booth-organization" className="w-full px-4 py-3 border border-border rounded-lg bg-muted text-foreground">
+              <div
+                id="booth-organization"
+                className="w-full px-4 py-3 border border-border rounded-lg bg-muted text-foreground"
+              >
                 {organizationName}
               </div>
             )}
@@ -188,7 +207,12 @@ export function BoothInfoForm({
         </div>
 
         <div>
-          <label htmlFor="booth-description" className="block text-sm font-semibold text-foreground mb-2">부스 소개글</label>
+          <label
+            htmlFor="booth-description"
+            className="block text-sm font-semibold text-foreground mb-2"
+          >
+            부스 소개글
+          </label>
           {isEditing ? (
             <textarea
               id="booth-description"
@@ -199,7 +223,10 @@ export function BoothInfoForm({
               className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all resize-none"
             />
           ) : (
-            <div id="booth-description" className="w-full px-4 py-3 border border-border rounded-lg bg-muted text-foreground min-h-[112px]">
+            <div
+              id="booth-description"
+              className="w-full px-4 py-3 border border-border rounded-lg bg-muted text-foreground min-h-[112px]"
+            >
               {boothDescription}
             </div>
           )}
@@ -207,7 +234,8 @@ export function BoothInfoForm({
 
         {isEditing && (
           <div>
-            <label className="block text-sm font-semibold text-foreground mb-2">부스 썸네일</label>
+            {/* 그룹 타이틀 — 실제 file input 은 아래 wrapping label 안. 시맨틱은 span. */}
+            <span className="block text-sm font-semibold text-foreground mb-2">부스 썸네일</span>
 
             <label className="block border-2 border-dashed border-ds-border-strong rounded-lg p-8 text-center hover:border-primary transition-colors cursor-pointer">
               <input
@@ -218,7 +246,9 @@ export function BoothInfoForm({
                 className="hidden"
               />
               <Upload className="mx-auto mb-3 text-ds-text-disabled" size={32} />
-              <p className="text-sm text-muted-foreground mb-1">이미지를 드래그하거나 클릭하여 업로드</p>
+              <p className="text-sm text-muted-foreground mb-1">
+                이미지를 드래그하거나 클릭하여 업로드
+              </p>
               <p className="text-xs text-muted-foreground">여러 장의 이미지를 선택할 수 있습니다</p>
             </label>
 
@@ -231,11 +261,7 @@ export function BoothInfoForm({
                       image.isMain ? 'border-primary' : 'border-border'
                     }`}
                   >
-                    <img
-                      src={image.url}
-                      alt="부스 이미지"
-                      className="w-full h-full object-cover"
-                    />
+                    <img src={image.url} alt="부스 이미지" className="w-full h-full object-cover" />
 
                     {image.isMain && (
                       <div className="absolute top-2 left-2 px-2 py-1 bg-primary text-primary-foreground text-xs font-semibold rounded-full flex items-center gap-1 shadow-lg">
@@ -269,7 +295,12 @@ export function BoothInfoForm({
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
           <div>
-            <label htmlFor="booth-signature-menu" className="block text-sm font-semibold text-foreground mb-2">대표 메뉴</label>
+            <label
+              htmlFor="booth-signature-menu"
+              className="block text-sm font-semibold text-foreground mb-2"
+            >
+              대표 메뉴
+            </label>
             {isEditing ? (
               <input
                 id="booth-signature-menu"
@@ -280,13 +311,21 @@ export function BoothInfoForm({
                 className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
               />
             ) : (
-              <div id="booth-signature-menu" className="w-full px-4 py-3 border border-border rounded-lg bg-muted text-foreground">
+              <div
+                id="booth-signature-menu"
+                className="w-full px-4 py-3 border border-border rounded-lg bg-muted text-foreground"
+              >
                 {signatureMenu}
               </div>
             )}
           </div>
           <div>
-            <label htmlFor="booth-operating-hours" className="block text-sm font-semibold text-foreground mb-2">운영 시간</label>
+            <label
+              htmlFor="booth-operating-hours"
+              className="block text-sm font-semibold text-foreground mb-2"
+            >
+              운영 시간
+            </label>
             {isEditing ? (
               <input
                 id="booth-operating-hours"
@@ -297,7 +336,10 @@ export function BoothInfoForm({
                 className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
               />
             ) : (
-              <div id="booth-operating-hours" className="w-full px-4 py-3 border border-border rounded-lg bg-muted text-foreground">
+              <div
+                id="booth-operating-hours"
+                className="w-full px-4 py-3 border border-border rounded-lg bg-muted text-foreground"
+              >
                 {operatingHours}
               </div>
             )}
@@ -315,10 +357,12 @@ export function BoothInfoForm({
               ${!isEditing ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
             `}
           >
-            <div className={`
+            <div
+              className={`
               absolute top-1 w-5 h-5 bg-background rounded-full shadow-md transition-all duration-300
               ${reservationEnabled ? 'left-8' : 'left-1'}
-            `} />
+            `}
+            />
           </button>
         </div>
       </div>

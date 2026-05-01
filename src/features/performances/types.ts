@@ -20,9 +20,9 @@ export interface PerformanceStageMeta {
 }
 
 export const PERFORMANCE_STAGES: Record<PerformanceStage, PerformanceStageMeta> = {
-  songdo:   { id: 'songdo',   label: '송도 메인스테이지', dates: ['2026-05-27'] },
+  songdo: { id: 'songdo', label: '송도 메인스테이지', dates: ['2026-05-27'] },
   baekyang: { id: 'baekyang', label: '백양로 메인스테이지', dates: ['2026-05-28', '2026-05-29'] },
-  nocheon:  { id: 'nocheon',  label: '노천극장', dates: ['2026-05-28', '2026-05-29'] },
+  nocheon: { id: 'nocheon', label: '노천극장', dates: ['2026-05-28', '2026-05-29'] },
 };
 
 // ---- 상세 서브 엔티티 ----
@@ -50,10 +50,10 @@ export interface PerformanceImage {
 export interface PerformanceListItem {
   teamId: number;
   teamName: string;
-  date: string;          // 'YYYY-MM-DD'
+  date: string; // 'YYYY-MM-DD'
   stage: PerformanceStage;
-  startTime: string;     // 'HH:mm'
-  endTime: string;       // 'HH:mm'
+  startTime: string; // 'HH:mm'
+  endTime: string; // 'HH:mm'
   mainPhotoUrl: string | null;
 }
 
@@ -63,10 +63,10 @@ export interface PerformanceDetail {
   description: string;
   instagramUrl: string;
   youtubeUrl: string;
-  date: string;          // 'YYYY-MM-DD'
+  date: string; // 'YYYY-MM-DD'
   stage: PerformanceStage;
-  startTime: string;     // 'HH:mm'
-  endTime: string;       // 'HH:mm'
+  startTime: string; // 'HH:mm'
+  endTime: string; // 'HH:mm'
   images: PerformanceImage[];
   setlist: SetlistItem[];
 }

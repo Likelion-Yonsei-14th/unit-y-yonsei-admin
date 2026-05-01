@@ -1,12 +1,23 @@
-import { useMemo, useState } from "react";
-import { MessageCircle, Filter, Trash2, Eye, EyeOff, Calendar, Music, Heart, TrendingUp, Search } from "lucide-react";
-import { toast } from "sonner";
+import { useMemo, useState } from 'react';
+import {
+  MessageCircle,
+  Filter,
+  Trash2,
+  Eye,
+  EyeOff,
+  Calendar,
+  Music,
+  Heart,
+  TrendingUp,
+  Search,
+} from 'lucide-react';
+import { toast } from 'sonner';
 import {
   useDeleteReview,
   useReviews,
   useSetReviewHidden,
-} from "@/features/performance-review/hooks";
-import type { Review } from "@/features/performance-review/types";
+} from '@/features/performance-review/hooks';
+import type { Review } from '@/features/performance-review/types';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -16,29 +27,32 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+} from '@/components/ui/alert-dialog';
 
 export function PerformanceReviewPage() {
   const reviewsQuery = useReviews();
-  const reviews: Review[] = reviewsQuery.data ?? [];
+  // 매 렌더마다 새 [] 가 생성되면 하위 useMemo deps 가 흔들려 불필요한 재계산.
+  // useMemo 로 묶어 데이터 도착 전엔 같은 빈 배열, 도착 후엔 query data 참조 유지.
+  const reviews: Review[] = useMemo(() => reviewsQuery.data ?? [], [reviewsQuery.data]);
   const setHiddenMutation = useSetReviewHidden();
   const deleteMutation = useDeleteReview();
 
-  const [selectedTeam, setSelectedTeam] = useState<string>("전체");
-  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedTeam, setSelectedTeam] = useState<string>('전체');
+  const [searchQuery, setSearchQuery] = useState('');
   const [showHidden, setShowHidden] = useState(false);
   const [pendingDelete, setPendingDelete] = useState<Review | null>(null);
 
   // reviews 가 바뀌어도 같은 팀명이면 참조가 유지되도록 memoize. stats deps 도 안정.
   const performanceTeams = useMemo(
-    () => ["전체", ...Array.from(new Set(reviews.map(r => r.performanceTeam)))],
+    () => ['전체', ...Array.from(new Set(reviews.map((r) => r.performanceTeam)))],
     [reviews],
   );
 
-  const filteredReviews = reviews.filter(review => {
-    const matchesTeam = selectedTeam === "전체" || review.performanceTeam === selectedTeam;
-    const matchesSearch = review.message.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         review.favoriteSong.toLowerCase().includes(searchQuery.toLowerCase());
+  const filteredReviews = reviews.filter((review) => {
+    const matchesTeam = selectedTeam === '전체' || review.performanceTeam === selectedTeam;
+    const matchesSearch =
+      review.message.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      review.favoriteSong.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesHidden = showHidden || !review.isHidden;
     return matchesTeam && matchesSearch && matchesHidden;
   });
@@ -47,7 +61,7 @@ export function PerformanceReviewPage() {
     setHiddenMutation.mutate(
       { id: review.id, isHidden: !review.isHidden },
       {
-        onError: () => toast.error("후기 상태 변경에 실패했습니다. 잠시 후 다시 시도해주세요."),
+        onError: () => toast.error('후기 상태 변경에 실패했습니다. 잠시 후 다시 시도해주세요.'),
       },
     );
   };
@@ -55,8 +69,8 @@ export function PerformanceReviewPage() {
   const confirmDelete = () => {
     if (pendingDelete) {
       deleteMutation.mutate(pendingDelete.id, {
-        onSuccess: () => toast.success("후기를 삭제했습니다."),
-        onError: () => toast.error("삭제에 실패했습니다. 잠시 후 다시 시도해주세요."),
+        onSuccess: () => toast.success('후기를 삭제했습니다.'),
+        onError: () => toast.error('삭제에 실패했습니다. 잠시 후 다시 시도해주세요.'),
       });
     }
     setPendingDelete(null);
@@ -64,22 +78,28 @@ export function PerformanceReviewPage() {
 
   // 통계 계산 — reviews 가 바뀔 때만 재계산. 검색/필터 토글 같은 잡음 렌더에서 N²
   // 정렬+reduce 가 매번 돌면 후기 수가 늘어날수록 무시 못 할 비용이 됨.
-  const stats = useMemo(() => ({
-    total: reviews.length,
-    hidden: reviews.filter(r => r.isHidden).length,
-    byTeam: performanceTeams.slice(1).map(team => ({
-      team,
-      count: reviews.filter(r => r.performanceTeam === team).length,
-    })),
-    topSongs: Object.entries(
-      reviews.reduce((acc, r) => {
-        acc[r.favoriteSong] = (acc[r.favoriteSong] || 0) + 1;
-        return acc;
-      }, {} as Record<string, number>)
-    )
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 5),
-  }), [reviews, performanceTeams]);
+  const stats = useMemo(
+    () => ({
+      total: reviews.length,
+      hidden: reviews.filter((r) => r.isHidden).length,
+      byTeam: performanceTeams.slice(1).map((team) => ({
+        team,
+        count: reviews.filter((r) => r.performanceTeam === team).length,
+      })),
+      topSongs: Object.entries(
+        reviews.reduce(
+          (acc, r) => {
+            acc[r.favoriteSong] = (acc[r.favoriteSong] || 0) + 1;
+            return acc;
+          },
+          {} as Record<string, number>,
+        ),
+      )
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 5),
+    }),
+    [reviews, performanceTeams],
+  );
 
   if (reviewsQuery.isLoading) {
     return (
@@ -111,7 +131,9 @@ export function PerformanceReviewPage() {
           <MessageCircle size={32} />
           공연 후기 수합
         </h1>
-        <p className="text-muted-foreground mt-2">이용자들이 남긴 공연 후기와 응원 메시지를 관리합니다.</p>
+        <p className="text-muted-foreground mt-2">
+          이용자들이 남긴 공연 후기와 응원 메시지를 관리합니다.
+        </p>
       </div>
 
       {/* 통계 카드 */}
@@ -159,7 +181,7 @@ export function PerformanceReviewPage() {
             <div>
               <p className="text-sm text-muted-foreground">인기 곡 1위</p>
               <p className="text-lg font-bold text-foreground mt-1 truncate">
-                {stats.topSongs[0]?.[0] || "-"}
+                {stats.topSongs[0]?.[0] || '-'}
               </p>
             </div>
             <div className="w-12 h-12 bg-ds-secondary-a-subtle rounded-lg flex items-center justify-center">
@@ -173,26 +195,46 @@ export function PerformanceReviewPage() {
       <div className="bg-background rounded-xl p-6 shadow-sm mb-6">
         <div className="flex flex-col md:flex-row gap-4">
           <div className="flex-1">
-            <label className="block text-sm font-semibold text-foreground mb-2">공연팀 필터</label>
+            <label
+              htmlFor="review-team-filter"
+              className="block text-sm font-semibold text-foreground mb-2"
+            >
+              공연팀 필터
+            </label>
             <div className="relative">
-              <Filter size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-ds-text-disabled" />
+              <Filter
+                size={18}
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-ds-text-disabled"
+              />
               <select
+                id="review-team-filter"
                 value={selectedTeam}
                 onChange={(e) => setSelectedTeam(e.target.value)}
                 className="w-full pl-10 pr-4 py-2.5 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
               >
-                {performanceTeams.map(team => (
-                  <option key={team} value={team}>{team}</option>
+                {performanceTeams.map((team) => (
+                  <option key={team} value={team}>
+                    {team}
+                  </option>
                 ))}
               </select>
             </div>
           </div>
 
           <div className="flex-1">
-            <label className="block text-sm font-semibold text-foreground mb-2">검색</label>
+            <label
+              htmlFor="review-search"
+              className="block text-sm font-semibold text-foreground mb-2"
+            >
+              검색
+            </label>
             <div className="relative">
-              <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-ds-text-disabled" />
+              <Search
+                size={18}
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-ds-text-disabled"
+              />
               <input
+                id="review-search"
                 type="text"
                 placeholder="메시지 또는 곡명 검색..."
                 value={searchQuery}
@@ -226,13 +268,20 @@ export function PerformanceReviewPage() {
           <div className="space-y-2">
             {stats.topSongs.map(([song, count], index) => (
               <div key={song} className="flex items-center gap-3">
-                <div className={`
+                <div
+                  className={`
                   w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm
-                  ${index === 0 ? 'bg-ds-warning text-white' :
-                    index === 1 ? 'bg-ds-gray-300 text-white' :
-                    index === 2 ? 'bg-ds-warning-pressed text-white' :
-                    'bg-muted text-muted-foreground'}
-                `}>
+                  ${
+                    index === 0
+                      ? 'bg-ds-warning text-white'
+                      : index === 1
+                        ? 'bg-ds-gray-300 text-white'
+                        : index === 2
+                          ? 'bg-ds-warning-pressed text-white'
+                          : 'bg-muted text-muted-foreground'
+                  }
+                `}
+                >
                   {index + 1}
                 </div>
                 <div className="flex-1 flex items-center justify-between">
@@ -248,9 +297,7 @@ export function PerformanceReviewPage() {
       {/* 후기 목록 */}
       <div className="bg-background rounded-xl shadow-sm">
         <div className="px-6 py-4">
-          <h3 className="font-bold text-foreground">
-            후기 목록 ({filteredReviews.length})
-          </h3>
+          <h3 className="font-bold text-foreground">후기 목록 ({filteredReviews.length})</h3>
         </div>
 
         {filteredReviews.length === 0 ? (
@@ -283,7 +330,7 @@ export function PerformanceReviewPage() {
                     <button
                       onClick={() => toggleHidden(review)}
                       className="p-2 text-muted-foreground hover:bg-muted rounded-lg transition-colors"
-                      title={review.isHidden ? "표시" : "숨김"}
+                      title={review.isHidden ? '표시' : '숨김'}
                     >
                       {review.isHidden ? <Eye size={18} /> : <EyeOff size={18} />}
                     </button>
@@ -342,7 +389,8 @@ export function PerformanceReviewPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>후기 삭제</AlertDialogTitle>
             <AlertDialogDescription>
-              {pendingDelete?.performanceTeam} 공연 후기를 삭제합니다. 삭제 후에는 복구할 수 없습니다.
+              {pendingDelete?.performanceTeam} 공연 후기를 삭제합니다. 삭제 후에는 복구할 수
+              없습니다.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

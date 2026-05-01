@@ -1,8 +1,6 @@
 import { Outlet, Link, useLocation } from 'react-router';
 import { useEffect, useState } from 'react';
-import {
-  LogOut, ChevronLeft, ChevronRight, ChevronDown, Menu, X,
-} from 'lucide-react';
+import { LogOut, ChevronLeft, ChevronRight, ChevronDown, Menu, X } from 'lucide-react';
 import { MAIN_NAV, FOOTER_NAV, type NavItem } from '@/config/nav';
 import { useAuth, useLogout } from '@/features/auth/hooks';
 import { ROLE_LABEL } from '@/types/role';
@@ -32,7 +30,7 @@ export function AppLayout() {
   }, [location.pathname]);
 
   const toggleMenu = (path: string) => {
-    setExpandedMenus(prev => {
+    setExpandedMenus((prev) => {
       const next = new Set(prev);
       if (next.has(path)) next.delete(path);
       else next.add(path);
@@ -51,7 +49,7 @@ export function AppLayout() {
    */
   const filterNav = (items: NavItem[]): NavItem[] =>
     items
-      .map(item => {
+      .map((item) => {
         if (item.requires && !can(item.requires)) return null;
         if (item.children) {
           const children = filterNav(item.children);
@@ -72,7 +70,7 @@ export function AppLayout() {
   const isMenuActive = (item: NavItem): boolean => {
     if (item.children?.length) {
       return (
-        item.children.some(child => pathMatches(location.pathname, child.path)) ||
+        item.children.some((child) => pathMatches(location.pathname, child.path)) ||
         pathMatches(location.pathname, item.path)
       );
     }
@@ -110,13 +108,15 @@ export function AppLayout() {
 
         {/* 데스크톱 collapse 토글 — 모바일 drawer 에서는 의미가 없으므로 숨김. */}
         <button
-          onClick={() => setIsCollapsed(v => !v)}
+          onClick={() => setIsCollapsed((v) => !v)}
           className="absolute -right-3 top-6 bg-background border border-border rounded-full p-1 shadow-md hover:shadow-lg transition-shadow z-10 hidden md:block"
           aria-label={isCollapsed ? '사이드바 펼치기' : '사이드바 접기'}
         >
-          {isCollapsed
-            ? <ChevronRight size={16} className="text-muted-foreground" />
-            : <ChevronLeft size={16} className="text-muted-foreground" />}
+          {isCollapsed ? (
+            <ChevronRight size={16} className="text-muted-foreground" />
+          ) : (
+            <ChevronLeft size={16} className="text-muted-foreground" />
+          )}
         </button>
 
         {/* 헤더 (로고) */}
@@ -150,7 +150,7 @@ export function AppLayout() {
 
         {/* 메인 네비 */}
         <nav className={`flex-1 overflow-y-auto p-4 space-y-1 ${isCollapsed ? 'px-2' : ''}`}>
-          {navItems.map(item => {
+          {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = isMenuActive(item);
             const isExpanded = expandedMenus.has(item.path);
@@ -183,9 +183,11 @@ export function AppLayout() {
                       className={`
                         flex items-center gap-3 rounded-lg transition-colors
                         ${isCollapsed ? 'justify-center px-3 py-3' : 'px-4 py-2.5'}
-                        ${isActive
-                          ? 'bg-primary text-primary-foreground'
-                          : 'text-muted-foreground hover:bg-muted'}
+                        ${
+                          isActive
+                            ? 'bg-primary text-primary-foreground'
+                            : 'text-muted-foreground hover:bg-muted'
+                        }
                       `}
                       title={isCollapsed ? item.label : undefined}
                     >
@@ -219,7 +221,9 @@ export function AppLayout() {
                       <Icon size={18} />
                       {!isCollapsed && (
                         <>
-                          <span className="ds-body-2 flex-1 min-w-0 truncate text-left">{item.label}</span>
+                          <span className="ds-body-2 flex-1 min-w-0 truncate text-left">
+                            {item.label}
+                          </span>
                           <ChevronDown
                             size={16}
                             className={`transition-transform ${isExpanded ? 'rotate-180' : ''}`}
@@ -234,9 +238,11 @@ export function AppLayout() {
                     className={`
                       flex items-center gap-3 rounded-lg transition-all
                       ${isCollapsed ? 'justify-center px-3 py-3' : 'px-4 py-2.5'}
-                      ${isActive
-                        ? 'bg-primary text-primary-foreground'
-                        : 'text-muted-foreground hover:bg-muted'}
+                      ${
+                        isActive
+                          ? 'bg-primary text-primary-foreground'
+                          : 'text-muted-foreground hover:bg-muted'
+                      }
                     `}
                     title={isCollapsed ? item.label : undefined}
                   >
@@ -248,7 +254,7 @@ export function AppLayout() {
                 {/* 서브 메뉴 */}
                 {hasChildren && isExpanded && !isCollapsed && (
                   <div className="mt-1 space-y-1">
-                    {item.children!.map(child => {
+                    {item.children!.map((child) => {
                       const ChildIcon = child.icon;
                       const isChildActive = location.pathname === child.path;
                       return (
@@ -257,9 +263,11 @@ export function AppLayout() {
                           to={child.path}
                           className={`
                             flex items-center gap-3 rounded-lg ml-4 pl-7 pr-4 py-2 transition-all
-                            ${isChildActive
-                              ? 'bg-primary text-primary-foreground'
-                              : 'text-muted-foreground hover:bg-muted'}
+                            ${
+                              isChildActive
+                                ? 'bg-primary text-primary-foreground'
+                                : 'text-muted-foreground hover:bg-muted'
+                            }
                           `}
                         >
                           <ChildIcon size={16} />
@@ -276,7 +284,7 @@ export function AppLayout() {
 
         {/* 하단 메뉴 */}
         <div className={`p-4 border-t border-border space-y-1 ${isCollapsed ? 'px-2' : ''}`}>
-          {footerItems.map(item => {
+          {footerItems.map((item) => {
             const Icon = item.icon;
             const isActive = location.pathname === item.path;
             return (
@@ -286,9 +294,11 @@ export function AppLayout() {
                 className={`
                   flex items-center gap-3 rounded-lg transition-all
                   ${isCollapsed ? 'justify-center px-3 py-3' : 'px-4 py-2.5'}
-                  ${isActive
-                    ? 'bg-primary text-primary-foreground'
-                    : 'text-muted-foreground hover:bg-muted'}
+                  ${
+                    isActive
+                      ? 'bg-primary text-primary-foreground'
+                      : 'text-muted-foreground hover:bg-muted'
+                  }
                 `}
                 title={isCollapsed ? item.label : undefined}
               >

@@ -61,11 +61,7 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
     ...init,
     headers,
     credentials: authStrategy.needsCredentials ? 'include' : 'same-origin',
-    body: body === undefined
-      ? undefined
-      : raw
-        ? (body as BodyInit)
-        : JSON.stringify(body),
+    body: body === undefined ? undefined : raw ? (body as BodyInit) : JSON.stringify(body),
   });
 
   if (res.status === 401) {

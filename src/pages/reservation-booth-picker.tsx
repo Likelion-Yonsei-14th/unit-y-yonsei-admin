@@ -42,9 +42,7 @@ export function ReservationBoothPicker() {
   // (한 운영자가 여러 날 여러 자리를 가질 수 있음).
   const availableDates = useMemo<readonly string[]>(() => {
     if (isBooth) {
-      const dates = Array.from(
-        new Set((myPlacementsQuery.data ?? []).map((p) => p.date)),
-      );
+      const dates = Array.from(new Set((myPlacementsQuery.data ?? []).map((p) => p.date)));
       return dates.sort();
     }
     return FESTIVAL_DATES;

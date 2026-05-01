@@ -1,14 +1,14 @@
-import { useEffect, useState } from "react";
-import { Plus, Trash2, Edit2, Upload, Package, X } from "lucide-react";
-import { toast } from "sonner";
+import { useEffect, useState } from 'react';
+import { Plus, Trash2, Edit2, Upload, Package, X } from 'lucide-react';
+import { toast } from 'sonner';
 import {
   useCreateLostItem,
   useDeleteLostItem,
   useLostItems,
   useUpdateLostItem,
-} from "@/features/lost-found/hooks";
-import type { LostItem } from "@/features/lost-found/types";
-import { PageHeaderAction } from "@/components/common/page-header-action";
+} from '@/features/lost-found/hooks';
+import type { LostItem } from '@/features/lost-found/types';
+import { PageHeaderAction } from '@/components/common/page-header-action';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -18,7 +18,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+} from '@/components/ui/alert-dialog';
 
 export function LostFoundPage() {
   const lostItemsQuery = useLostItems();
@@ -31,9 +31,9 @@ export function LostFoundPage() {
   const [editingItem, setEditingItem] = useState<LostItem | null>(null);
   const [pendingDelete, setPendingDelete] = useState<LostItem | null>(null);
 
-  const [nameDraft, setNameDraft] = useState("");
-  const [locationDraft, setLocationDraft] = useState("");
-  const [descriptionDraft, setDescriptionDraft] = useState("");
+  const [nameDraft, setNameDraft] = useState('');
+  const [locationDraft, setLocationDraft] = useState('');
+  const [descriptionDraft, setDescriptionDraft] = useState('');
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
   const [hasExistingImage, setHasExistingImage] = useState(false);
 
@@ -42,12 +42,12 @@ export function LostFoundPage() {
     if (editingItem) {
       setNameDraft(editingItem.name);
       setLocationDraft(editingItem.location);
-      setDescriptionDraft(editingItem.description ?? "");
+      setDescriptionDraft(editingItem.description ?? '');
       setHasExistingImage(editingItem.hasImage);
     } else {
-      setNameDraft("");
-      setLocationDraft("");
-      setDescriptionDraft("");
+      setNameDraft('');
+      setLocationDraft('');
+      setDescriptionDraft('');
       setHasExistingImage(false);
     }
     setImagePreviewUrl(null);
@@ -80,8 +80,8 @@ export function LostFoundPage() {
   const confirmDelete = () => {
     if (!pendingDelete) return;
     deleteMutation.mutate(pendingDelete.id, {
-      onSuccess: () => toast.success("분실물을 삭제했습니다."),
-      onError: () => toast.error("삭제에 실패했습니다. 잠시 후 다시 시도해주세요."),
+      onSuccess: () => toast.success('분실물을 삭제했습니다.'),
+      onError: () => toast.error('삭제에 실패했습니다. 잠시 후 다시 시도해주세요.'),
     });
     setPendingDelete(null);
   };
@@ -93,7 +93,7 @@ export function LostFoundPage() {
 
   const handleSave = () => {
     if (!nameDraft.trim() || !locationDraft.trim()) {
-      toast.error("분실물명과 발견 위치를 모두 입력해주세요.");
+      toast.error('분실물명과 발견 위치를 모두 입력해주세요.');
       return;
     }
     const description = descriptionDraft.trim() || undefined;
@@ -113,10 +113,10 @@ export function LostFoundPage() {
         },
         {
           onSuccess: () => {
-            toast.success("분실물 정보를 수정했습니다.");
+            toast.success('분실물 정보를 수정했습니다.');
             onAfter();
           },
-          onError: () => toast.error("수정에 실패했습니다. 잠시 후 다시 시도해주세요."),
+          onError: () => toast.error('수정에 실패했습니다. 잠시 후 다시 시도해주세요.'),
         },
       );
     } else {
@@ -129,10 +129,10 @@ export function LostFoundPage() {
         },
         {
           onSuccess: () => {
-            toast.success("분실물을 등록했습니다.");
+            toast.success('분실물을 등록했습니다.');
             onAfter();
           },
-          onError: () => toast.error("등록에 실패했습니다. 잠시 후 다시 시도해주세요."),
+          onError: () => toast.error('등록에 실패했습니다. 잠시 후 다시 시도해주세요.'),
         },
       );
     }
@@ -177,67 +177,79 @@ export function LostFoundPage() {
       {!showForm && lostItemsQuery.isSuccess && (
         <div className="bg-background rounded-2xl overflow-hidden shadow-sm">
           <div className="overflow-x-auto">
-          <table className="w-full min-w-[720px]">
-            <thead className="bg-muted">
-              <tr>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-foreground">분실물명</th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-foreground">발견 위치</th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-foreground">등록일</th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-foreground">이미지</th>
-                <th className="px-6 py-4 text-center text-sm font-semibold text-foreground">액션</th>
-              </tr>
-            </thead>
-            <tbody>
-              {lostItems.map((item) => (
-                <tr key={item.id} className="hover:bg-muted transition-colors">
-                  <td className="px-6 py-4">
-                    <button
-                      type="button"
-                      onClick={() => handleEdit(item)}
-                      className="text-left w-full group"
-                      aria-label={`${item.name} 수정`}
-                    >
-                      <div className="text-sm font-medium text-foreground group-hover:text-primary group-hover:underline underline-offset-2 transition-colors">
-                        {item.name}
-                      </div>
-                      {item.description && (
-                        <div className="text-xs text-muted-foreground mt-1">{item.description}</div>
-                      )}
-                    </button>
-                  </td>
-                  <td className="px-6 py-4 text-sm text-muted-foreground">{item.location}</td>
-                  <td className="px-6 py-4 text-sm text-muted-foreground">{item.date}</td>
-                  <td className="px-6 py-4">
-                    {item.hasImage ? (
-                      <span className="inline-block px-3 py-1 bg-ds-success-subtle text-ds-success-pressed rounded-full text-xs font-medium">
-                        있음
-                      </span>
-                    ) : (
-                      <span className="inline-block px-3 py-1 bg-muted text-muted-foreground rounded-full text-xs font-medium">
-                        없음
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-6 py-4 text-center">
-                    <div className="flex items-center justify-center gap-2">
-                      <button
-                        onClick={() => handleEdit(item)}
-                        className="p-2 text-primary hover:bg-ds-primary-subtle rounded-lg transition-colors"
-                      >
-                        <Edit2 size={16} />
-                      </button>
-                      <button
-                        onClick={() => setPendingDelete(item)}
-                        className="p-2 text-destructive hover:bg-ds-error-subtle rounded-lg transition-colors"
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
-                  </td>
+            <table className="w-full min-w-[720px]">
+              <thead className="bg-muted">
+                <tr>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-foreground">
+                    분실물명
+                  </th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-foreground">
+                    발견 위치
+                  </th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-foreground">
+                    등록일
+                  </th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-foreground">
+                    이미지
+                  </th>
+                  <th className="px-6 py-4 text-center text-sm font-semibold text-foreground">
+                    액션
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {lostItems.map((item) => (
+                  <tr key={item.id} className="hover:bg-muted transition-colors">
+                    <td className="px-6 py-4">
+                      <button
+                        type="button"
+                        onClick={() => handleEdit(item)}
+                        className="text-left w-full group"
+                        aria-label={`${item.name} 수정`}
+                      >
+                        <div className="text-sm font-medium text-foreground group-hover:text-primary group-hover:underline underline-offset-2 transition-colors">
+                          {item.name}
+                        </div>
+                        {item.description && (
+                          <div className="text-xs text-muted-foreground mt-1">
+                            {item.description}
+                          </div>
+                        )}
+                      </button>
+                    </td>
+                    <td className="px-6 py-4 text-sm text-muted-foreground">{item.location}</td>
+                    <td className="px-6 py-4 text-sm text-muted-foreground">{item.date}</td>
+                    <td className="px-6 py-4">
+                      {item.hasImage ? (
+                        <span className="inline-block px-3 py-1 bg-ds-success-subtle text-ds-success-pressed rounded-full text-xs font-medium">
+                          있음
+                        </span>
+                      ) : (
+                        <span className="inline-block px-3 py-1 bg-muted text-muted-foreground rounded-full text-xs font-medium">
+                          없음
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      <div className="flex items-center justify-center gap-2">
+                        <button
+                          onClick={() => handleEdit(item)}
+                          className="p-2 text-primary hover:bg-ds-primary-subtle rounded-lg transition-colors"
+                        >
+                          <Edit2 size={16} />
+                        </button>
+                        <button
+                          onClick={() => setPendingDelete(item)}
+                          className="p-2 text-destructive hover:bg-ds-error-subtle rounded-lg transition-colors"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
           {lostItems.length === 0 && (
             <div className="text-center py-12 text-ds-text-disabled">
@@ -252,7 +264,7 @@ export function LostFoundPage() {
         <div className="bg-background rounded-2xl p-4 md:p-8 shadow-sm">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-bold text-foreground">
-              {editingItem ? "분실물 수정" : "분실물 등록"}
+              {editingItem ? '분실물 수정' : '분실물 등록'}
             </h2>
             <button
               onClick={handleCancel}
@@ -265,7 +277,12 @@ export function LostFoundPage() {
           <div className="space-y-6">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
               <div>
-                <label htmlFor="lost-name" className="block text-sm font-semibold text-foreground mb-2">분실물명</label>
+                <label
+                  htmlFor="lost-name"
+                  className="block text-sm font-semibold text-foreground mb-2"
+                >
+                  분실물명
+                </label>
                 <input
                   id="lost-name"
                   type="text"
@@ -276,7 +293,12 @@ export function LostFoundPage() {
                 />
               </div>
               <div>
-                <label htmlFor="lost-location" className="block text-sm font-semibold text-foreground mb-2">발견 위치</label>
+                <label
+                  htmlFor="lost-location"
+                  className="block text-sm font-semibold text-foreground mb-2"
+                >
+                  발견 위치
+                </label>
                 <input
                   id="lost-location"
                   type="text"
@@ -289,7 +311,12 @@ export function LostFoundPage() {
             </div>
 
             <div>
-              <label htmlFor="lost-description" className="block text-sm font-semibold text-foreground mb-2">상세 설명</label>
+              <label
+                htmlFor="lost-description"
+                className="block text-sm font-semibold text-foreground mb-2"
+              >
+                상세 설명
+              </label>
               <textarea
                 id="lost-description"
                 rows={4}
@@ -301,7 +328,8 @@ export function LostFoundPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-foreground mb-2">분실물 사진</label>
+              {/* 그룹 타이틀 — file input 은 아래 wrapping label 안. */}
+              <span className="block text-sm font-semibold text-foreground mb-2">분실물 사진</span>
               {imagePreviewUrl ? (
                 <div className="relative inline-block max-w-full overflow-hidden rounded-lg border border-border bg-muted">
                   <img
@@ -365,7 +393,7 @@ export function LostFoundPage() {
                 disabled={isSaving}
                 className="px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-ds-primary-pressed transition-colors duration-200 disabled:opacity-70 disabled:cursor-not-allowed"
               >
-                {isSaving ? "저장 중…" : (editingItem ? "수정 완료" : "등록")}
+                {isSaving ? '저장 중…' : editingItem ? '수정 완료' : '등록'}
               </button>
             </div>
           </div>
@@ -383,7 +411,8 @@ export function LostFoundPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>분실물 삭제</AlertDialogTitle>
             <AlertDialogDescription>
-              "{pendingDelete?.name}" 분실물 기록을 삭제합니다. 삭제 후에는 복구할 수 없습니다.
+              &ldquo;{pendingDelete?.name}&rdquo; 분실물 기록을 삭제합니다. 삭제 후에는 복구할 수
+              없습니다.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

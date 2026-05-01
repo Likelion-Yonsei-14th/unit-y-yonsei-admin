@@ -83,11 +83,11 @@ export function isBoothInfoCompleted(b: BoothProfile | null | undefined): boolea
     b.description &&
     b.signatureMenu &&
     b.operatingHours &&
-    b.thumbnails.some(t => t.isMain),
+    b.thumbnails.some((t) => t.isMain),
   );
 }
 
 export function isMenuListCompleted(b: BoothProfile | null | undefined): boolean {
   if (!b) return false;
-  return b.menuItems.length > 0 && b.menuItems.every(m => m.name && m.price);
+  return b.menuItems.length > 0 && b.menuItems.every((m) => m.name && m.price);
 }

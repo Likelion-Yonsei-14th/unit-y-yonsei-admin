@@ -52,13 +52,7 @@ export function RequireGuest({ children }: { children: ReactNode }) {
 /**
  * 특정 역할만 접근 가능.
  */
-export function RequireRole({
-  allow,
-  children,
-}: {
-  allow: readonly Role[];
-  children: ReactNode;
-}) {
+export function RequireRole({ allow, children }: { allow: readonly Role[]; children: ReactNode }) {
   const { user } = useAuth();
   if (!user || !allow.includes(user.role)) return <ForbiddenPage />;
   return <>{children}</>;
