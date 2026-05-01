@@ -1,6 +1,6 @@
 import { useEffect, useState, type ChangeEvent } from "react";
 import { useParams, Link } from "react-router";
-import { ArrowLeft, Plus, Trash2, Instagram, Youtube, Music, Check, Edit, X, Star, Upload } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Instagram, Youtube, Music, Check, Edit, X, Star, Upload, ChevronDown } from "lucide-react";
 import { useAuth } from "@/features/auth/hooks";
 import { useMyPerformance, usePerformance } from "@/features/performances/hooks";
 import {
@@ -415,36 +415,64 @@ export function PerformanceManagement() {
           )}
         </div>
 
-        <div className="grid grid-cols-2 gap-6">
-          <div>
-            <label className="block text-sm font-semibold text-foreground mb-2">공연 날짜</label>
-            <select
-              className="w-full px-4 py-3 border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
-              value={displayData.date}
-              onChange={(e) => setEditingData(prev => prev ? { ...prev, date: e.target.value } : prev)}
-              disabled={!isEditMode || !canEditTimetable}
-            >
-              {FESTIVAL_DATES.map(d => {
-                const [, m, day] = d.split('-');
-                return <option key={d} value={d}>{`${Number(m)}/${Number(day)}`}</option>;
-              })}
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-semibold text-foreground mb-2">스테이지</label>
-            <select
-              className="w-full px-4 py-3 border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
-              value={displayData.stage}
-              onChange={(e) => setEditingData(prev => prev ? { ...prev, stage: e.target.value as PerformanceStage } : prev)}
-              disabled={!isEditMode || !canEditTimetable}
-            >
-              {(Object.values(PERFORMANCE_STAGES) as typeof PERFORMANCE_STAGES[PerformanceStage][])
-                .filter(s => s.dates.includes(displayData.date))
-                .map(s => (
-                  <option key={s.id} value={s.id}>{s.label}</option>
-                ))}
-            </select>
-          </div>
+        {/* 편집 가능 여부에 따라 select 의 화살표 표시를 갈음한다.
+            native 화살표는 disabled 상태에서도 항상 그려져 view 모드에서 시각적 노이즈가 됐다.
+            appearance-none 으로 native UI 를 끄고, 편집 가능할 때만 ChevronDown 을
+            안쪽(right-3) 에 띄워 시간 입력의 disabled 동작과 결을 맞춘다. */}
+        {(() => {
+          const timetableEditable = isEditMode && canEditTimetable;
+          const selectClass =
+            "w-full appearance-none border border-border rounded-lg bg-background py-3 pl-4 transition-all focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent " +
+            (timetableEditable ? "pr-10" : "pr-4");
+          return (
+            <div className="grid grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-semibold text-foreground mb-2">공연 날짜</label>
+                <div className="relative">
+                  <select
+                    className={selectClass}
+                    value={displayData.date}
+                    onChange={(e) => setEditingData(prev => prev ? { ...prev, date: e.target.value } : prev)}
+                    disabled={!timetableEditable}
+                  >
+                    {FESTIVAL_DATES.map(d => {
+                      const [, m, day] = d.split('-');
+                      return <option key={d} value={d}>{`${Number(m)}/${Number(day)}`}</option>;
+                    })}
+                  </select>
+                  {timetableEditable && (
+                    <ChevronDown
+                      size={16}
+                      aria-hidden="true"
+                      className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+                    />
+                  )}
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-foreground mb-2">스테이지</label>
+                <div className="relative">
+                  <select
+                    className={selectClass}
+                    value={displayData.stage}
+                    onChange={(e) => setEditingData(prev => prev ? { ...prev, stage: e.target.value as PerformanceStage } : prev)}
+                    disabled={!timetableEditable}
+                  >
+                    {(Object.values(PERFORMANCE_STAGES) as typeof PERFORMANCE_STAGES[PerformanceStage][])
+                      .filter(s => s.dates.includes(displayData.date))
+                      .map(s => (
+                        <option key={s.id} value={s.id}>{s.label}</option>
+                      ))}
+                  </select>
+                  {timetableEditable && (
+                    <ChevronDown
+                      size={16}
+                      aria-hidden="true"
+                      className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+                    />
+                  )}
+                </div>
+              </div>
           <div>
             <label className="block text-sm font-semibold text-foreground mb-2">공연 시작 시간</label>
             <input
@@ -468,6 +496,8 @@ export function PerformanceManagement() {
             />
           </div>
         </div>
+          );
+        })()}
       </div>
 
       {/* Setlist Management */}
