@@ -9,6 +9,7 @@ import {
 } from '@/features/reservations/hooks';
 import type { Reservation, ReservationState } from '@/features/reservations/types';
 import { PageHeaderAction } from '@/components/common/page-header-action';
+import { TableSkeleton } from '@/components/common/table-skeleton';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -145,7 +146,9 @@ export function ReservationManagement() {
   // booth 가드(아래 early-return) 보다 먼저 검사해 잘못된 redirect 를 막는다.
   if (reservationsQuery.isLoading) {
     return (
-      <div className="p-4 md:p-8 text-center text-muted-foreground">예약 정보를 불러오는 중…</div>
+      <div className="p-4 md:p-8">
+        <TableSkeleton rows={6} />
+      </div>
     );
   }
   if (reservationsQuery.isError) {

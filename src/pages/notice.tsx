@@ -9,6 +9,7 @@ import {
 } from '@/features/notices/hooks';
 import type { Notice } from '@/features/notices/types';
 import { PageHeaderAction } from '@/components/common/page-header-action';
+import { TableSkeleton } from '@/components/common/table-skeleton';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -149,11 +150,7 @@ export function NoticePage() {
       </div>
 
       {/* 로딩/에러 상태 */}
-      {!showForm && noticesQuery.isLoading && (
-        <div className="bg-background rounded-2xl p-12 text-center text-muted-foreground shadow-sm">
-          공지사항을 불러오는 중…
-        </div>
-      )}
+      {!showForm && noticesQuery.isLoading && <TableSkeleton rows={4} />}
       {!showForm && noticesQuery.isError && (
         <div className="bg-ds-error-subtle border border-destructive text-destructive rounded-2xl p-6 text-center">
           <p className="mb-3">공지사항을 가져오지 못했습니다.</p>
