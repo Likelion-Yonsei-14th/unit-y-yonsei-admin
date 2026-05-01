@@ -54,8 +54,18 @@ export function DashboardPage() {
     return [...counter.entries()].sort((a, b) => b[1] - a[1]).slice(0, 3);
   }, [reviewsQuery.data]);
 
-  const recentNotices = (noticesQuery.data ?? []).slice(0, 3);
-  const recentLostItems = (lostItemsQuery.data ?? []).slice(0, 5);
+  // 최신순 정렬 후 상위 N개 — list API 가 정렬 보장 안 할 수 있어 화면 단계에서 한번 더.
+  // 같은 date 내 안정 순위는 id 큰 쪽(나중 등록) 우선.
+  const recentNotices = useMemo(() => {
+    const arr = noticesQuery.data ? [...noticesQuery.data] : [];
+    arr.sort((a, b) => b.date.localeCompare(a.date) || b.id - a.id);
+    return arr.slice(0, 3);
+  }, [noticesQuery.data]);
+  const recentLostItems = useMemo(() => {
+    const arr = lostItemsQuery.data ? [...lostItemsQuery.data] : [];
+    arr.sort((a, b) => b.date.localeCompare(a.date) || b.id - a.id);
+    return arr.slice(0, 5);
+  }, [lostItemsQuery.data]);
 
   return (
     <div className="p-4 md:p-8">
@@ -74,6 +84,7 @@ export function DashboardPage() {
         <KpiCard
           label="총 예약"
           loading={reservationsQuery.isLoading}
+          isError={reservationsQuery.isError}
           icon={<Calendar size={24} />}
           tone="primary"
           value={stats.reservationCount}
@@ -84,6 +95,7 @@ export function DashboardPage() {
         <KpiCard
           label="활성 부스"
           loading={boothsQuery.isLoading}
+          isError={boothsQuery.isError}
           icon={<Store size={24} />}
           tone="success"
           value={stats.activeBoothCount}
@@ -94,6 +106,7 @@ export function DashboardPage() {
         <KpiCard
           label="공연팀"
           loading={performancesQuery.isLoading}
+          isError={performancesQuery.isError}
           icon={<Music size={24} />}
           tone="warning"
           value={stats.performanceCount}
@@ -104,6 +117,7 @@ export function DashboardPage() {
         <KpiCard
           label="활성 계정"
           loading={usersQuery.isLoading}
+          isError={usersQuery.isError}
           icon={<Users size={24} />}
           tone="secondary"
           value={stats.activeUserCount}
@@ -120,6 +134,8 @@ export function DashboardPage() {
           icon={<FileText size={18} />}
           to="/general/notice"
           loading={noticesQuery.isLoading}
+          isError={noticesQuery.isError}
+          onRetry={() => noticesQuery.refetch()}
           empty={recentNotices.length === 0}
         >
           {recentNotices.map((n) => (
@@ -141,6 +157,8 @@ export function DashboardPage() {
           icon={<Package size={18} />}
           to="/general/lost-found"
           loading={lostItemsQuery.isLoading}
+          isError={lostItemsQuery.isError}
+          onRetry={() => lostItemsQuery.refetch()}
           empty={recentLostItems.length === 0}
         >
           {recentLostItems.map((item) => (
@@ -164,6 +182,8 @@ export function DashboardPage() {
           icon={<MessageCircle size={18} />}
           to="/general/performance-review"
           loading={reviewsQuery.isLoading}
+          isError={reviewsQuery.isError}
+          onRetry={() => reviewsQuery.refetch()}
           empty={topSongs.length === 0}
         >
           {topSongs.map(([song, count], idx) => (
@@ -197,6 +217,8 @@ export function DashboardPage() {
 interface KpiCardProps {
   label: string;
   loading: boolean;
+  /** 쿼리 실패 시 '—' 표시 — '값 없음(0)' 과 명확히 구분. */
+  isError: boolean;
   icon: React.ReactNode;
   tone: 'primary' | 'success' | 'warning' | 'secondary';
   value: number;
@@ -212,7 +234,7 @@ const TONE_CLASS: Record<KpiCardProps['tone'], string> = {
   secondary: 'bg-ds-secondary-a-subtle text-ds-secondary-a-pressed',
 };
 
-function KpiCard({ label, loading, icon, tone, value, unit, hint, to }: KpiCardProps) {
+function KpiCard({ label, loading, isError, icon, tone, value, unit, hint, to }: KpiCardProps) {
   return (
     <Link
       to={to}
@@ -230,6 +252,10 @@ function KpiCard({ label, loading, icon, tone, value, unit, hint, to }: KpiCardP
       <div className="flex items-baseline gap-1">
         {loading ? (
           <Skeleton className="h-8 w-16" />
+        ) : isError ? (
+          <span className="text-3xl font-bold text-destructive" title="조회 실패">
+            —
+          </span>
         ) : (
           <>
             <span className="text-3xl font-bold text-foreground">{value.toLocaleString()}</span>
@@ -237,7 +263,9 @@ function KpiCard({ label, loading, icon, tone, value, unit, hint, to }: KpiCardP
           </>
         )}
       </div>
-      <div className="text-xs text-muted-foreground mt-2">{hint}</div>
+      <div className="text-xs text-muted-foreground mt-2">
+        {isError ? '조회 실패 — 클릭해 다시 확인' : hint}
+      </div>
     </Link>
   );
 }
@@ -247,11 +275,14 @@ interface ListCardProps {
   icon: React.ReactNode;
   to: string;
   loading: boolean;
+  /** 쿼리 실패 시 에러 메시지 + 다시 시도 버튼 노출 — '항목 없음' 과 분리. */
+  isError: boolean;
+  onRetry: () => void;
   empty: boolean;
   children: React.ReactNode;
 }
 
-function ListCard({ title, icon, to, loading, empty, children }: ListCardProps) {
+function ListCard({ title, icon, to, loading, isError, onRetry, empty, children }: ListCardProps) {
   return (
     <div className="bg-background rounded-2xl p-5 shadow-sm">
       <div className="flex items-center justify-between mb-3">
@@ -271,6 +302,17 @@ function ListCard({ title, icon, to, loading, empty, children }: ListCardProps) 
             </li>
           ))}
         </ul>
+      ) : isError ? (
+        <div className="py-6 text-center">
+          <p className="text-sm text-destructive mb-2">조회에 실패했습니다.</p>
+          <button
+            type="button"
+            onClick={onRetry}
+            className="text-xs px-3 py-1.5 rounded-md border border-border text-foreground hover:bg-muted transition-colors"
+          >
+            다시 시도
+          </button>
+        </div>
       ) : empty ? (
         <p className="py-8 text-center text-sm text-muted-foreground">표시할 항목이 없습니다.</p>
       ) : (
