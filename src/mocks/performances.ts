@@ -22,19 +22,6 @@ const PHOTO = (seed: string): PerformanceImage[] => [
 export const mockPerformanceDetails: PerformanceDetail[] = [
   // ==== 5/27 송도 ============================================================
   {
-    teamId: 1,
-    teamName: '멋쟁이사자처럼 연세대',
-    description: '연세대학교 IT 창업 동아리. 2026년 대동제에서 열정적인 무대를 선보입니다!',
-    instagramUrl: 'https://instagram.com/likelion_yonsei',
-    youtubeUrl: 'https://youtube.com/likelion',
-    date: '2026-05-28',
-    stage: 'baekyang',
-    startTime: '14:00',
-    endTime: '14:30',
-    images: PHOTO('photo-1501386761578-eac5c94b800a'),
-    setlist: setlist(['Spring Day', 'BTS'], ['Next Level', 'aespa'], ['Dynamite', 'BTS']),
-  },
-  {
     teamId: 2,
     teamName: '송도노인정양로원',
     description: '송도 국제캠퍼스의 밤을 밝히는 인디 밴드. 잔잔한 발라드부터 신나는 록까지.',
@@ -144,6 +131,20 @@ export const mockPerformanceDetails: PerformanceDetail[] = [
   },
 
   // ==== 5/28 백양로 ==========================================================
+  // teamId=1 은 performer1 로그인 매칭 — 위치는 그 팀의 실제 공연 날짜/스테이지(5/28 백양로 14:00).
+  {
+    teamId: 1,
+    teamName: '멋쟁이사자처럼 연세대',
+    description: '연세대학교 IT 창업 동아리. 2026년 대동제에서 열정적인 무대를 선보입니다!',
+    instagramUrl: 'https://instagram.com/likelion_yonsei',
+    youtubeUrl: 'https://youtube.com/likelion',
+    date: '2026-05-28',
+    stage: 'baekyang',
+    startTime: '14:00',
+    endTime: '14:30',
+    images: PHOTO('photo-1501386761578-eac5c94b800a'),
+    setlist: setlist(['Spring Day', 'BTS'], ['Next Level', 'aespa'], ['Dynamite', 'BTS']),
+  },
   {
     teamId: 6,
     teamName: '아침향기',
