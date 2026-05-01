@@ -55,6 +55,21 @@ const HANDLE_OFFSETS: Record<HandleId, { dx: string; dy: string; cursor: string 
   w:  { dx: '0%',   dy: '50%',  cursor: 'ew-resize'   },
 };
 
+const CORNER_HANDLES: HandleId[] = ['nw', 'ne', 'se', 'sw'];
+
+/**
+ * 핀 css 폭/높이가 이만큼은 돼야 해당 변의 변(edge) 핸들을 표시한다.
+ * 8px 핸들이 두 모서리 핸들과 짧은 변에서 겹치는 걸 막기 위한 임계.
+ * 백양로처럼 좁고 긴 부스에서 변 핸들을 자동 숨겨 모서리만 잡히게 한다.
+ */
+const EDGE_HANDLE_MIN_PX = 16;
+
+/** 핀 borderRadius — 짧은 변 비율로 캡 씌워 캔버스 종횡비가 극단적인 섹션에서도 사각형 형태 유지. */
+function computePinRadius(pxW: number, pxH: number): number {
+  const shorter = Math.min(pxW, pxH);
+  return Math.max(0, Math.min(6, shorter * 0.2));
+}
+
 export function PlacementEditorCanvas({
   section,
   placements,
@@ -360,6 +375,17 @@ export function PlacementEditorCanvas({
               : p.y;
             const liveW = isResizing ? resizeState!.next.width : p.width;
             const liveH = isResizing ? resizeState!.next.height : p.height;
+            const pinPxW = (liveW / 100) * rect.width;
+            const pinPxH = (liveH / 100) * rect.height;
+            const borderRadius = computePinRadius(pinPxW, pinPxH);
+            // 변 핸들 중 모서리와 겹칠 위험이 있는 쪽은 숨김 — 모서리는 항상 보장.
+            const showHorizEdges = pinPxW >= EDGE_HANDLE_MIN_PX;
+            const showVertEdges = pinPxH >= EDGE_HANDLE_MIN_PX;
+            const visibleHandles: HandleId[] = [
+              ...CORNER_HANDLES,
+              ...(showHorizEdges ? (['n', 's'] as HandleId[]) : []),
+              ...(showVertEdges ? (['e', 'w'] as HandleId[]) : []),
+            ];
             return (
               <button
                 key={p.id}
@@ -376,8 +402,9 @@ export function PlacementEditorCanvas({
                   height: `${liveH}%`,
                   minWidth: 8,
                   minHeight: 8,
+                  borderRadius,
                 }}
-                className={`pointer-events-auto absolute flex -translate-x-1/2 -translate-y-1/2 cursor-grab items-center justify-center rounded-md border-2 text-xs font-semibold shadow-sm transition-all ${
+                className={`pointer-events-auto absolute flex -translate-x-1/2 -translate-y-1/2 cursor-grab items-center justify-center border-2 text-xs font-semibold shadow-sm transition-all ${
                   isSelected
                     ? 'border-primary bg-primary/30 ring-2 ring-primary/40'
                     : isInGroup
@@ -389,7 +416,7 @@ export function PlacementEditorCanvas({
                 <span className="truncate">{p.boothNumber}</span>
                 {isSelected && !isDragging && !isResizing && (
                   <>
-                    {(Object.keys(HANDLE_OFFSETS) as HandleId[]).map((h) => {
+                    {visibleHandles.map((h) => {
                       const o = HANDLE_OFFSETS[h];
                       return (
                         <span
