@@ -7,6 +7,7 @@ import {
 } from 'react-zoom-pan-pinch';
 import { useImagePaintedRect } from '@/features/booth-layout/hooks/use-image-painted-rect';
 import { clamp } from '@/features/booth-layout/utils/clamp';
+import { computePinRadius } from '@/features/booth-layout/utils/pin-radius';
 import type { BoothPlacement, MapSection, MapSectionId } from '@/features/booth-layout/types';
 
 const MIN_SCALE = 1;
@@ -63,12 +64,6 @@ const CORNER_HANDLES: HandleId[] = ['nw', 'ne', 'se', 'sw'];
  * 백양로처럼 좁고 긴 부스에서 변 핸들을 자동 숨겨 모서리만 잡히게 한다.
  */
 const EDGE_HANDLE_MIN_PX = 16;
-
-/** 핀 borderRadius — 짧은 변 비율로 캡 씌워 캔버스 종횡비가 극단적인 섹션에서도 사각형 형태 유지. */
-function computePinRadius(pxW: number, pxH: number): number {
-  const shorter = Math.min(pxW, pxH);
-  return Math.max(0, Math.min(6, shorter * 0.2));
-}
 
 export function PlacementEditorCanvas({
   section,

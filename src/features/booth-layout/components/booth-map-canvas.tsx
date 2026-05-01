@@ -6,6 +6,7 @@ import {
   type ReactZoomPanPinchRef,
 } from 'react-zoom-pan-pinch';
 import { useImagePaintedRect } from '@/features/booth-layout/hooks/use-image-painted-rect';
+import { computePinRadius } from '@/features/booth-layout/utils/pin-radius';
 import type { MapSection, MapSectionId, PickerBooth } from '@/features/booth-layout/types';
 
 /**
@@ -203,17 +204,6 @@ interface BoothPinProps {
   /** 핀이 올라간 painted rect 의 unzoomed 크기. borderRadius 계산에 사용. */
   mapWidth: number;
   mapHeight: number;
-}
-
-/**
- * 핀의 borderRadius 를 짧은 변에 비례해 결정한다.
- * 백양로(1:3.55) 같이 캔버스가 길쭉한 섹션에서는 핀 자체의 css 폭이 한 자리수
- * 픽셀까지 줄 수 있어, 고정 `rounded-md`(6px) 가 변보다 커져 타원처럼 렌더되는
- * 문제가 있었음 — 짧은 변의 20% 까지만 곡률을 허용해 사각형 형태를 유지.
- */
-function computePinRadius(pxW: number, pxH: number): number {
-  const shorter = Math.min(pxW, pxH);
-  return Math.max(0, Math.min(6, shorter * 0.2));
 }
 
 function BoothPin({ booth, isFocused, isMine, canEnter, onClick, mapWidth, mapHeight }: BoothPinProps) {
