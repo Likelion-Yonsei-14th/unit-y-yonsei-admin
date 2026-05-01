@@ -77,6 +77,38 @@ export function ReservationManagement() {
   // 요약/감사용 성격의 "전체" 는 맨 끝에 둔다.
   const statuses: ReservationStatus[] = ["대기자 목록", "완료 목록", "취소 목록", "전체 목록"];
 
+  // ---- early-return 위로 끌어올린 파생값들 ----
+  // filtered* / select* 계산은 booth 가 없어도 의미 있고, 아래 useRef/useEffect 호출이
+  // 모든 렌더에서 동일 순서로 일어나도록 보장하려면 이 변수들이 먼저 정의돼 있어야 한다.
+  const filteredReservations = searchedReservations.filter((res) => {
+    if (selectedStatus === "대기자 목록") return res.status === "waiting";
+    if (selectedStatus === "완료 목록") return res.status === "completed";
+    if (selectedStatus === "취소 목록") return res.status === "cancelled";
+    return true; // 전체 목록
+  });
+
+  // "현재 필터 뷰의 전체 행이 선택돼 있는가" 를 실제 membership 으로 판정.
+  // 단순 length 비교는 (a) 0 === 0 으로 빈 목록이 '전체 선택'처럼 보이거나
+  // (b) 필터 전환 시 다른 필터 선택분과 길이가 우연히 같아질 때 거짓 양성.
+  const filteredSelectedCount = filteredReservations.reduce(
+    (n, r) => (selectedIds.includes(r.id) ? n + 1 : n),
+    0,
+  );
+  const allFilteredSelected =
+    filteredReservations.length > 0 &&
+    filteredSelectedCount === filteredReservations.length;
+  const someFilteredSelected =
+    filteredSelectedCount > 0 && !allFilteredSelected;
+
+  // indeterminate 는 checked 와 별개 프로퍼티라 ref 로 직접 세팅.
+  // early-return 분기 위에서 호출해야 모든 렌더에서 hook 호출 순서가 동일.
+  const selectAllRef = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    if (selectAllRef.current) {
+      selectAllRef.current.indeterminate = someFilteredSelected;
+    }
+  }, [someFilteredSelected]);
+
   // 훅 호출 이후에 조건부 리턴 — Rules of Hooks 위반 방지.
   // Booth 계정이 본인 소속이 아닌 부스 URL 을 직접 입력한 경우 자기 부스로 튕김.
   // boothId 미할당(이론상 엣지) 계정은 `/reservations` 의 entry 로 보내
@@ -97,13 +129,6 @@ export function ReservationManagement() {
     return <Navigate to="/reservations" replace />;
   }
 
-  const filteredReservations = searchedReservations.filter((res) => {
-    if (selectedStatus === "대기자 목록") return res.status === "waiting";
-    if (selectedStatus === "완료 목록") return res.status === "completed";
-    if (selectedStatus === "취소 목록") return res.status === "cancelled";
-    return true; // 전체 목록
-  });
-
   const boothHeaderLabel = booth.name || "이름 미입력 부스";
 
   // 체크박스 토글
@@ -112,27 +137,6 @@ export function ReservationManagement() {
       prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
     );
   };
-
-  // "현재 필터 뷰의 전체 행이 선택돼 있는가" 를 실제 membership 으로 판정.
-  // 단순 length 비교는 (a) 0 === 0 으로 빈 목록이 '전체 선택'처럼 보이거나
-  // (b) 필터 전환 시 다른 필터 선택분과 길이가 우연히 같아질 때 거짓 양성.
-  const filteredSelectedCount = filteredReservations.reduce(
-    (n, r) => (selectedIds.includes(r.id) ? n + 1 : n),
-    0,
-  );
-  const allFilteredSelected =
-    filteredReservations.length > 0 &&
-    filteredSelectedCount === filteredReservations.length;
-  const someFilteredSelected =
-    filteredSelectedCount > 0 && !allFilteredSelected;
-
-  // indeterminate 는 checked 와 별개 프로퍼티라 ref 로 직접 세팅.
-  const selectAllRef = useRef<HTMLInputElement>(null);
-  useEffect(() => {
-    if (selectAllRef.current) {
-      selectAllRef.current.indeterminate = someFilteredSelected;
-    }
-  }, [someFilteredSelected]);
 
   // 빈 상태 메시지는 두 가지 원인이 다르다:
   //  - 부스에 예약 자체가 없음 → "아직 예약이 없습니다."
