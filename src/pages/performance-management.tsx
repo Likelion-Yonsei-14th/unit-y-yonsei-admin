@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type ChangeEvent } from "react";
 import { useParams, Link } from "react-router";
 import { ArrowLeft, Plus, Trash2, Instagram, Youtube, Music, Check, Edit, X, Star, Upload, ChevronDown } from "lucide-react";
 import { useAuth } from "@/features/auth/hooks";
-import { useMyPerformance, usePerformance } from "@/features/performances/hooks";
+import { useMyPerformance, usePerformance, useUpdatePerformance } from "@/features/performances/hooks";
 import {
   PERFORMANCE_STAGES,
   type PerformanceDetail,
@@ -34,6 +34,7 @@ export function PerformanceManagement() {
 
   const { can, canEditPerformance } = useAuth();
   const canEdit = data ? canEditPerformance({ teamId: data.teamId }) : false;
+  const updateMutation = useUpdatePerformance();
   // 타임테이블(날짜·스테이지·시작/종료) 은 축제 운영 전체 스케줄의 입력으로
   // Performer 가 임의로 바꾸면 곤란. 본인 프로필·셋리스트는 수정 가능하되
   // 이 섹션은 Super/Master(performance.manage) 만 편집할 수 있다.
@@ -167,15 +168,29 @@ export function PerformanceManagement() {
 
   const handleSave = () => {
     if (!editingData) return;
-    // TODO: 실제 저장 mutation 연결. 지금은 local state 에만 반영해 UI 흐름만 검증.
-    setPerformanceData(editingData);
-    setSetlist(editingSetlist);
-    setPerformanceImages(editingImages);
-    setIsEditMode(false);
-    setSaveSuccess(true);
-    setTimeout(() => {
-      setSaveSuccess(false);
-    }, 3000);
+    // 편집 중인 모든 영역(프로필+타임테이블+셋리스트+이미지) 을 한 번에 patch.
+    // teamId 는 URL 파라미터로만 전달 — 바디에 중복 포함하면 백엔드 검증에 걸리거나 무시될 수 있다.
+    const { teamId, ...rest } = editingData;
+    const patch: Partial<PerformanceDetail> = {
+      ...rest,
+      images: editingImages,
+      setlist: editingSetlist,
+    };
+    updateMutation.mutate(
+      { teamId, patch },
+      {
+        onSuccess: (saved) => {
+          // 캐시는 hooks 의 onSuccess 가 갱신함. 여기서는 로컬 view state 를 서버 응답으로 동기화.
+          setPerformanceData(saved);
+          setSetlist(saved.setlist);
+          setPerformanceImages(saved.images);
+          setIsEditMode(false);
+          setSaveSuccess(true);
+          setTimeout(() => setSaveSuccess(false), 3000);
+        },
+        // onError 는 mutation.error 로 노출 — 아래 알림 영역에서 처리.
+      },
+    );
   };
 
   // URL 의 teamId 가 숫자가 아닌 경우 — 쿼리 자체가 안 돌므로 바로 빈 상태로.
@@ -271,22 +286,35 @@ export function PerformanceManagement() {
             <>
               <button
                 onClick={handleCancel}
-                className="px-6 py-3 border border-ds-border-strong text-foreground rounded-lg hover:bg-muted transition-all duration-200 flex items-center gap-2"
+                disabled={updateMutation.isPending}
+                className="px-6 py-3 border border-ds-border-strong text-foreground rounded-lg hover:bg-muted transition-all duration-200 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <X size={18} />
                 <span>취소</span>
               </button>
               <button
                 onClick={handleSave}
-                className="px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-ds-primary-pressed hover:shadow-lg transition-all duration-200 flex items-center gap-2"
+                disabled={updateMutation.isPending}
+                className="px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-ds-primary-pressed hover:shadow-lg transition-all duration-200 flex items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
               >
                 <Check size={18} />
-                <span>저장</span>
+                <span>{updateMutation.isPending ? "저장 중…" : "저장"}</span>
               </button>
             </>
           )}
-          
-          {/* Save Success Toast */}
+
+          {/* 저장 실패 — toast 가 거짓말하지 않도록, 실제 mutation 결과만 노출. */}
+          {updateMutation.isError && (
+            <div
+              role="alert"
+              className="flex items-center gap-2 px-4 py-3 bg-ds-error-subtle border border-destructive text-destructive rounded-lg shadow-lg"
+            >
+              <X size={14} />
+              <span className="font-medium">저장에 실패했습니다. 잠시 후 다시 시도해주세요.</span>
+            </div>
+          )}
+
+          {/* Save Success Toast — 실 mutation 성공 시에만 발화 */}
           {saveSuccess && (
             <div className="flex items-center gap-2 px-4 py-3 bg-ds-success-subtle border border-ds-success text-ds-success-pressed rounded-lg shadow-lg animate-fade-in">
               <div className="w-6 h-6 bg-ds-success rounded-full flex items-center justify-center">
@@ -304,8 +332,9 @@ export function PerformanceManagement() {
 
         <div className="space-y-6">
           <div>
-            <label className="block text-sm font-semibold text-foreground mb-2">공연팀명</label>
+            <label htmlFor="perf-team-name" className="block text-sm font-semibold text-foreground mb-2">공연팀명</label>
             <input
+              id="perf-team-name"
               type="text"
               placeholder="공연팀 이름을 입력하세요"
               className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
@@ -316,8 +345,9 @@ export function PerformanceManagement() {
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-foreground mb-2">공연팀 소개글</label>
+            <label htmlFor="perf-description" className="block text-sm font-semibold text-foreground mb-2">공연팀 소개글</label>
             <textarea
+              id="perf-description"
               rows={5}
               placeholder="동아리 소개, 구성원 소개 등을 작성하세요"
               className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all resize-none"
@@ -328,15 +358,17 @@ export function PerformanceManagement() {
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-foreground mb-2">SNS 링크 (선택)</label>
+            {/* SNS 묶음은 그룹 라벨이라 htmlFor 단일 매칭이 어색함. 각 input 에 aria-label 로 매칭. */}
+            <span className="block text-sm font-semibold text-foreground mb-2">SNS 링크 (선택)</span>
             <div className="space-y-3">
               <div className="flex items-center gap-3">
-                <div className="flex items-center justify-center w-10 h-10 bg-muted text-muted-foreground rounded-lg">
+                <div className="flex items-center justify-center w-10 h-10 bg-muted text-muted-foreground rounded-lg" aria-hidden="true">
                   <Instagram size={20} />
                 </div>
                 <input
                   type="text"
                   placeholder="인스타그램 URL"
+                  aria-label="인스타그램 URL"
                   className="flex-1 px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
                   value={displayData.instagramUrl}
                   onChange={(e) => setEditingData(prev => prev ? { ...prev, instagramUrl: e.target.value } : prev)}
@@ -344,12 +376,13 @@ export function PerformanceManagement() {
                 />
               </div>
               <div className="flex items-center gap-3">
-                <div className="flex items-center justify-center w-10 h-10 bg-muted text-muted-foreground rounded-lg">
+                <div className="flex items-center justify-center w-10 h-10 bg-muted text-muted-foreground rounded-lg" aria-hidden="true">
                   <Youtube size={20} />
                 </div>
                 <input
                   type="text"
                   placeholder="유튜브 URL"
+                  aria-label="유튜브 URL"
                   className="flex-1 px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
                   value={displayData.youtubeUrl}
                   onChange={(e) => setEditingData(prev => prev ? { ...prev, youtubeUrl: e.target.value } : prev)}
@@ -460,9 +493,10 @@ export function PerformanceManagement() {
           return (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-semibold text-foreground mb-2">공연 날짜</label>
+                <label htmlFor="perf-date" className="block text-sm font-semibold text-foreground mb-2">공연 날짜</label>
                 <div className="relative">
                   <select
+                    id="perf-date"
                     className={selectClass}
                     value={displayData.date}
                     onChange={(e) => setEditingData(prev => prev ? { ...prev, date: e.target.value } : prev)}
@@ -483,9 +517,10 @@ export function PerformanceManagement() {
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-semibold text-foreground mb-2">스테이지</label>
+                <label htmlFor="perf-stage" className="block text-sm font-semibold text-foreground mb-2">스테이지</label>
                 <div className="relative">
                   <select
+                    id="perf-stage"
                     className={selectClass}
                     value={displayData.stage}
                     onChange={(e) => setEditingData(prev => prev ? { ...prev, stage: e.target.value as PerformanceStage } : prev)}
@@ -507,8 +542,9 @@ export function PerformanceManagement() {
                 </div>
               </div>
           <div>
-            <label className="block text-sm font-semibold text-foreground mb-2">공연 시작 시간</label>
+            <label htmlFor="perf-start-time" className="block text-sm font-semibold text-foreground mb-2">공연 시작 시간</label>
             <input
+              id="perf-start-time"
               type="time"
               step={300}
               className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
@@ -518,8 +554,9 @@ export function PerformanceManagement() {
             />
           </div>
           <div>
-            <label className="block text-sm font-semibold text-foreground mb-2">공연 종료 시간</label>
+            <label htmlFor="perf-end-time" className="block text-sm font-semibold text-foreground mb-2">공연 종료 시간</label>
             <input
+              id="perf-end-time"
               type="time"
               step={300}
               className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all"

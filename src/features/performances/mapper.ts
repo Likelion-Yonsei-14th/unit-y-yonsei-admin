@@ -41,3 +41,37 @@ export const toPerformanceDetail = (d: PerformanceDetailDTO): PerformanceDetail 
   images: d.images.map(toPerformanceImage),
   setlist: d.setlist.map(toSetlistItem),
 });
+
+const fromSetlistItem = (s: SetlistItem): SetlistItemDTO => ({
+  id: s.id,
+  order: s.order,
+  song_name: s.songName,
+  artist: s.artist,
+});
+
+const fromPerformanceImage = (i: PerformanceImage): PerformanceImageDTO => ({
+  id: i.id,
+  url: i.url,
+  is_main: i.isMain,
+});
+
+/**
+ * 부분 업데이트 payload — 전송된 필드만 snake_case 로 매핑.
+ * teamId 는 URL 파라미터로만 보내므로 의도적으로 누락한다.
+ */
+export const fromPerformanceDetailPatch = (
+  patch: Partial<PerformanceDetail>,
+): Partial<PerformanceDetailDTO> => {
+  const dto: Partial<PerformanceDetailDTO> = {};
+  if ('teamName' in patch && patch.teamName !== undefined) dto.team_name = patch.teamName;
+  if ('description' in patch && patch.description !== undefined) dto.description = patch.description;
+  if ('instagramUrl' in patch && patch.instagramUrl !== undefined) dto.instagram_url = patch.instagramUrl;
+  if ('youtubeUrl' in patch && patch.youtubeUrl !== undefined) dto.youtube_url = patch.youtubeUrl;
+  if ('date' in patch && patch.date !== undefined) dto.date = patch.date;
+  if ('stage' in patch && patch.stage !== undefined) dto.stage = patch.stage;
+  if ('startTime' in patch && patch.startTime !== undefined) dto.start_time = patch.startTime;
+  if ('endTime' in patch && patch.endTime !== undefined) dto.end_time = patch.endTime;
+  if ('images' in patch && patch.images !== undefined) dto.images = patch.images.map(fromPerformanceImage);
+  if ('setlist' in patch && patch.setlist !== undefined) dto.setlist = patch.setlist.map(fromSetlistItem);
+  return dto;
+};

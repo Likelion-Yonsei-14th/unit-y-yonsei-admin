@@ -1,7 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Navigate, useParams } from "react-router";
 import { Phone, MessageSquare, Check, X, Calendar, RotateCcw, Search } from "lucide-react";
-import { mockReservations, type Reservation, type ReservationState } from "@/mocks/reservations";
+import { toast } from "sonner";
+import {
+  useReservations,
+  useSetReservationStatus,
+  useSetReservationsStatusBulk,
+} from "@/features/reservations/hooks";
+import type { Reservation, ReservationState } from "@/features/reservations/types";
 import { PageHeaderAction } from "@/components/common/page-header-action";
 import {
   AlertDialog,
@@ -13,6 +19,14 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { useAuth } from "@/features/auth/hooks";
 import { useBooths } from "@/features/booths/hooks";
 
@@ -28,10 +42,19 @@ export function ReservationManagement() {
   }, [boothId, boothsQuery.data]);
   const { user } = useAuth();
 
-  const [reservations, setReservations] = useState<Reservation[]>(mockReservations);
+  const reservationsQuery = useReservations();
+  const reservations: Reservation[] = reservationsQuery.data ?? [];
+  const setStatusMutation = useSetReservationStatus();
+  const setStatusBulkMutation = useSetReservationsStatusBulk();
+
   const [selectedStatus, setSelectedStatus] = useState<ReservationStatus>("대기자 목록");
   const [searchQuery, setSearchQuery] = useState("");
+  // booth 가 비동기로 도착(useBooths) 하므로 초기값은 booth 가 없을 때의 안전한 기본값(true).
+  // 도착 후엔 아래 useEffect 로 한번 동기화. 이후 사용자의 토글은 로컬 상태로 유지.
   const [reservationEnabled, setReservationEnabled] = useState(booth?.reservationEnabled ?? true);
+  useEffect(() => {
+    if (booth) setReservationEnabled(booth.reservationEnabled);
+  }, [booth?.id, booth?.reservationEnabled]);
   const [selectedReservation, setSelectedReservation] = useState<Reservation | null>(null);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [showStatusChangeModal, setShowStatusChangeModal] = useState(false);
@@ -58,7 +81,12 @@ export function ReservationManagement() {
   }, [boothReservations, normalizedQuery]);
 
   const applyStatus = (id: string, status: ReservationState) => {
-    setReservations((prev) => prev.map((r) => (r.id === id ? { ...r, status } : r)));
+    setStatusMutation.mutate(
+      { id, status },
+      {
+        onError: () => toast.error("상태 변경에 실패했습니다. 잠시 후 다시 시도해주세요."),
+      },
+    );
   };
 
   // 대기 순번은 시간 오름차순 기준 고정이라 boothReservations 가 바뀔 때만
@@ -108,6 +136,30 @@ export function ReservationManagement() {
       selectAllRef.current.indeterminate = someFilteredSelected;
     }
   }, [someFilteredSelected]);
+
+  // 예약 풀 로딩/에러 분기 — 데이터 부재(빈 목록) 와 통신 실패를 구분해 보여준다.
+  // booth 가드(아래 early-return) 보다 먼저 검사해 잘못된 redirect 를 막는다.
+  if (reservationsQuery.isLoading) {
+    return (
+      <div className="p-4 md:p-8 text-center text-muted-foreground">예약 정보를 불러오는 중…</div>
+    );
+  }
+  if (reservationsQuery.isError) {
+    return (
+      <div className="p-4 md:p-8">
+        <div className="bg-ds-error-subtle border border-destructive text-destructive rounded-2xl p-6 text-center">
+          <p className="mb-3">예약 정보를 가져오지 못했습니다.</p>
+          <button
+            type="button"
+            onClick={() => reservationsQuery.refetch()}
+            className="px-4 py-2 rounded-lg bg-destructive text-destructive-foreground hover:bg-ds-error-pressed transition-colors"
+          >
+            다시 시도
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   // 훅 호출 이후에 조건부 리턴 — Rules of Hooks 위반 방지.
   // Booth 계정이 본인 소속이 아닌 부스 URL 을 직접 입력한 경우 자기 부스로 튕김.
@@ -159,11 +211,20 @@ export function ReservationManagement() {
 
   // 벌크 예약 상태 변경 — 모달 자체가 확인 단계 역할이라 여기서 바로 반영.
   const handleStatusChange = (newStatus: ReservationState) => {
-    setReservations((prev) =>
-      prev.map((r) => (selectedIds.includes(r.id) ? { ...r, status: newStatus } : r)),
+    if (selectedIds.length === 0) {
+      setShowStatusChangeModal(false);
+      return;
+    }
+    setStatusBulkMutation.mutate(
+      { ids: selectedIds, status: newStatus },
+      {
+        onSuccess: () => {
+          setShowStatusChangeModal(false);
+          setSelectedIds([]);
+        },
+        onError: () => toast.error("벌크 변경에 실패했습니다. 잠시 후 다시 시도해주세요."),
+      },
     );
-    setShowStatusChangeModal(false);
-    setSelectedIds([]);
   };
 
   return (
@@ -364,159 +425,144 @@ export function ReservationManagement() {
         </div>
       </div>
 
-      {/* Reservation Detail Modal */}
-      {selectedReservation && (
-        <div
-          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
-          onClick={() => setSelectedReservation(null)}
-        >
-          <div
-            className="bg-background rounded-2xl p-4 md:p-8 max-w-md w-full mx-4 shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-start justify-between mb-6">
-              <h3 className="text-2xl font-bold text-foreground">예약 상세 정보</h3>
-              <button
-                type="button"
-                onClick={() => setSelectedReservation(null)}
-                aria-label="닫기"
-                className="-m-1 p-1 rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
-              >
-                <X size={20} />
-              </button>
-            </div>
+      {/* Reservation Detail — shadcn Dialog 로 통일 (포커스 트랩/ESC/aria-modal). */}
+      <Dialog
+        open={!!selectedReservation}
+        onOpenChange={(o) => { if (!o) setSelectedReservation(null); }}
+      >
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>예약 상세 정보</DialogTitle>
+            <DialogDescription className="sr-only">
+              선택한 예약의 상세 정보와 상태 전이/연락 액션.
+            </DialogDescription>
+          </DialogHeader>
 
-            <div className="space-y-4 mb-8">
-              <div>
-                <div className="text-sm text-muted-foreground mb-1">예약 ID</div>
-                <div className="text-lg font-semibold text-foreground">{selectedReservation.id}</div>
-              </div>
-              <div>
-                <div className="text-sm text-muted-foreground mb-1">예약자명</div>
-                <div className="text-lg font-semibold text-foreground">{selectedReservation.name}</div>
-              </div>
-              <div>
-                <div className="text-sm text-muted-foreground mb-1">연락처</div>
-                <div className="text-lg font-semibold text-foreground">{selectedReservation.contact}</div>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {selectedReservation && (
+            <>
+              <div className="space-y-4">
                 <div>
-                  <div className="text-sm text-muted-foreground mb-1">예약 시간</div>
-                  <div className="text-lg font-semibold text-foreground">{selectedReservation.time}</div>
+                  <div className="text-sm text-muted-foreground mb-1">예약 ID</div>
+                  <div className="text-lg font-semibold text-foreground">{selectedReservation.id}</div>
                 </div>
                 <div>
-                  <div className="text-sm text-muted-foreground mb-1">인원수</div>
-                  <div className="text-lg font-semibold text-foreground">{selectedReservation.people}명</div>
+                  <div className="text-sm text-muted-foreground mb-1">예약자명</div>
+                  <div className="text-lg font-semibold text-foreground">{selectedReservation.name}</div>
+                </div>
+                <div>
+                  <div className="text-sm text-muted-foreground mb-1">연락처</div>
+                  <div className="text-lg font-semibold text-foreground">{selectedReservation.contact}</div>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <div className="text-sm text-muted-foreground mb-1">예약 시간</div>
+                    <div className="text-lg font-semibold text-foreground">{selectedReservation.time}</div>
+                  </div>
+                  <div>
+                    <div className="text-sm text-muted-foreground mb-1">인원수</div>
+                    <div className="text-lg font-semibold text-foreground">{selectedReservation.people}명</div>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            {/*
-              상태 전이 버튼은 "현재 상태 제외" 규칙으로 항상 2개 노출 — 총 4칸으로 grid-cols-2 채움.
-              입장/대기로 되돌리기 는 즉시 반영, 취소 는 파괴성이 있어 Alert 로 한 번 더 확인.
-            */}
-            <div className="grid grid-cols-2 gap-3">
-              {selectedReservation.status !== "completed" && (
-                <button
-                  onClick={() => {
-                    applyStatus(selectedReservation.id, "completed");
-                    setSelectedReservation(null);
-                  }}
-                  className="px-4 py-3 bg-ds-success text-white rounded-lg hover:bg-ds-success-pressed transition-colors flex items-center justify-center gap-2"
+              {/*
+                상태 전이 버튼은 "현재 상태 제외" 규칙으로 항상 2개 노출 — 총 4칸으로 grid-cols-2 채움.
+                입장/대기로 되돌리기 는 즉시 반영, 취소 는 파괴성이 있어 별도 AlertDialog 로 확인.
+              */}
+              <div className="grid grid-cols-2 gap-3 mt-2">
+                {selectedReservation.status !== "completed" && (
+                  <button
+                    onClick={() => {
+                      applyStatus(selectedReservation.id, "completed");
+                      setSelectedReservation(null);
+                    }}
+                    className="px-4 py-3 bg-ds-success text-white rounded-lg hover:bg-ds-success-pressed transition-colors flex items-center justify-center gap-2"
+                  >
+                    <Check size={18} />
+                    입장
+                  </button>
+                )}
+                {selectedReservation.status !== "waiting" && (
+                  <button
+                    onClick={() => {
+                      applyStatus(selectedReservation.id, "waiting");
+                      setSelectedReservation(null);
+                    }}
+                    className="px-4 py-3 border border-border bg-background text-foreground rounded-lg hover:bg-muted transition-colors flex items-center justify-center gap-2"
+                  >
+                    <RotateCcw size={18} />
+                    대기로 되돌리기
+                  </button>
+                )}
+                {selectedReservation.status !== "cancelled" && (
+                  <button
+                    onClick={() => {
+                      setPendingCancel(selectedReservation);
+                      setSelectedReservation(null);
+                    }}
+                    className="px-4 py-3 bg-destructive text-destructive-foreground rounded-lg hover:bg-ds-error-pressed transition-colors flex items-center justify-center gap-2"
+                  >
+                    <X size={18} />
+                    취소
+                  </button>
+                )}
+                <a
+                  href={`sms:${selectedReservation.contact.replace(/-/g, '')}`}
+                  className="px-4 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-ds-primary-pressed transition-colors flex items-center justify-center gap-2"
                 >
-                  <Check size={18} />
-                  입장
-                </button>
-              )}
-              {selectedReservation.status !== "waiting" && (
-                <button
-                  onClick={() => {
-                    applyStatus(selectedReservation.id, "waiting");
-                    setSelectedReservation(null);
-                  }}
-                  className="px-4 py-3 border border-border bg-background text-foreground rounded-lg hover:bg-muted transition-colors flex items-center justify-center gap-2"
+                  <MessageSquare size={18} />
+                  문자
+                </a>
+                <a
+                  href={`tel:${selectedReservation.contact.replace(/-/g, '')}`}
+                  className="px-4 py-3 bg-ds-secondary-a text-white hover:bg-ds-secondary-a-pressed transition-colors rounded-lg flex items-center justify-center gap-2"
                 >
-                  <RotateCcw size={18} />
-                  대기로 되돌리기
-                </button>
-              )}
-              {selectedReservation.status !== "cancelled" && (
-                <button
-                  onClick={() => {
-                    setPendingCancel(selectedReservation);
-                    setSelectedReservation(null);
-                  }}
-                  className="px-4 py-3 bg-destructive text-destructive-foreground rounded-lg hover:bg-ds-error-pressed transition-colors flex items-center justify-center gap-2"
-                >
-                  <X size={18} />
-                  취소
-                </button>
-              )}
-              <a
-                href={`sms:${selectedReservation.contact.replace(/-/g, '')}`}
-                className="px-4 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-ds-primary-pressed transition-colors flex items-center justify-center gap-2"
-              >
-                <MessageSquare size={18} />
-                문자
-              </a>
-              <a
-                href={`tel:${selectedReservation.contact.replace(/-/g, '')}`}
-                className="px-4 py-3 bg-ds-secondary-a text-white rounded-lg hover:bg-ds-secondary-a-pressed transition-colors flex items-center justify-center gap-2"
-              >
-                <Phone size={18} />
-                전화
-              </a>
-            </div>
-          </div>
-        </div>
-      )}
+                  <Phone size={18} />
+                  전화
+                </a>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
 
-      {/* Status Change Modal */}
-      {showStatusChangeModal && (
-        <div
-          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
-          onClick={() => setShowStatusChangeModal(false)}
-        >
-          <div
-            className="bg-background rounded-2xl p-4 md:p-8 max-w-md w-full mx-4 shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h3 className="text-2xl font-bold text-foreground mb-4">예약 상태 변경</h3>
-            <p className="text-muted-foreground mb-6">
+      {/* 벌크 상태 변경 — 각 버튼이 즉시 적용이라 AlertDialog 보다 Dialog 가 적절. */}
+      <Dialog
+        open={showStatusChangeModal}
+        onOpenChange={setShowStatusChangeModal}
+      >
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>예약 상태 변경</DialogTitle>
+            <DialogDescription>
               선택한 <span className="font-bold text-primary">{selectedIds.length}개</span>의 예약 상태를 변경합니다.
-            </p>
+            </DialogDescription>
+          </DialogHeader>
 
-            <div className="space-y-3">
-              <button
-                onClick={() => handleStatusChange("waiting")}
-                className="w-full px-4 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-ds-primary-pressed transition-colors flex items-center justify-center gap-2"
-              >
-                대기로 변경
-              </button>
-              <button
-                onClick={() => handleStatusChange("completed")}
-                className="w-full px-4 py-3 bg-ds-success text-white rounded-lg hover:bg-ds-success-pressed transition-colors flex items-center justify-center gap-2"
-              >
-                <Check size={18} />
-                완료로 변경
-              </button>
-              <button
-                onClick={() => handleStatusChange("cancelled")}
-                className="w-full px-4 py-3 bg-destructive text-destructive-foreground rounded-lg hover:bg-ds-error-pressed transition-colors flex items-center justify-center gap-2"
-              >
-                <X size={18} />
-                취소로 변경
-              </button>
-              <button
-                onClick={() => setShowStatusChangeModal(false)}
-                className="w-full px-4 py-3 border border-border text-foreground rounded-lg hover:bg-muted transition-colors"
-              >
-                닫기
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+          <DialogFooter className="flex-col sm:flex-col gap-3">
+            <button
+              onClick={() => handleStatusChange("waiting")}
+              className="w-full px-4 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-ds-primary-pressed transition-colors flex items-center justify-center gap-2"
+            >
+              대기로 변경
+            </button>
+            <button
+              onClick={() => handleStatusChange("completed")}
+              className="w-full px-4 py-3 bg-ds-success text-white rounded-lg hover:bg-ds-success-pressed transition-colors flex items-center justify-center gap-2"
+            >
+              <Check size={18} />
+              완료로 변경
+            </button>
+            <button
+              onClick={() => handleStatusChange("cancelled")}
+              className="w-full px-4 py-3 bg-destructive text-destructive-foreground rounded-lg hover:bg-ds-error-pressed transition-colors flex items-center justify-center gap-2"
+            >
+              <X size={18} />
+              취소로 변경
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* 예약 취소 확인 — 고객 약속을 깨는 방향이라 파괴적. 한 번 더 확인. */}
       <AlertDialog

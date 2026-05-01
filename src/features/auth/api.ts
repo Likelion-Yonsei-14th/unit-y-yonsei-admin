@@ -1,4 +1,4 @@
-import { api } from '@/lib/api-client';
+import { api, ApiError } from '@/lib/api-client';
 import { authStrategy } from '@/lib/auth-strategy';
 import { env } from '@/lib/env';
 import type { CurrentUser, CurrentUserDTO, LoginPayload, LoginResultDTO } from './types';
@@ -56,7 +56,9 @@ async function loginMock(payload: LoginPayload): Promise<CurrentUser> {
   await new Promise(r => setTimeout(r, 300)); // 네트워크 흉내
   const record = MOCK_USERS[payload.userId];
   if (!record || record.password !== payload.password) {
-    throw new Error('아이디 또는 비밀번호가 올바르지 않습니다.');
+    // real 분기와 동일한 에러 타입을 던져 호출자(폼 onError, instanceof 분기 등) 가
+    // mock/real 구분 없이 같은 코드로 처리할 수 있게 한다.
+    throw new ApiError(401, '아이디 또는 비밀번호가 올바르지 않습니다.');
   }
   localStorage.setItem(MOCK_TOKEN_KEY, payload.userId);
   authStrategy.persistLogin({ accessToken: `mock-token-${payload.userId}` });
@@ -67,7 +69,8 @@ async function fetchMeMock(): Promise<CurrentUser> {
   await new Promise(r => setTimeout(r, 100));
   const userId = localStorage.getItem(MOCK_TOKEN_KEY);
   if (!userId || !MOCK_USERS[userId]) {
-    throw new Error('로그인이 필요합니다.');
+    // 401 — api-client.ts 의 onUnauthorized 가 발화되도록 status 까지 맞춤.
+    throw new ApiError(401, '로그인이 필요합니다.');
   }
   return toCurrentUser(MOCK_USERS[userId].user);
 }

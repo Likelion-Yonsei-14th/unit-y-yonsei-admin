@@ -12,7 +12,7 @@ type Tone = 'blue' | 'purple' | 'green' | 'neutral';
 
 const TONE_CLASS: Record<Tone, string> = {
   blue: 'bg-primary text-primary-foreground hover:bg-ds-primary-pressed',
-  purple: 'bg-ds-violet-500 text-white hover:bg-ds-violet-700',
+  purple: 'bg-ds-secondary-a text-white hover:bg-ds-secondary-a-pressed',
   green: 'bg-ds-success text-white hover:bg-ds-success-pressed',
   neutral: 'bg-ds-gray-800 text-white hover:bg-ds-gray-700',
 };

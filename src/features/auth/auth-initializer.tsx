@@ -17,7 +17,8 @@ export function AuthInitializer({ children }: { children: ReactNode }) {
 
   const hasToken = hasStoredToken();
 
-  const { data, isSuccess, isError, isLoading } = useQuery({
+  // isLoading 은 useAuth().isInitializing 으로 가드가 처리하므로 여기서 따로 다룰 필요 없음.
+  const { data, isSuccess, isError } = useQuery({
     queryKey: ['auth', 'me'],
     queryFn: fetchMe,
     enabled: hasToken,
@@ -49,9 +50,6 @@ export function AuthInitializer({ children }: { children: ReactNode }) {
       }
     });
   }, [setUser]);
-
-  // 토큰은 있는데 /me 로딩 중 — useAuth의 isInitializing으로 guard가 처리
-  void isLoading;
 
   return <>{children}</>;
 }

@@ -6,12 +6,15 @@ import { FESTIVAL_DATES, sectionsValidFor } from '@/features/booth-layout/sectio
 import type { MapSectionId, PickerBooth } from '@/features/booth-layout/types';
 import { useAuth } from '@/features/auth/hooks';
 import { useBooths } from '@/features/booths/hooks';
-import { mockReservations, type ReservationState } from '@/mocks/reservations';
+import { useReservations } from '@/features/reservations/hooks';
+import type { Reservation, ReservationState } from '@/features/reservations/types';
 
-/** boothId → 상태별 카운트 집계 (mockReservations 순회 1회). */
-function buildReservationCountsByBooth(): Map<number, Record<ReservationState, number>> {
+/** boothId → 상태별 카운트 집계 (예약 풀 순회 1회). */
+function buildReservationCountsByBooth(
+  reservations: Reservation[],
+): Map<number, Record<ReservationState, number>> {
   const m = new Map<number, Record<ReservationState, number>>();
-  for (const r of mockReservations) {
+  for (const r of reservations) {
     const cur = m.get(r.boothId) ?? { waiting: 0, completed: 0, cancelled: 0 };
     cur[r.status] += 1;
     m.set(r.boothId, cur);
@@ -78,6 +81,7 @@ export function ReservationBoothPicker() {
 
   const placementsQuery = usePlacements(selectedDate ?? '');
   const allBoothsQuery = useBooths();
+  const reservationsQuery = useReservations();
   const boothById = useMemo(() => {
     const m = new Map<number, { name: string; organizationName: string }>();
     for (const b of allBoothsQuery.data ?? []) {
@@ -86,9 +90,14 @@ export function ReservationBoothPicker() {
     return m;
   }, [allBoothsQuery.data]);
 
+  // boothId → 상태별 카운트. 예약 풀이 바뀔 때만 재계산.
+  const countsByBooth = useMemo(
+    () => buildReservationCountsByBooth(reservationsQuery.data ?? []),
+    [reservationsQuery.data],
+  );
+
   const booths = useMemo<PickerBooth[]>(() => {
     if (!placementsQuery.data) return [];
-    const countsByBooth = buildReservationCountsByBooth();
     return placementsQuery.data.map((p) => {
       const profile = boothById.get(p.boothId);
       return {
@@ -100,7 +109,7 @@ export function ReservationBoothPicker() {
         counts: countsByBooth.get(p.boothId) ?? { waiting: 0, completed: 0, cancelled: 0 },
       };
     });
-  }, [placementsQuery.data, boothById]);
+  }, [placementsQuery.data, boothById, countsByBooth]);
 
   const canEnter = useCallback(
     (boothId: number) => {

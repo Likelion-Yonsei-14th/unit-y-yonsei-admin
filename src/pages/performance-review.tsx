@@ -1,6 +1,12 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { MessageCircle, Filter, Trash2, Eye, EyeOff, Calendar, Music, Heart, TrendingUp, Search } from "lucide-react";
-import { mockReviews, type Review } from "@/mocks/performance-reviews";
+import { toast } from "sonner";
+import {
+  useDeleteReview,
+  useReviews,
+  useSetReviewHidden,
+} from "@/features/performance-review/hooks";
+import type { Review } from "@/features/performance-review/types";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -13,13 +19,21 @@ import {
 } from "@/components/ui/alert-dialog";
 
 export function PerformanceReviewPage() {
-  const [reviews, setReviews] = useState<Review[]>(mockReviews);
+  const reviewsQuery = useReviews();
+  const reviews: Review[] = reviewsQuery.data ?? [];
+  const setHiddenMutation = useSetReviewHidden();
+  const deleteMutation = useDeleteReview();
+
   const [selectedTeam, setSelectedTeam] = useState<string>("전체");
   const [searchQuery, setSearchQuery] = useState("");
   const [showHidden, setShowHidden] = useState(false);
   const [pendingDelete, setPendingDelete] = useState<Review | null>(null);
 
-  const performanceTeams = ["전체", ...Array.from(new Set(mockReviews.map(r => r.performanceTeam)))];
+  // reviews 가 바뀌어도 같은 팀명이면 참조가 유지되도록 memoize. stats deps 도 안정.
+  const performanceTeams = useMemo(
+    () => ["전체", ...Array.from(new Set(reviews.map(r => r.performanceTeam)))],
+    [reviews],
+  );
 
   const filteredReviews = reviews.filter(review => {
     const matchesTeam = selectedTeam === "전체" || review.performanceTeam === selectedTeam;
@@ -29,21 +43,28 @@ export function PerformanceReviewPage() {
     return matchesTeam && matchesSearch && matchesHidden;
   });
 
-  const toggleHidden = (id: number) => {
-    setReviews(reviews.map(review =>
-      review.id === id ? { ...review, isHidden: !review.isHidden } : review
-    ));
+  const toggleHidden = (review: Review) => {
+    setHiddenMutation.mutate(
+      { id: review.id, isHidden: !review.isHidden },
+      {
+        onError: () => toast.error("후기 상태 변경에 실패했습니다. 잠시 후 다시 시도해주세요."),
+      },
+    );
   };
 
   const confirmDelete = () => {
     if (pendingDelete) {
-      setReviews((prev) => prev.filter((r) => r.id !== pendingDelete.id));
+      deleteMutation.mutate(pendingDelete.id, {
+        onSuccess: () => toast.success("후기를 삭제했습니다."),
+        onError: () => toast.error("삭제에 실패했습니다. 잠시 후 다시 시도해주세요."),
+      });
     }
     setPendingDelete(null);
   };
 
-  // 통계 계산
-  const stats = {
+  // 통계 계산 — reviews 가 바뀔 때만 재계산. 검색/필터 토글 같은 잡음 렌더에서 N²
+  // 정렬+reduce 가 매번 돌면 후기 수가 늘어날수록 무시 못 할 비용이 됨.
+  const stats = useMemo(() => ({
     total: reviews.length,
     hidden: reviews.filter(r => r.isHidden).length,
     byTeam: performanceTeams.slice(1).map(team => ({
@@ -58,7 +79,30 @@ export function PerformanceReviewPage() {
     )
       .sort((a, b) => b[1] - a[1])
       .slice(0, 5),
-  };
+  }), [reviews, performanceTeams]);
+
+  if (reviewsQuery.isLoading) {
+    return (
+      <div className="p-4 md:p-8 text-center text-muted-foreground">공연 후기를 불러오는 중…</div>
+    );
+  }
+
+  if (reviewsQuery.isError) {
+    return (
+      <div className="p-4 md:p-8">
+        <div className="bg-ds-error-subtle border border-destructive text-destructive rounded-2xl p-6 text-center">
+          <p className="mb-3">공연 후기를 가져오지 못했습니다.</p>
+          <button
+            type="button"
+            onClick={() => reviewsQuery.refetch()}
+            className="px-4 py-2 rounded-lg bg-destructive text-destructive-foreground hover:bg-ds-error-pressed transition-colors"
+          >
+            다시 시도
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-4 md:p-8">
@@ -237,7 +281,7 @@ export function PerformanceReviewPage() {
                   </div>
                   <div className="flex items-center gap-2">
                     <button
-                      onClick={() => toggleHidden(review.id)}
+                      onClick={() => toggleHidden(review)}
                       className="p-2 text-muted-foreground hover:bg-muted rounded-lg transition-colors"
                       title={review.isHidden ? "표시" : "숨김"}
                     >

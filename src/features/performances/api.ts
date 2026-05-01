@@ -2,7 +2,7 @@ import { api } from '@/lib/api-client';
 import { env } from '@/lib/env';
 import { useAuthStore } from '@/features/auth/store';
 import { mockPerformanceDetails, mockPerformanceDetailsById } from '@/mocks/performances';
-import { toPerformanceDetail, toPerformanceListItem } from './mapper';
+import { fromPerformanceDetailPatch, toPerformanceDetail, toPerformanceListItem } from './mapper';
 import type {
   PerformanceDetail, PerformanceDetailDTO,
   PerformanceListItem, PerformanceListItemDTO,
@@ -36,6 +36,22 @@ async function getMyPerformanceMock(): Promise<PerformanceDetail | null> {
   return mockPerformanceDetailsById[user.performanceTeamId] ?? null;
 }
 
+/**
+ * mock 구현은 in-memory 사전에 직접 머지해 같은 세션 동안 수정사항이 살아있게 한다.
+ * 실제 백엔드 결정 전까지의 임시 — refetch 로 다시 mockPerformanceDetailsById 에서 읽으면
+ * 같은 데이터를 받게 됨.
+ */
+async function updatePerformanceMock(teamId: number, patch: Partial<PerformanceDetail>): Promise<PerformanceDetail> {
+  await new Promise(r => setTimeout(r, 200));
+  const existing = mockPerformanceDetailsById[teamId];
+  if (!existing) {
+    throw new Error(`mock: performance team ${teamId} not found`);
+  }
+  const next = { ...existing, ...patch, teamId };
+  mockPerformanceDetailsById[teamId] = next;
+  return next;
+}
+
 // ---- 실제 구현 ----
 
 async function listPerformancesReal(): Promise<PerformanceListItem[]> {
@@ -53,8 +69,19 @@ async function getMyPerformanceReal(): Promise<PerformanceDetail | null> {
   return toPerformanceDetail(dto);
 }
 
+async function updatePerformanceReal(teamId: number, patch: Partial<PerformanceDetail>): Promise<PerformanceDetail> {
+  // 백엔드 DTO 는 snake_case 라 camelCase Partial 을 그대로 보내면 필드가 무시될 수 있음.
+  // mapper 의 fromPerformanceDetailPatch 로 전송된 필드만 snake_case 로 매핑.
+  const dto = await api.put<PerformanceDetailDTO>(
+    `/performances/${teamId}`,
+    fromPerformanceDetailPatch(patch),
+  );
+  return toPerformanceDetail(dto);
+}
+
 // ---- 분기 export ----
 
 export const listPerformances = env.USE_MOCK ? listPerformancesMock : listPerformancesReal;
 export const getPerformance = env.USE_MOCK ? getPerformanceMock : getPerformanceReal;
 export const getMyPerformance = env.USE_MOCK ? getMyPerformanceMock : getMyPerformanceReal;
+export const updatePerformance = env.USE_MOCK ? updatePerformanceMock : updatePerformanceReal;

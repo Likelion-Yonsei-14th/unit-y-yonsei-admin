@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { Upload, Plus, Trash2, Edit2, FileText, X } from "lucide-react";
 import { toast } from "sonner";
-import { mockNotices, type Notice } from "@/mocks/notices";
+import { useCreateNotice, useDeleteNotice, useNotices, useUpdateNotice } from "@/features/notices/hooks";
+import type { Notice } from "@/features/notices/types";
 import { PageHeaderAction } from "@/components/common/page-header-action";
 import {
   AlertDialog,
@@ -14,10 +15,13 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
-const todayString = () => new Date().toISOString().slice(0, 10);
-
 export function NoticePage() {
-  const [notices, setNotices] = useState<Notice[]>(mockNotices);
+  const noticesQuery = useNotices();
+  const notices = noticesQuery.data ?? [];
+  const createMutation = useCreateNotice();
+  const updateMutation = useUpdateNotice();
+  const deleteMutation = useDeleteNotice();
+
   const [showForm, setShowForm] = useState(false);
   const [editingNotice, setEditingNotice] = useState<Notice | null>(null);
   const [pendingDelete, setPendingDelete] = useState<Notice | null>(null);
@@ -71,8 +75,15 @@ export function NoticePage() {
 
   const confirmDelete = () => {
     if (!pendingDelete) return;
-    setNotices(notices.filter(n => n.id !== pendingDelete.id));
-    toast.success("공지사항을 삭제했습니다.");
+    const target = pendingDelete;
+    deleteMutation.mutate(target.id, {
+      onSuccess: () => {
+        toast.success("공지사항을 삭제했습니다.");
+      },
+      onError: () => {
+        toast.error("삭제에 실패했습니다. 잠시 후 다시 시도해주세요.");
+      },
+    });
     setPendingDelete(null);
   };
 
@@ -87,28 +98,36 @@ export function NoticePage() {
       return;
     }
     const hasImage = !!imagePreviewUrl || hasExistingImage;
+    const onAfter = () => {
+      setShowForm(false);
+      setEditingNotice(null);
+    };
     if (editingNotice) {
-      setNotices(notices.map(n =>
-        n.id === editingNotice.id
-          ? { ...n, title: titleDraft.trim(), content: contentDraft.trim(), hasImage }
-          : n,
-      ));
-      toast.success("공지사항을 수정했습니다.");
+      updateMutation.mutate(
+        { id: editingNotice.id, title: titleDraft.trim(), content: contentDraft.trim(), hasImage },
+        {
+          onSuccess: () => {
+            toast.success("공지사항을 수정했습니다.");
+            onAfter();
+          },
+          onError: () => toast.error("수정에 실패했습니다. 잠시 후 다시 시도해주세요."),
+        },
+      );
     } else {
-      const nextId = notices.reduce((max, n) => Math.max(max, n.id), 0) + 1;
-      const newNotice: Notice = {
-        id: nextId,
-        title: titleDraft.trim(),
-        content: contentDraft.trim(),
-        date: todayString(),
-        hasImage,
-      };
-      setNotices([newNotice, ...notices]);
-      toast.success("공지사항을 등록했습니다.");
+      createMutation.mutate(
+        { title: titleDraft.trim(), content: contentDraft.trim(), hasImage },
+        {
+          onSuccess: () => {
+            toast.success("공지사항을 등록했습니다.");
+            onAfter();
+          },
+          onError: () => toast.error("등록에 실패했습니다. 잠시 후 다시 시도해주세요."),
+        },
+      );
     }
-    setShowForm(false);
-    setEditingNotice(null);
   };
+
+  const isSaving = createMutation.isPending || updateMutation.isPending;
 
   return (
     <div className="p-4 md:p-8">
@@ -124,8 +143,27 @@ export function NoticePage() {
         )}
       </div>
 
+      {/* 로딩/에러 상태 */}
+      {!showForm && noticesQuery.isLoading && (
+        <div className="bg-background rounded-2xl p-12 text-center text-muted-foreground shadow-sm">
+          공지사항을 불러오는 중…
+        </div>
+      )}
+      {!showForm && noticesQuery.isError && (
+        <div className="bg-ds-error-subtle border border-destructive text-destructive rounded-2xl p-6 text-center">
+          <p className="mb-3">공지사항을 가져오지 못했습니다.</p>
+          <button
+            type="button"
+            onClick={() => noticesQuery.refetch()}
+            className="px-4 py-2 rounded-lg bg-destructive text-destructive-foreground hover:bg-ds-error-pressed transition-colors"
+          >
+            다시 시도
+          </button>
+        </div>
+      )}
+
       {/* Notice List */}
-      {!showForm && (
+      {!showForm && noticesQuery.isSuccess && (
         <div className="bg-background rounded-2xl overflow-hidden shadow-sm">
           <div className="overflow-x-auto">
           <table className="w-full min-w-[640px]">
@@ -211,8 +249,9 @@ export function NoticePage() {
 
           <div className="space-y-6">
             <div>
-              <label className="block text-sm font-semibold text-foreground mb-2">공지사항 제목</label>
+              <label htmlFor="notice-title" className="block text-sm font-semibold text-foreground mb-2">공지사항 제목</label>
               <input
+                id="notice-title"
                 type="text"
                 placeholder="공지사항 제목을 입력하세요"
                 value={titleDraft}
@@ -276,8 +315,9 @@ export function NoticePage() {
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-foreground mb-2">본문</label>
+              <label htmlFor="notice-content" className="block text-sm font-semibold text-foreground mb-2">본문</label>
               <textarea
+                id="notice-content"
                 rows={6}
                 placeholder="공지사항 내용을 작성하세요"
                 value={contentDraft}
@@ -289,15 +329,17 @@ export function NoticePage() {
             <div className="flex justify-end gap-3 pt-4">
               <button
                 onClick={handleCancel}
-                className="px-6 py-3 border border-border text-foreground rounded-lg hover:bg-muted transition-colors"
+                disabled={isSaving}
+                className="px-6 py-3 border border-border text-foreground rounded-lg hover:bg-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 취소
               </button>
               <button
                 onClick={handleSave}
-                className="px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-ds-primary-pressed transition-colors duration-200"
+                disabled={isSaving}
+                className="px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-ds-primary-pressed transition-colors duration-200 disabled:opacity-70 disabled:cursor-not-allowed"
               >
-                {editingNotice ? "수정 완료" : "공지사항 등록"}
+                {isSaving ? "저장 중…" : (editingNotice ? "수정 완료" : "공지사항 등록")}
               </button>
             </div>
           </div>
