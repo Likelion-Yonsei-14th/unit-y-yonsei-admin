@@ -22,16 +22,6 @@ function DefaultLanding() {
 }
 
 /**
- * `/reservations` 진입 분기.
- * 이전엔 Booth 계정을 `/reservations/:myBoothId` 로 자동 리다이렉트했지만,
- * 지도+슬라이더 picker 가 모든 역할 공통 진입점이 되면서 리다이렉트는 불필요.
- * "소속 부스 정보 없음" 빈 상태 메시지는 ReservationBoothPicker 내부에서 처리.
- */
-function ReservationsEntry() {
-  return <ReservationBoothPicker />;
-}
-
-/**
  * boothId 가 바뀌면 ReservationManagement 를 강제 remount.
  * 같은 라우트 패턴 간 이동(`/reservations/1` → `/reservations/3`) 시
  * 내부 상태(필터·선택·토글 등) 가 전 부스 값을 끌고 오지 않도록 차단.
@@ -125,10 +115,12 @@ export const router = createBrowserRouter([
       },
 
       {
+        // 모든 역할 공통 진입점 — Booth 계정의 자동 리다이렉트는 더 이상 안 함.
+        // 소속 부스 정보 없음 빈 상태 메시지는 ReservationBoothPicker 내부에서 처리.
         path: 'reservations',
         element: (
           <RequirePermission permission="reservation.read">
-            <ReservationsEntry />
+            <ReservationBoothPicker />
           </RequirePermission>
         ),
       },
