@@ -149,6 +149,8 @@ export function BoothMapCanvas({
                       isMine={b.placement.boothId === myBoothId}
                       canEnter={canEnter(b.placement.boothId)}
                       onClick={() => onPinClick(b.placement.boothId)}
+                      mapWidth={imageRect.width}
+                      mapHeight={imageRect.height}
                     />
                   ))}
                 </div>
@@ -198,9 +200,23 @@ interface BoothPinProps {
   isMine: boolean;
   canEnter: boolean;
   onClick: () => void;
+  /** 핀이 올라간 painted rect 의 unzoomed 크기. borderRadius 계산에 사용. */
+  mapWidth: number;
+  mapHeight: number;
 }
 
-function BoothPin({ booth, isFocused, isMine, canEnter, onClick }: BoothPinProps) {
+/**
+ * 핀의 borderRadius 를 짧은 변에 비례해 결정한다.
+ * 백양로(1:3.55) 같이 캔버스가 길쭉한 섹션에서는 핀 자체의 css 폭이 한 자리수
+ * 픽셀까지 줄 수 있어, 고정 `rounded-md`(6px) 가 변보다 커져 타원처럼 렌더되는
+ * 문제가 있었음 — 짧은 변의 20% 까지만 곡률을 허용해 사각형 형태를 유지.
+ */
+function computePinRadius(pxW: number, pxH: number): number {
+  const shorter = Math.min(pxW, pxH);
+  return Math.max(0, Math.min(6, shorter * 0.2));
+}
+
+function BoothPin({ booth, isFocused, isMine, canEnter, onClick, mapWidth, mapHeight }: BoothPinProps) {
   const { placement } = booth;
   const stateClass = isFocused
     ? 'border-primary bg-primary/20 ring-2 ring-primary/30 scale-[1.02]'
@@ -208,6 +224,10 @@ function BoothPin({ booth, isFocused, isMine, canEnter, onClick }: BoothPinProps
     ? 'border-ds-success-pressed bg-ds-success-subtle/60'
     : 'border-border bg-background/50 hover:border-ds-border-strong';
   const lockedClass = !canEnter ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer';
+
+  const pinPxW = (placement.width / 100) * mapWidth;
+  const pinPxH = (placement.height / 100) * mapHeight;
+  const borderRadius = computePinRadius(pinPxW, pinPxH);
 
   return (
     <button
@@ -225,8 +245,9 @@ function BoothPin({ booth, isFocused, isMine, canEnter, onClick }: BoothPinProps
         height: `${placement.height}%`,
         minWidth: 8,
         minHeight: 8,
+        borderRadius,
       }}
-      className={`pointer-events-auto absolute -translate-x-1/2 -translate-y-1/2 flex items-center justify-center rounded-md border-2 text-xs font-semibold shadow-sm transition-all ${stateClass} ${lockedClass}`}
+      className={`pointer-events-auto absolute -translate-x-1/2 -translate-y-1/2 flex items-center justify-center border-2 text-xs font-semibold shadow-sm transition-all ${stateClass} ${lockedClass}`}
       aria-label={`부스 ${placement.boothNumber}${!canEnter ? ' — 예약 관리 불가' : ''}`}
     >
       {/* 핀 안에는 본인 부스 표시용 Star 만 둔다 — 부스 번호는 지도 정보를 가리고,
