@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Upload, Plus, Trash2, Check, X, GripVertical, ArrowLeft, Star, Edit, Store } from "lucide-react";
 import { DndProvider, useDrag, useDrop } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
@@ -140,6 +140,14 @@ export function BoothManagement() {
   const [orderNotice, setOrderNotice] = useState("");
   const [menuItems, setMenuItems] = useState<BoothMenuItem[]>([]);
 
+  // 이 컴포넌트에서 직접 createObjectURL 로 만든 blob URL 만 추적 — 서버에서
+  // 받은 일반 URL 은 revoke 대상이 아니다. 제거/동기화/언마운트 시점에 누수 없이 정리.
+  const blobUrlsRef = useRef<Set<string>>(new Set());
+  useEffect(() => () => {
+    blobUrlsRef.current.forEach((u) => URL.revokeObjectURL(u));
+    blobUrlsRef.current.clear();
+  }, []);
+
   useEffect(() => {
     if (!booth) return;
     setReservationEnabled(booth.reservationEnabled);
@@ -151,6 +159,14 @@ export function BoothManagement() {
     setOperatingHours(booth.operatingHours);
     setOrderNotice(booth.orderNotice);
     setMenuItems(booth.menuItems);
+    // 서버 데이터로 다시 채워질 때 — 화면에서 사라진 blob URL 즉시 revoke (저장→refetch 경로 누수 차단).
+    const stillUsed = new Set(booth.thumbnails.map((img) => img.url));
+    for (const url of blobUrlsRef.current) {
+      if (!stillUsed.has(url)) {
+        URL.revokeObjectURL(url);
+        blobUrlsRef.current.delete(url);
+      }
+    }
   }, [booth]);
 
   /** 작성 전(=완료 안 된) 카드 클릭 시 바로 편집 모드로 진입. */
@@ -204,11 +220,15 @@ export function BoothManagement() {
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (files) {
-      const newImages: BoothImage[] = Array.from(files).map((file, index) => ({
-        id: Date.now() + index,
-        url: URL.createObjectURL(file),
-        isMain: boothImages.length === 0 && index === 0,
-      }));
+      const newImages: BoothImage[] = Array.from(files).map((file, index) => {
+        const url = URL.createObjectURL(file);
+        blobUrlsRef.current.add(url);
+        return {
+          id: Date.now() + index,
+          url,
+          isMain: boothImages.length === 0 && index === 0,
+        };
+      });
       setBoothImages([...boothImages, ...newImages]);
     }
   };
@@ -221,6 +241,11 @@ export function BoothManagement() {
   };
 
   const removeImage = (id: number) => {
+    const target = boothImages.find((img) => img.id === id);
+    if (target && blobUrlsRef.current.has(target.url)) {
+      URL.revokeObjectURL(target.url);
+      blobUrlsRef.current.delete(target.url);
+    }
     const filtered = boothImages.filter(img => img.id !== id);
     if (filtered.length > 0 && !filtered.some(img => img.isMain)) {
       filtered[0].isMain = true;
