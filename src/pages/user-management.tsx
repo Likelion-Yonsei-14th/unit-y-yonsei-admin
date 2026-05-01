@@ -1,7 +1,13 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router";
 import { ArrowDown, ArrowUp, ArrowUpDown, Search, UserPlus, Users, X } from "lucide-react";
-import { mockUsers, type MockUser as User } from "@/mocks/users";
+import { toast } from "sonner";
+import {
+  useAdminUsers,
+  useSetUserActive,
+  useSetUserRole,
+} from "@/features/users/hooks";
+import type { AdminUser as User } from "@/features/users/types";
 import { PageHeaderAction } from "@/components/common/page-header-action";
 import { useAuth } from "@/features/auth/hooks";
 import { Switch } from "@/components/ui/switch";
@@ -63,7 +69,11 @@ const nextSortDir: Record<SortDir, SortDir> = {
 };
 
 export function UserManagement() {
-  const [users, setUsers] = useState<User[]>(mockUsers);
+  const usersQuery = useAdminUsers();
+  const users: User[] = usersQuery.data ?? [];
+  const setActiveMutation = useSetUserActive();
+  const setRoleMutation = useSetUserRole();
+
   const [selectedRole, setSelectedRole] = useState<RoleFilter>("전체");
   const [searchQuery, setSearchQuery] = useState("");
   const [statusSort, setStatusSort] = useState<SortDir>("none");
@@ -133,7 +143,21 @@ export function UserManagement() {
     statusSort === "asc" ? "비활성 먼저" : statusSort === "desc" ? "활성 먼저" : "정렬 없음";
 
   const applyStatus = (id: number, active: boolean) => {
-    setUsers((prev) => prev.map((u) => (u.id === id ? { ...u, active } : u)));
+    setActiveMutation.mutate(
+      { id, active },
+      {
+        onError: () => toast.error("상태 변경에 실패했습니다. 잠시 후 다시 시도해주세요."),
+      },
+    );
+  };
+
+  const applyRole = (id: number, role: Role) => {
+    setRoleMutation.mutate(
+      { id, role },
+      {
+        onError: () => toast.error("권한 변경에 실패했습니다. 잠시 후 다시 시도해주세요."),
+      },
+    );
   };
 
   const handleToggleActive = (u: User) => {
@@ -154,7 +178,7 @@ export function UserManagement() {
   const handleRoleSelect = (u: User, to: Role) => {
     const tier = getRoleChangeTier(u.role, to);
     if (tier === 0) {
-      setUsers((prev) => prev.map((x) => (x.id === u.id ? { ...x, role: to } : x)));
+      applyRole(u.id, to);
       return;
     }
     setPendingRoleChange({ user: u, to });
@@ -162,11 +186,7 @@ export function UserManagement() {
 
   const confirmRoleChange = () => {
     if (pendingRoleChange) {
-      setUsers((prev) =>
-        prev.map((x) =>
-          x.id === pendingRoleChange.user.id ? { ...x, role: pendingRoleChange.to } : x,
-        ),
-      );
+      applyRole(pendingRoleChange.user.id, pendingRoleChange.to);
     }
     setPendingRoleChange(null);
   };
@@ -181,6 +201,29 @@ export function UserManagement() {
   // SelectTrigger 기본 클래스에 `data-[size=sm]:h-8` 이 포함돼 있어
   // 같은 특이도의 `h-7` 로는 덮어써지지 않는다. data-variant 로 맞춰 높이를 통일.
   const roleBadgeSize = "h-7 data-[size=sm]:h-7 rounded-full text-xs font-medium";
+
+  if (usersQuery.isLoading) {
+    return (
+      <div className="p-4 md:p-8 text-center text-muted-foreground">유저 정보를 불러오는 중…</div>
+    );
+  }
+
+  if (usersQuery.isError) {
+    return (
+      <div className="p-4 md:p-8">
+        <div className="bg-ds-error-subtle border border-destructive text-destructive rounded-2xl p-6 text-center">
+          <p className="mb-3">유저 정보를 가져오지 못했습니다.</p>
+          <button
+            type="button"
+            onClick={() => usersQuery.refetch()}
+            className="px-4 py-2 rounded-lg bg-destructive text-destructive-foreground hover:bg-ds-error-pressed transition-colors"
+          >
+            다시 시도
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-4 md:p-8">
