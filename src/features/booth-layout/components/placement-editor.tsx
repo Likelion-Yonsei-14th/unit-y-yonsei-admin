@@ -281,6 +281,7 @@ export function PlacementEditor({ booths }: PlacementEditorProps) {
       <div className="flex flex-1 overflow-hidden">
         <PlacementList
           booths={booths}
+          placementsAtDate={placementsQuery.data ?? []}
           placementsInSection={placementsInSection}
           selectedBoothId={selectedBoothId}
           onSelectBooth={setSelectedBoothId}
