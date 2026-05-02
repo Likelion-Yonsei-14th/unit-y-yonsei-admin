@@ -10,6 +10,7 @@ import {
 import type { Notice } from '@/features/notices/types';
 import { PageHeaderAction } from '@/components/common/page-header-action';
 import { TableSkeleton } from '@/components/common/table-skeleton';
+import { Markdown } from '@/components/common/markdown';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -339,18 +340,32 @@ export function NoticePage() {
             <div>
               <label
                 htmlFor="notice-content"
-                className="block text-sm font-semibold text-foreground mb-2"
+                className="block text-sm font-semibold text-foreground mb-2 flex items-center justify-between"
               >
-                본문
+                <span>본문</span>
+                <span className="text-xs font-normal text-muted-foreground">
+                  마크다운 지원 — **굵게**, *기울임*, [링크](url), 목록(- ), 표
+                </span>
               </label>
               <textarea
                 id="notice-content"
                 rows={6}
-                placeholder="공지사항 내용을 작성하세요"
+                placeholder="공지사항 내용을 작성하세요. 마크다운 문법을 그대로 쓰면 미리보기에 반영됩니다."
                 value={contentDraft}
                 onChange={(e) => setContentDraft(e.target.value)}
-                className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all resize-none"
+                className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all resize-none font-mono text-sm"
               />
+              {/* 실시간 미리보기 — 비어 있을 땐 안내, 있을 땐 렌더 결과. */}
+              <div className="mt-3 rounded-lg border border-dashed border-border bg-muted/40 p-4">
+                <div className="text-xs font-semibold text-muted-foreground mb-2">미리보기</div>
+                {contentDraft.trim() ? (
+                  <Markdown source={contentDraft} />
+                ) : (
+                  <p className="text-xs text-ds-text-disabled">
+                    본문을 입력하면 여기에 렌더 결과가 표시됩니다.
+                  </p>
+                )}
+              </div>
             </div>
 
             <div className="flex justify-end gap-3 pt-4">
