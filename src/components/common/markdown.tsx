@@ -1,6 +1,7 @@
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeSanitize from 'rehype-sanitize';
+import { cn } from '@/components/ui/utils';
 
 interface Props {
   /** 원본 markdown 문자열. */
@@ -22,7 +23,7 @@ interface Props {
  */
 export function Markdown({ source, className }: Props) {
   return (
-    <div className={`markdown-content text-sm leading-relaxed text-foreground ${className ?? ''}`}>
+    <div className={cn('markdown-content text-sm leading-relaxed text-foreground', className)}>
       <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeSanitize]}>
         {source}
       </ReactMarkdown>
