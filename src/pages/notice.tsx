@@ -248,7 +248,7 @@ export function NoticePage() {
       {/* Notice Form */}
       {showForm && (
         <div className="bg-background rounded-2xl p-4 md:p-8 shadow-sm">
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
             <h2 className="text-xl font-bold text-foreground">
               {editingNotice ? '공지사항 수정' : '새 공지사항 작성'}
             </h2>
@@ -302,7 +302,7 @@ export function NoticePage() {
               ) : hasExistingImage ? (
                 /* 편집 진입 시 mock 데이터엔 URL 이 없어 미리보기를 띄울 수 없는 경우.
                    '기존 이미지 유지' 의도를 명시하고, 변경하려면 새로 업로드. */
-                <div className="flex items-center justify-between rounded-lg border border-border bg-muted px-4 py-3 text-sm text-muted-foreground">
+                <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border bg-muted px-4 py-3 text-sm text-muted-foreground">
                   <span>기존 이미지가 첨부되어 있습니다.</span>
                   <label className="cursor-pointer rounded-md border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground hover:border-ds-border-strong">
                     <input

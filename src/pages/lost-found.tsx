@@ -259,7 +259,7 @@ export function LostFoundPage() {
       {/* Lost Item Form */}
       {showForm && (
         <div className="bg-background rounded-2xl p-4 md:p-8 shadow-sm">
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
             <h2 className="text-xl font-bold text-foreground">
               {editingItem ? '분실물 수정' : '분실물 등록'}
             </h2>
@@ -344,7 +344,7 @@ export function LostFoundPage() {
                   </button>
                 </div>
               ) : hasExistingImage ? (
-                <div className="flex items-center justify-between rounded-lg border border-border bg-muted px-4 py-3 text-sm text-muted-foreground">
+                <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border bg-muted px-4 py-3 text-sm text-muted-foreground">
                   <span>기존 사진이 첨부되어 있습니다.</span>
                   <label className="cursor-pointer rounded-md border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground hover:border-ds-border-strong">
                     <input
