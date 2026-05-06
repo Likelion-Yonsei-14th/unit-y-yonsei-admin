@@ -122,7 +122,7 @@ export function BoothInfoForm({
 
   return (
     <div className="bg-background rounded-2xl p-4 md:p-8 mb-6 shadow-sm">
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
         <h2 className="text-xl font-bold text-foreground">부스 상세 정보</h2>
         <div className="flex items-center gap-3">
           {!isEditing ? (

@@ -44,7 +44,7 @@ export function DraggableMenuItem({
   return (
     <div
       ref={(node) => preview(drop(node))}
-      className={`flex items-center gap-4 p-4 border border-border rounded-lg transition-all ${
+      className={`flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 p-4 border border-border rounded-lg transition-all ${
         isDragging ? 'opacity-50' : 'opacity-100'
       } hover:border-primary`}
     >
