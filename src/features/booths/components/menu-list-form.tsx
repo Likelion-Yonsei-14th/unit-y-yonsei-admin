@@ -175,7 +175,10 @@ export function MenuListForm({ booth, initiallyEditing, updateMutation, onClose 
       ) : (
         <div className="space-y-4">
           {menuItems.map((item) => (
-            <div key={item.id} className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 p-4 rounded-lg bg-muted">
+            <div
+              key={item.id}
+              className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 p-4 rounded-lg bg-muted"
+            >
               <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-semibold text-sm flex-shrink-0">
                 {item.order}
               </div>
