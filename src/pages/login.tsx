@@ -97,7 +97,7 @@ export function LoginPage() {
             <p className="ds-caption font-medium text-ds-warning-pressed mb-1.5">
               🛠 Mock 모드 안내 (VITE_USE_MOCK=true)
             </p>
-            <div className="ds-caption text-ds-warning-pressed space-y-0.5 font-mono">
+            <div className="text-[11px] sm:text-xs text-ds-warning-pressed space-y-0.5 font-mono break-words">
               <div>super / super1234 (슈퍼어드민)</div>
               <div>master / master1234 (마스터어드민)</div>
               <div className="pt-1 text-[10px] opacity-80">─ Booth · 비밀번호 booth1234 ─</div>
