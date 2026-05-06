@@ -248,8 +248,8 @@ export function UserManagement() {
         pill 은 "Performer | 99" 형태의 라벨·카운트 동반 노출을 고려해 min-w-32 로 폭 편차 제거.
         계정 규모(≤수백)를 감안해 서버 검색 없이 프론트에서 .includes() 로 충분.
       */}
-      <div className="flex items-center justify-between gap-4 mb-6">
-        <div className="flex gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
+        <div className="flex flex-wrap gap-2">
           {roles.map((role) => (
             <button
               key={role}
