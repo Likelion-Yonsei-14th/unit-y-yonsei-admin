@@ -140,7 +140,7 @@ export function PerformanceReviewPage() {
       </div>
 
       {/* 통계 카드 */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-6">
         <div className="bg-background rounded-xl p-5 shadow-sm">
           <div className="flex items-center justify-between">
             <div>

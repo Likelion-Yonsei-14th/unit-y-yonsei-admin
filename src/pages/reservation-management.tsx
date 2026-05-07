@@ -286,8 +286,8 @@ export function ReservationManagement() {
         user-management 와 동일 패턴. 계정/예약 수가 수백 단위라 서버 검색 없이
         프론트에서 .includes() 로 충분.
       */}
-      <div className="flex items-center justify-between gap-4 mb-6">
-        <div className="flex gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
+        <div className="flex flex-wrap gap-2">
           {statuses.map((status) => (
             <button
               key={status}
@@ -306,7 +306,7 @@ export function ReservationManagement() {
           ))}
         </div>
 
-        <div className="relative w-72">
+        <div className="relative w-full sm:w-72">
           <Search
             size={16}
             className="absolute left-3 top-1/2 -translate-y-1/2 text-ds-text-disabled pointer-events-none"

@@ -80,7 +80,7 @@
 - **mutation 정직성**: 성공 토스트는 mutation 성공 응답에서만 발화, 실패는 alert 영역으로 노출 (저장 거짓말 방지)
 - **AlertDialog vs Dialog**: 파괴적 액션은 AlertDialog (취소 확정/삭제), 일반 정보/액션은 Dialog (포커스 트랩 + ESC + aria-modal)
 - **로딩/에러 분기**: `isLoading` → 메시지, `isError` → 다시 시도 버튼 — 도메인 페이지 전반 통일
-- **모바일 반응형**: 페이지 외곽 `p-4 md:p-8`, 카드 `p-4 md:p-8`, 폼 grid `grid-cols-1 sm:grid-cols-2`, 테이블 `overflow-x-auto` 래퍼 + `min-w-[NNNpx]`, 페이지 헤더 `flex-wrap gap-3 mb-6 md:mb-8`
+- **모바일 반응형** (2026-05-07 등급화 일괄 정리): 페이지 외곽 `p-4 md:p-8`, 카드 `p-4 md:p-8`, 폼 grid `grid-cols-1 sm:grid-cols-2`, 테이블 `overflow-x-auto` 래퍼 + `min-w-[NNNpx]`, 페이지 헤더 `flex flex-wrap items-center justify-between gap-3 mb-6 md:mb-8`, 좁은 폭 행 stack `flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4`. 좌표 편집기는 `lg:hidden` 안내 + `hidden lg:block` 마운트로 데스크톱 전용. 등급 분류·표준 어휘는 `docs/superpowers/specs/2026-05-07-mobile-responsive-design.md`.
 - **부스 핀 borderRadius**: 짧은 변의 20% 캡 (백양로 1:3.55 종횡비에서 타원 현상 해결, view+편집기 공유)
 - **편집기 핀 핸들**: 폭/높이 < 16px 일 때 변 핸들 자동 숨김 (좁은 자리 가독성)
 - **접근성**: 폼 `htmlFor` + `id` 매칭, 동적 리스트는 `aria-label`, 권한 카드 `role=radio`+`aria-checked`
@@ -107,7 +107,7 @@
 - 우선순위 3: E2E (Playwright) — 권한 라우팅, 폼 흐름
 
 ### 4. 새로운 사용자 피드백 사이클
-- 모바일 실기기 QA — 캠퍼스 일정 임박(2026-05-26~29) 전 PM/사용자 손으로 한 번 더 점검 권장
+- 모바일 실기기 QA — 코드/패턴 audit + dev 머지(2026-05-07) 완료. PM/사용자가 실제 폰으로 한 번 더 시각 점검만 남음 (캠퍼스 일정 5/26~29 전 권장)
 - 사진 업로드 까맣게/실패 — 백엔드 리드(user) 작업
 
 ### 5. 미정/외부 의사결정 대기

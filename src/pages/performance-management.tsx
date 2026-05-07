@@ -328,29 +328,28 @@ export function PerformanceManagement() {
               </button>
             </>
           )}
-
-          {/* 저장 실패 — toast 가 거짓말하지 않도록, 실제 mutation 결과만 노출. */}
-          {updateMutation.isError && (
-            <div
-              role="alert"
-              className="flex items-center gap-2 px-4 py-3 bg-ds-error-subtle border border-destructive text-destructive rounded-lg shadow-lg"
-            >
-              <X size={14} />
-              <span className="font-medium">저장에 실패했습니다. 잠시 후 다시 시도해주세요.</span>
-            </div>
-          )}
-
-          {/* Save Success Toast — 실 mutation 성공 시에만 발화 */}
-          {saveSuccess && (
-            <div className="flex items-center gap-2 px-4 py-3 bg-ds-success-subtle border border-ds-success text-ds-success-pressed rounded-lg shadow-lg animate-fade-in">
-              <div className="w-6 h-6 bg-ds-success rounded-full flex items-center justify-center">
-                <Check size={14} className="text-white" />
-              </div>
-              <span className="font-medium">저장이 완료되었습니다!</span>
-            </div>
-          )}
         </div>
       </div>
+
+      {/* 저장 실패/성공 알림 — 헤더와 별도 줄로 분리. flex-wrap 의 우측 그룹 안에 alert
+          박스를 넣으면 좁은 폰에서 버튼+alert 가 같은 줄에 욱여 들어가 가독성↓. */}
+      {updateMutation.isError && (
+        <div
+          role="alert"
+          className="mb-4 flex items-center gap-2 px-4 py-3 bg-ds-error-subtle border border-destructive text-destructive rounded-lg shadow-sm"
+        >
+          <X size={14} />
+          <span className="font-medium">저장에 실패했습니다. 잠시 후 다시 시도해주세요.</span>
+        </div>
+      )}
+      {saveSuccess && (
+        <div className="mb-4 flex items-center gap-2 px-4 py-3 bg-ds-success-subtle border border-ds-success text-ds-success-pressed rounded-lg shadow-sm animate-fade-in">
+          <div className="w-6 h-6 bg-ds-success rounded-full flex items-center justify-center">
+            <Check size={14} className="text-white" />
+          </div>
+          <span className="font-medium">저장이 완료되었습니다!</span>
+        </div>
+      )}
 
       {/* Performance Team Profile */}
       <div className="bg-background rounded-2xl p-4 md:p-8 mb-6 shadow-sm">
@@ -687,7 +686,7 @@ export function PerformanceManagement() {
           {(isEditMode ? editingSetlist : setlist).map((item, index) => (
             <div
               key={item.id}
-              className="flex items-center gap-4 p-4 border border-border rounded-lg hover:border-primary transition-colors"
+              className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 p-4 border border-border rounded-lg hover:border-primary transition-colors"
             >
               <div className="flex items-center justify-center w-10 h-10 bg-primary text-primary-foreground font-bold rounded-lg">
                 {index + 1}

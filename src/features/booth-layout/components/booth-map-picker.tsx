@@ -67,7 +67,7 @@ export function BoothMapPicker({
 
   return (
     <div className="flex h-full flex-col">
-      <div className="border-b border-border bg-background px-6 py-3">
+      <div className="border-b border-border bg-background px-4 md:px-6 py-3">
         <MapSectionTabs
           availableDates={availableDates}
           selectedDate={selectedDate}

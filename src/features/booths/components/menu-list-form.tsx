@@ -89,7 +89,7 @@ export function MenuListForm({ booth, initiallyEditing, updateMutation, onClose 
 
   return (
     <div className="bg-background rounded-2xl p-4 md:p-8 shadow-sm">
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
         <h2 className="text-xl font-bold text-foreground">메뉴 리스트</h2>
         <div className="flex items-center gap-3">
           {isEditing && (
@@ -175,7 +175,10 @@ export function MenuListForm({ booth, initiallyEditing, updateMutation, onClose 
       ) : (
         <div className="space-y-4">
           {menuItems.map((item) => (
-            <div key={item.id} className="flex items-center gap-4 p-4 rounded-lg bg-muted">
+            <div
+              key={item.id}
+              className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 p-4 rounded-lg bg-muted"
+            >
               <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-semibold text-sm flex-shrink-0">
                 {item.order}
               </div>
