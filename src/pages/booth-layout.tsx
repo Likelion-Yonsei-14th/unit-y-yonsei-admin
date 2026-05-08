@@ -35,8 +35,11 @@ export function BoothLayoutPage() {
         </div>
       </div>
 
-      {/* lg 이상에서만 편집기 마운트. */}
-      <div className="hidden lg:block flex-1 overflow-hidden">
+      {/* lg 이상에서만 편집기 마운트. flex-col 로 둬서 자식의 h-full 캐스케이드가
+          끊기지 않도록 — block 이면 자식 height 100% 가 정확히 평가되지 않아
+          PlacementEditor 가 content-height 로 부풀어 페이지 자체가 스크롤되는
+          현상이 생긴다. */}
+      <div className="hidden lg:flex flex-1 flex-col min-h-0 overflow-hidden">
         {boothsQuery.isLoading ? (
           <div className="p-8 text-sm text-muted-foreground">불러오는 중...</div>
         ) : boothsQuery.isError ? (
