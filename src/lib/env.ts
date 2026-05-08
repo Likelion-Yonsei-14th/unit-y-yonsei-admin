@@ -7,9 +7,17 @@ import { z } from 'zod';
 const schema = z.object({
   VITE_API_BASE_URL: z.string().min(1).default('http://localhost:8080/api'),
   VITE_APP_NAME: z.string().default('대동제 어드민'),
+  /**
+   * mock 데이터 사용 여부. **default 는 모드에 따라 다르다**:
+   * - dev (`pnpm dev`)      → default 'true'  (개발 편의: .env.local 없어도 mock 으로 즉시 동작)
+   * - prod build            → default 'false' (안전: mock 계정이 prod 번들에 새는 사고 차단)
+   * 명시적으로 `VITE_USE_MOCK=true` 를 prod 에서 설정하면 vite.config.ts 의
+   * build-time 가드가 빌드 자체를 막는다. 아래 런타임 가드는 그 가드를 어떻게든
+   * 통과한 번들에 대한 2차 방어선.
+   */
   VITE_USE_MOCK: z
     .enum(['true', 'false'])
-    .default('true')
+    .default(import.meta.env.DEV ? 'true' : 'false')
     .transform((v) => v === 'true'),
   /**
    * CS 문의용 오픈카카오 채팅방 URL.
@@ -33,6 +41,17 @@ if (!parsed.success) {
   console.error('[env] 환경변수 검증 실패:', formatted);
   throw new Error(
     `환경변수 검증 실패. .env.local 파일을 확인하세요. 상세: ${JSON.stringify(formatted)}`,
+  );
+}
+
+/**
+ * production + USE_MOCK=true 조합은 mock 계정·고정 비번이 prod 번들에 그대로
+ * 노출되는 사고를 만든다. 환경변수 실수로라도 이 조합이 들어오면 빌드/런타임에서
+ * 즉시 차단. 의도적으로 prod 에서 mock 을 쓰려면(스테이징 등) 이 가드를 일시 제거.
+ */
+if (import.meta.env.PROD && parsed.data.VITE_USE_MOCK) {
+  throw new Error(
+    '[env] production 빌드에서 VITE_USE_MOCK=true 는 차단됩니다 — mock 계정/고정 비번이 번들에 노출됩니다. .env / 배포 환경변수를 확인하세요.',
   );
 }
 
