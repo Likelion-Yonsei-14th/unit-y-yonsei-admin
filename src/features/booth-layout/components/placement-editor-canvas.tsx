@@ -9,6 +9,7 @@ import { useImagePaintedRect } from '@/features/booth-layout/hooks/use-image-pai
 import { clamp } from '@/features/booth-layout/utils/clamp';
 import { computePinRadius } from '@/features/booth-layout/utils/pin-radius';
 import type { BoothPlacement, MapSection, MapSectionId } from '@/features/booth-layout/types';
+import type { BoothProfile } from '@/features/booths/types';
 
 const MIN_SCALE = 1;
 const MAX_SCALE = 4;
@@ -23,6 +24,10 @@ export interface PlacementEditorCanvasProps {
   placements: BoothPlacement[];
   selectedPlacementId: number | null;
   selectedBoothId: number | null;
+  /** 좌측 리스트 hover 동기화 — 핀 ghost 강조. select 와 다른 채널. */
+  hoveredBoothId?: number | null;
+  /** 핀 hover tooltip 에 부스명/단체명 노출하기 위한 lookup. */
+  boothById?: Map<number, BoothProfile>;
   onSelectPlacement: (id: number | null) => void;
   /** 새 placement 생성 콜백. 좌표/크기는 이미지 기준 0–100 %. */
   onCreatePlacement: (input: { x: number; y: number; width: number; height: number }) => void;
@@ -70,6 +75,8 @@ export function PlacementEditorCanvas({
   placements,
   selectedPlacementId,
   selectedBoothId,
+  hoveredBoothId,
+  boothById,
   onSelectPlacement,
   onCreatePlacement,
   onMovePlacement,
@@ -350,6 +357,14 @@ export function PlacementEditorCanvas({
                   {placements.map((p) => {
                     const isSelected = p.id === selectedPlacementId;
                     const isInGroup = !isSelected && p.boothId === selectedBoothId;
+                    const isHovered = !isSelected && !isInGroup && p.boothId === hoveredBoothId;
+                    const profile = boothById?.get(p.boothId);
+                    // 부스명 / 단체명 / 자리 번호 — 운영진이 핀에 hover 만 해도 누구 자리인지 즉시 식별.
+                    const tooltipText = profile?.name
+                      ? `${profile.name}${
+                          profile.organizationName ? ` / ${profile.organizationName}` : ''
+                        } · 자리 ${p.boothNumber}`
+                      : `자리 ${p.boothNumber}`;
                     const isDragging = dragState?.placementId === p.id;
                     const isResizing = resizeState?.placementId === p.id;
                     const liveX = isDragging
@@ -398,9 +413,12 @@ export function PlacementEditorCanvas({
                             ? 'border-primary bg-primary/30 ring-2 ring-primary/40'
                             : isInGroup
                               ? 'border-ds-success-pressed bg-ds-success-subtle/70'
-                              : 'border-border bg-background/60 hover:border-ds-border-strong'
+                              : isHovered
+                                ? 'border-ds-primary-pressed bg-ds-primary-subtle/50'
+                                : 'border-border bg-background/60 hover:border-ds-border-strong'
                         } ${isDragging ? 'cursor-grabbing' : ''}`}
-                        aria-label={`자리 ${p.boothNumber}`}
+                        title={tooltipText}
+                        aria-label={tooltipText}
                       >
                         <span className="truncate">{p.boothNumber}</span>
                         {isSelected && !isDragging && !isResizing && (
