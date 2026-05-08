@@ -1,5 +1,5 @@
 // src/features/booth-layout/components/placement-list.tsx
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Search, X, AlertTriangle } from 'lucide-react';
 import type { BoothProfile } from '@/features/booths/types';
 import type { BoothPlacement } from '@/features/booth-layout/types';
@@ -42,11 +42,35 @@ export function PlacementList({
   // 캔버스에서 핀 클릭 → selectedBoothId 변경 → 리스트의 해당 항목으로 자동 스크롤.
   // li ref Map 으로 추적. 항목 unmount 시 cleanup.
   const liRefs = useRef<Map<number, HTMLLIElement>>(new Map());
+  // boothId 별 ref 콜백을 캐시 — inline 콜백 매 렌더 새로 생성되어 ref churn 발생하던
+  // 문제 방지(같은 boothId 면 같은 함수 instance 재사용).
+  const liRefCallbacks = useRef<Map<number, (el: HTMLLIElement | null) => void>>(new Map());
+  const getLiRef = useCallback((boothId: number) => {
+    let cb = liRefCallbacks.current.get(boothId);
+    if (!cb) {
+      cb = (el: HTMLLIElement | null) => {
+        if (el) liRefs.current.set(boothId, el);
+        else liRefs.current.delete(boothId);
+      };
+      liRefCallbacks.current.set(boothId, cb);
+    }
+    return cb;
+  }, []);
   useEffect(() => {
     if (selectedBoothId == null) return;
     const el = liRefs.current.get(selectedBoothId);
-    el?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    if (!el) return;
+    // prefers-reduced-motion 사용자에게는 smooth 가 부적절 — 즉각 점프로.
+    const reduced =
+      typeof window !== 'undefined' &&
+      window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    el.scrollIntoView({ block: 'nearest', behavior: reduced ? 'auto' : 'smooth' });
   }, [selectedBoothId]);
+
+  // hover 중인 부스가 필터/검색 변경으로 unmount 되면 onMouseLeave 가 발생하지 않아
+  // hoveredBoothId 가 stale 로 남고 캔버스 ghost 가 계속 켜지는 문제. 컴포넌트 unmount
+  // 시 일괄 정리.
+  useEffect(() => () => onHoverBooth?.(null), [onHoverBooth]);
 
   const inSectionByBooth = useMemo(() => {
     const m = new Map<number, number>();
@@ -68,8 +92,11 @@ export function PlacementList({
     let pool = booths;
     if (!normalizedQuery) {
       if (missingOnly) {
-        // 이 (날짜, 섹션) 에 자리 없는 부스만. showAll 토글은 무시.
-        pool = pool.filter((b) => (inSectionByBooth.get(b.id) ?? 0) === 0);
+        // 이 날짜에 운영하는 부스 중 이 섹션에 자리가 없는 것 — label 과 일치.
+        // 다른 날짜만 운영하는 부스는 노이즈라 제외.
+        pool = pool.filter(
+          (b) => inDateByBooth.has(b.id) && (inSectionByBooth.get(b.id) ?? 0) === 0,
+        );
       } else if (!showAll) {
         pool = pool.filter((b) => inDateByBooth.has(b.id));
       }
@@ -100,12 +127,16 @@ export function PlacementList({
     [booths, inDateByBooth],
   );
 
-  /** 검증 패널 카운트 — 운영진이 "이 (date, section) 에 빠진 부스 있나?" 즉시 확인. */
+  /**
+   * 검증 패널 카운트 — 운영진이 "이 (date, section) 에 빠진 부스 있나?" 즉시 확인.
+   * 의미: 이 날짜에 운영하는 부스(=어떤 placement 라도 있는) 중 이 섹션에 자리 없는 것.
+   * 다른 날짜에만 있는 부스는 분모에서 제외 (label "이 (날짜, 섹션) 미배치" 와 일치).
+   */
   const totalInSection = useMemo(
     () => booths.filter((b) => (inSectionByBooth.get(b.id) ?? 0) > 0).length,
     [booths, inSectionByBooth],
   );
-  const missingFromSection = booths.length - totalInSection;
+  const missingFromSection = totalInDate - totalInSection;
 
   return (
     <aside className="flex h-full min-h-0 w-72 flex-col border-r border-border bg-background">
@@ -121,8 +152,11 @@ export function PlacementList({
             축제 시작 전 "빠진 부스 있나?" 1초 안에 확인하기 위함 (운영 사고 방지선). */}
         <div className="rounded-md border border-border bg-muted/40 px-3 py-2 text-xs">
           <div className="flex items-center justify-between gap-2">
-            <span className="text-muted-foreground">전체 부스</span>
-            <span className="font-semibold text-foreground">{booths.length}</span>
+            <span className="text-muted-foreground">이 날짜 운영</span>
+            <span className="font-semibold text-foreground">
+              {totalInDate}
+              <span className="font-normal text-ds-text-disabled"> / {booths.length}</span>
+            </span>
           </div>
           <div className="mt-1 flex items-center justify-between gap-2">
             <span className="text-ds-success-pressed">이 섹션 배치</span>
@@ -214,7 +248,10 @@ export function PlacementList({
         </div>
       </header>
 
-      <ul className="min-h-0 flex-1 divide-y divide-border overflow-y-auto">
+      <ul
+        className="min-h-0 flex-1 divide-y divide-border overflow-y-auto"
+        onMouseLeave={() => onHoverBooth?.(null)}
+      >
         {visibleBooths.length === 0 && (
           <li className="px-4 py-8 text-center text-xs text-muted-foreground">
             {normalizedQuery
@@ -244,15 +281,7 @@ export function PlacementList({
                 ? `이 날짜의 다른 섹션에 ${dateCount} 자리 배치됨`
                 : '아직 배치된 자리가 없는 부스';
           return (
-            <li
-              key={b.id}
-              ref={(el) => {
-                if (el) liRefs.current.set(b.id, el);
-                else liRefs.current.delete(b.id);
-              }}
-              onMouseEnter={() => onHoverBooth?.(b.id)}
-              onMouseLeave={() => onHoverBooth?.(null)}
-            >
+            <li key={b.id} ref={getLiRef(b.id)} onMouseEnter={() => onHoverBooth?.(b.id)}>
               <button
                 type="button"
                 onClick={() => onSelectBooth(selected ? null : b.id)}
