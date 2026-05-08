@@ -7,7 +7,25 @@ import {
   useNotices,
   useUpdateNotice,
 } from '@/features/notices/hooks';
-import type { Notice } from '@/features/notices/types';
+import {
+  isNewNotice,
+  NOTICE_CATEGORIES,
+  type Notice,
+  type NoticeCategory,
+  type NoticeCategoryMeta,
+} from '@/features/notices/types';
+
+/**
+ * 카테고리 톤 → Tailwind 배지 클래스 매핑.
+ * NOTICE_CATEGORIES 의 tone 값과 1:1 대응.
+ */
+const CATEGORY_TONE_CLASS: Record<NoticeCategoryMeta['tone'], string> = {
+  neutral: 'bg-muted text-muted-foreground',
+  secondary: 'bg-ds-secondary-a-subtle text-ds-secondary-a-pressed',
+  warning: 'bg-ds-warning-subtle text-ds-warning-pressed',
+  primary: 'bg-ds-primary-subtle text-ds-primary-pressed',
+  success: 'bg-ds-success-subtle text-ds-success-pressed',
+};
 import { PageHeaderAction } from '@/components/common/page-header-action';
 import { TableSkeleton } from '@/components/common/table-skeleton';
 import { Markdown } from '@/components/common/markdown';
@@ -36,6 +54,7 @@ export function NoticePage() {
   // 폼 입력 상태 (controlled)
   const [titleDraft, setTitleDraft] = useState('');
   const [contentDraft, setContentDraft] = useState('');
+  const [categoryDraft, setCategoryDraft] = useState<NoticeCategory>('general');
   // 새로 첨부한 이미지의 object URL — 미리보기 + cleanup 대상.
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
   // 편집 진입 시 기존 이미지 보유 여부 — 새 파일을 올리지 않고 그대로 저장하면 유지된다.
@@ -47,10 +66,12 @@ export function NoticePage() {
       setTitleDraft(editingNotice.title);
       setContentDraft(editingNotice.content);
       setHasExistingImage(editingNotice.hasImage);
+      setCategoryDraft(editingNotice.category);
     } else {
       setTitleDraft('');
       setContentDraft('');
       setHasExistingImage(false);
+      setCategoryDraft('general');
     }
     // 새 미리보기는 폼 진입 시 항상 초기화 — revoke 는 아래 cleanup effect 가 책임.
     setImagePreviewUrl(null);
@@ -111,7 +132,13 @@ export function NoticePage() {
     };
     if (editingNotice) {
       updateMutation.mutate(
-        { id: editingNotice.id, title: titleDraft.trim(), content: contentDraft.trim(), hasImage },
+        {
+          id: editingNotice.id,
+          title: titleDraft.trim(),
+          content: contentDraft.trim(),
+          hasImage,
+          category: categoryDraft,
+        },
         {
           onSuccess: () => {
             toast.success('공지사항을 수정했습니다.');
@@ -122,7 +149,12 @@ export function NoticePage() {
       );
     } else {
       createMutation.mutate(
-        { title: titleDraft.trim(), content: contentDraft.trim(), hasImage },
+        {
+          title: titleDraft.trim(),
+          content: contentDraft.trim(),
+          hasImage,
+          category: categoryDraft,
+        },
         {
           onSuccess: () => {
             toast.success('공지사항을 등록했습니다.');
@@ -187,55 +219,71 @@ export function NoticePage() {
                 </tr>
               </thead>
               <tbody>
-                {notices.map((notice) => (
-                  <tr key={notice.id} className="hover:bg-muted transition-colors">
-                    <td className="px-6 py-4">
-                      <button
-                        type="button"
-                        onClick={() => handleEdit(notice)}
-                        className="text-left w-full group"
-                        aria-label={`${notice.title} 수정`}
-                      >
-                        <div className="text-sm font-medium text-foreground group-hover:text-primary group-hover:underline underline-offset-2 transition-colors">
-                          {notice.title}
-                        </div>
-                        <div className="text-xs text-muted-foreground mt-1 line-clamp-1">
-                          {notice.content}
-                        </div>
-                      </button>
-                    </td>
-                    <td className="px-6 py-4 text-sm text-muted-foreground whitespace-nowrap">
-                      {notice.date}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      {notice.hasImage ? (
-                        <span className="inline-block px-3 py-1 bg-ds-success-subtle text-ds-success-pressed rounded-full text-xs font-medium">
-                          있음
-                        </span>
-                      ) : (
-                        <span className="inline-block px-3 py-1 bg-muted text-muted-foreground rounded-full text-xs font-medium">
-                          없음
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 text-center">
-                      <div className="flex items-center justify-center gap-2">
+                {notices.map((notice) => {
+                  const category = NOTICE_CATEGORIES[notice.category];
+                  const isNew = isNewNotice(notice.date);
+                  return (
+                    <tr key={notice.id} className="hover:bg-muted transition-colors">
+                      <td className="px-6 py-4">
                         <button
+                          type="button"
                           onClick={() => handleEdit(notice)}
-                          className="p-2 text-primary hover:bg-ds-primary-subtle rounded-lg transition-colors"
+                          className="text-left w-full group"
+                          aria-label={`${notice.title} 수정`}
                         >
-                          <Edit2 size={16} />
+                          <div className="flex flex-wrap items-center gap-1.5 mb-1.5">
+                            {isNew && (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-destructive text-destructive-foreground">
+                                NEW
+                              </span>
+                            )}
+                            <span
+                              className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium whitespace-nowrap ${CATEGORY_TONE_CLASS[category.tone]}`}
+                            >
+                              {category.label}
+                            </span>
+                          </div>
+                          <div className="text-sm font-medium text-foreground group-hover:text-primary group-hover:underline underline-offset-2 transition-colors">
+                            {notice.title}
+                          </div>
+                          <div className="text-xs text-muted-foreground mt-1 line-clamp-1">
+                            {notice.content}
+                          </div>
                         </button>
-                        <button
-                          onClick={() => setPendingDelete(notice)}
-                          className="p-2 text-destructive hover:bg-ds-error-subtle rounded-lg transition-colors"
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-muted-foreground whitespace-nowrap">
+                        {notice.date}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        {notice.hasImage ? (
+                          <span className="inline-block px-3 py-1 bg-ds-success-subtle text-ds-success-pressed rounded-full text-xs font-medium">
+                            있음
+                          </span>
+                        ) : (
+                          <span className="inline-block px-3 py-1 bg-muted text-muted-foreground rounded-full text-xs font-medium">
+                            없음
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 text-center">
+                        <div className="flex items-center justify-center gap-2">
+                          <button
+                            onClick={() => handleEdit(notice)}
+                            className="p-2 text-primary hover:bg-ds-primary-subtle rounded-lg transition-colors"
+                          >
+                            <Edit2 size={16} />
+                          </button>
+                          <button
+                            onClick={() => setPendingDelete(notice)}
+                            className="p-2 text-destructive hover:bg-ds-error-subtle rounded-lg transition-colors"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -263,6 +311,32 @@ export function NoticePage() {
           </div>
 
           <div className="space-y-6">
+            {/* 카테고리 — 모바일 웹사이트와 통일된 4 일자 + general 5 옵션. */}
+            <div>
+              <span className="block text-sm font-semibold text-foreground mb-2">분류</span>
+              <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="공지 분류">
+                {(Object.values(NOTICE_CATEGORIES) as NoticeCategoryMeta[]).map((cat) => {
+                  const selected = categoryDraft === cat.id;
+                  return (
+                    <button
+                      key={cat.id}
+                      type="button"
+                      role="radio"
+                      aria-checked={selected}
+                      onClick={() => setCategoryDraft(cat.id)}
+                      className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+                        selected
+                          ? CATEGORY_TONE_CLASS[cat.tone] + ' ring-2 ring-foreground/40'
+                          : 'bg-background border border-border text-muted-foreground hover:border-ds-border-strong'
+                      }`}
+                    >
+                      {cat.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
             <div>
               <label
                 htmlFor="notice-title"
