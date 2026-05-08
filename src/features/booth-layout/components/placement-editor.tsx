@@ -63,6 +63,8 @@ export function PlacementEditor({ booths }: PlacementEditorProps) {
   // selectedPlacementId 는 특정 row 를 가리키므로 컨텍스트 전환 시 해제된다.
   const [selectedBoothId, setSelectedBoothId] = useState<number | null>(null);
   const [selectedPlacementId, setSelectedPlacementId] = useState<number | null>(null);
+  /** 좌측 리스트 hover → 캔버스 핀 ghost highlight 동기화. select 와 별도 채널. */
+  const [hoveredBoothId, setHoveredBoothId] = useState<number | null>(null);
   const [stickySize, setStickySize] = useState<{ width: number; height: number }>(DEFAULT_SIZE);
   // 추가 모드 — 기본 OFF. 빈 곳 클릭이 의도치 않게 자리를 만드는 오작동 방지.
   const [isAddMode, setIsAddMode] = useState<boolean>(false);
@@ -91,6 +93,13 @@ export function PlacementEditor({ booths }: PlacementEditorProps) {
     () => (placementsQuery.data ?? []).filter((p) => p.section === selectedSection),
     [placementsQuery.data, selectedSection],
   );
+
+  /** 캔버스 핀 hover tooltip 용 booth id → BoothProfile lookup. */
+  const boothById = useMemo(() => {
+    const m = new Map<number, BoothProfile>();
+    for (const b of booths) m.set(b.id, b);
+    return m;
+  }, [booths]);
 
   const section = MAP_SECTIONS[selectedSection];
 
@@ -285,6 +294,7 @@ export function PlacementEditor({ booths }: PlacementEditorProps) {
           placementsInSection={placementsInSection}
           selectedBoothId={selectedBoothId}
           onSelectBooth={setSelectedBoothId}
+          onHoverBooth={setHoveredBoothId}
         />
         <div className="relative flex-1">
           <PlacementEditorCanvas
@@ -292,6 +302,8 @@ export function PlacementEditor({ booths }: PlacementEditorProps) {
             placements={placementsInSection}
             selectedPlacementId={selectedPlacementId}
             selectedBoothId={selectedBoothId}
+            hoveredBoothId={hoveredBoothId}
+            boothById={boothById}
             onSelectPlacement={handleSelectPlacement}
             onCreatePlacement={handleCreate}
             onMovePlacement={handleMove}
