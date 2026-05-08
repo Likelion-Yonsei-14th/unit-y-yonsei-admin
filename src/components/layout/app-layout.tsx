@@ -344,7 +344,11 @@ export function AppLayout() {
           </button>
           <span className="text-sm font-semibold text-foreground">대동제 어드민</span>
         </div>
-        <div className="flex-1">
+        {/* outlet 래퍼는 flex-col + min-h-0 — 자식의 h-full / flex-1 캐스케이드가
+            정확히 동작해야 하는 페이지(booth-layout 편집기, reservation-booth-picker
+            등) 가 viewport 안에 갇히도록. content-sized 페이지는 자기 패딩으로
+            자연 높이를 가지므로 영향 없음. */}
+        <div className="flex-1 min-h-0 flex flex-col">
           <Outlet />
         </div>
       </main>
