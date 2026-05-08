@@ -352,9 +352,14 @@ export function CreateAdmin() {
                 aria-expanded={showOperationalInfo}
                 className="flex w-full items-center justify-between gap-3 p-4 text-left hover:bg-muted/50 transition-colors rounded-lg"
               >
-                <div className="flex items-center gap-2">
-                  <Settings size={16} className="text-muted-foreground" />
-                  <span className="text-sm font-semibold text-foreground">운영 정보 (선택)</span>
+                <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                  <div className="flex items-center gap-2">
+                    <Settings size={16} className="text-muted-foreground" aria-hidden="true" />
+                    <span className="text-sm font-semibold text-foreground whitespace-nowrap">
+                      운영 정보 (선택)
+                    </span>
+                  </div>
+                  {/* hint — 좁은 폭에선 별도 줄로 깔끔하게 떨어지도록 부모 flex-wrap 사용. */}
                   <span className="text-xs text-muted-foreground">
                     — 알면 미리, 모르면 비워 두세요
                   </span>
