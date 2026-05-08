@@ -1,4 +1,15 @@
 import { z } from 'zod';
+import { FESTIVAL_DATES } from '@/features/booth-layout/sections';
+
+/**
+ * 축제 날짜 리터럴 — schema 와 UI 양쪽에서 동일 단일 소스(FESTIVAL_DATES)로
+ * 통일. FESTIVAL_DATES 는 readonly tuple 이라 z.enum 의 mutable tuple 타입에
+ * 직접 못 들어가 한 번 spread + cast.
+ */
+const FESTIVAL_DATE_ENUM = [...FESTIVAL_DATES] as [
+  (typeof FESTIVAL_DATES)[number],
+  ...(typeof FESTIVAL_DATES)[number][],
+];
 
 /**
  * 신규 어드민 계정 생성 폼 스키마.
@@ -37,11 +48,11 @@ export const createUserSchema = z
      * Booth 운영 날짜 — 한 부스가 여러 날 운영 가능하므로 다중 선택.
      * 부스 운영 가능일은 5/27 (송도), 5/28 / 5/29 (신촌). 5/26 블루런 은 부스 없음.
      */
-    boothOperatingDates: z.array(z.enum(['2026-05-27', '2026-05-28', '2026-05-29'])).optional(),
+    boothOperatingDates: z.array(z.enum(FESTIVAL_DATE_ENUM)).optional(),
     /** 부스 자리 후보 메모. 좌표 입력 X — PlacementEditor 에서 별도. */
     boothLocationNote: z.string().optional(),
-    /** Performer 공연 일자(YYYY-MM-DD). FESTIVAL_DATES 와 일치 — 변경 시 같이 갱신. */
-    performanceDate: z.enum(['2026-05-27', '2026-05-28', '2026-05-29']).optional(),
+    /** Performer 공연 일자(YYYY-MM-DD). FESTIVAL_DATES 단일 소스 사용. */
+    performanceDate: z.enum(FESTIVAL_DATE_ENUM).optional(),
     /** Performer 스테이지 — PerformanceStage 와 일치. */
     performanceStage: z.enum(['songdo', 'dongmoon', 'nocheon']).optional(),
     /** Performer 시작 시각 (HH:MM, 24h). */
