@@ -175,10 +175,10 @@ export function NoticePage() {
                   <th className="px-6 py-4 text-left text-sm font-semibold text-foreground">
                     제목
                   </th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-foreground">
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-foreground whitespace-nowrap">
                     등록일
                   </th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-foreground">
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-foreground whitespace-nowrap">
                     이미지
                   </th>
                   <th className="px-6 py-4 text-center text-sm font-semibold text-foreground">
@@ -204,8 +204,10 @@ export function NoticePage() {
                         </div>
                       </button>
                     </td>
-                    <td className="px-6 py-4 text-sm text-muted-foreground">{notice.date}</td>
-                    <td className="px-6 py-4">
+                    <td className="px-6 py-4 text-sm text-muted-foreground whitespace-nowrap">
+                      {notice.date}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
                       {notice.hasImage ? (
                         <span className="inline-block px-3 py-1 bg-ds-success-subtle text-ds-success-pressed rounded-full text-xs font-medium">
                           있음
