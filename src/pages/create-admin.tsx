@@ -47,7 +47,7 @@ const EMPTY_FORM: CreateUserFormValues = {
   boothCampus: undefined,
   boothOperatingHours: '',
   boothLocationNote: '',
-  performanceDate: '',
+  performanceDate: undefined,
   performanceStage: undefined,
   performanceStartTime: '',
   performanceEndTime: '',
@@ -377,8 +377,10 @@ export function CreateAdmin() {
                     >
                       운영 캠퍼스
                     </span>
+                    {/* role=group + aria-pressed 토글 버튼 — 운영 정보(선택)이라 미선택 허용.
+                        ARIA radiogroup 은 항상 1개 선택을 강제하므로 부적합. */}
                     <div
-                      role="radiogroup"
+                      role="group"
                       aria-labelledby="booth-campus-label"
                       className="flex flex-wrap gap-2"
                     >
@@ -389,8 +391,7 @@ export function CreateAdmin() {
                             <button
                               key={section.id}
                               type="button"
-                              role="radio"
-                              aria-checked={selected}
+                              aria-pressed={selected}
                               onClick={() =>
                                 setValue(
                                   'boothCampus',
@@ -462,7 +463,7 @@ export function CreateAdmin() {
                         공연 일자
                       </span>
                       <div
-                        role="radiogroup"
+                        role="group"
                         aria-labelledby="performance-date-label"
                         className="flex flex-wrap gap-2"
                       >
@@ -473,11 +474,10 @@ export function CreateAdmin() {
                             <button
                               key={d}
                               type="button"
-                              role="radio"
-                              aria-checked={selected}
+                              aria-pressed={selected}
                               onClick={() => {
                                 if (selected) {
-                                  setValue('performanceDate', '');
+                                  setValue('performanceDate', undefined);
                                 } else {
                                   setValue('performanceDate', d);
                                   // 날짜 변경 시 기존 stage 가 그 날짜에 운영되지 않으면 reset.
@@ -510,7 +510,7 @@ export function CreateAdmin() {
                         스테이지
                       </span>
                       <div
-                        role="radiogroup"
+                        role="group"
                         aria-labelledby="performance-stage-label"
                         className="flex flex-wrap gap-2"
                       >
@@ -520,8 +520,7 @@ export function CreateAdmin() {
                             <button
                               key={s.id}
                               type="button"
-                              role="radio"
-                              aria-checked={selected}
+                              aria-pressed={selected}
                               onClick={() =>
                                 setValue('performanceStage', selected ? undefined : s.id)
                               }

@@ -37,8 +37,8 @@ export const createUserSchema = z
     boothOperatingHours: z.string().optional(),
     /** 부스 자리 후보 메모. 좌표 입력 X — PlacementEditor 에서 별도. */
     boothLocationNote: z.string().optional(),
-    /** Performer 공연 일자(YYYY-MM-DD). FESTIVAL_DATES 중 하나. */
-    performanceDate: z.string().optional(),
+    /** Performer 공연 일자(YYYY-MM-DD). FESTIVAL_DATES 와 일치 — 변경 시 같이 갱신. */
+    performanceDate: z.enum(['2026-05-27', '2026-05-28', '2026-05-29']).optional(),
     /** Performer 스테이지 — PerformanceStage 와 일치. */
     performanceStage: z.enum(['songdo', 'dongmoon', 'nocheon']).optional(),
     /** Performer 시작 시각 (HH:MM, 24h). */

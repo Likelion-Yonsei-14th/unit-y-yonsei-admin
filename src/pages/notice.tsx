@@ -268,16 +268,20 @@ export function NoticePage() {
                       <td className="px-6 py-4 text-center">
                         <div className="flex items-center justify-center gap-2">
                           <button
+                            type="button"
+                            aria-label={`${notice.title} 수정`}
                             onClick={() => handleEdit(notice)}
                             className="p-2 text-primary hover:bg-ds-primary-subtle rounded-lg transition-colors"
                           >
-                            <Edit2 size={16} />
+                            <Edit2 size={16} aria-hidden="true" />
                           </button>
                           <button
+                            type="button"
+                            aria-label={`${notice.title} 삭제`}
                             onClick={() => setPendingDelete(notice)}
                             className="p-2 text-destructive hover:bg-ds-error-subtle rounded-lg transition-colors"
                           >
-                            <Trash2 size={16} />
+                            <Trash2 size={16} aria-hidden="true" />
                           </button>
                         </div>
                       </td>
