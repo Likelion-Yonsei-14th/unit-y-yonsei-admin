@@ -1,10 +1,13 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { UserPlus, Check, Shield, FileText, X } from 'lucide-react';
+import { UserPlus, Check, Shield, FileText, X, ChevronDown, Settings } from 'lucide-react';
 import { useCreateUser } from '@/features/users/hooks';
 import { createUserSchema, type CreateUserFormValues } from '@/features/users/schema';
 import type { Role } from '@/types/role';
+import { FESTIVAL_DATES, MAP_SECTIONS } from '@/features/booth-layout/sections';
+import type { MapSectionId } from '@/features/booth-layout/types';
+import { PERFORMANCE_STAGES, type PerformanceStage } from '@/features/performances/types';
 
 const PERMISSION_OPTIONS: Array<{
   value: Role;
@@ -40,6 +43,14 @@ const EMPTY_FORM: CreateUserFormValues = {
   boothName: '',
   performanceTeamName: '',
   internalMemo: '',
+  // 운영 정보 (선택) — 모두 미입력 default. 펼침 영역에서만 노출.
+  boothCampus: undefined,
+  boothOperatingHours: '',
+  boothLocationNote: '',
+  performanceDate: undefined,
+  performanceStage: undefined,
+  performanceStartTime: '',
+  performanceEndTime: '',
 };
 
 export function CreateAdmin() {
@@ -61,6 +72,15 @@ export function CreateAdmin() {
   const permissionType = watch('permissionType');
   const needsBoothName = permissionType === 'Booth';
   const needsPerformanceTeamName = permissionType === 'Performer';
+  /** 운영 정보(선택) 펼침 토글 — 권한이 Booth/Performer 일 때만 의미 있다. */
+  const [showOperationalInfo, setShowOperationalInfo] = useState(false);
+  const operationalInfoAvailable = needsBoothName || needsPerformanceTeamName;
+  // 권한이 Booth↔Performer 로 바뀌면 다른 권한의 운영 정보가 남아 있어도 보내지 않으니
+  // (mapper 가 권한별로 가지치기) UI 만 정리. 펼침 상태도 권한 변경 시 reset.
+  const performanceDate = watch('performanceDate');
+  const availablePerformanceStages = (
+    Object.values(PERFORMANCE_STAGES) as (typeof PERFORMANCE_STAGES)[PerformanceStage][]
+  ).filter((s) => !performanceDate || s.dates.includes(performanceDate));
 
   // 성공 알림 3초 뒤 폼 초기화 타이머 — 다음 submit / unmount 시 반드시 정리해야
   // 이미 입력 중인 값을 뒤늦게 날리거나, unmount 후 작업이 발생하지 않는다.
@@ -314,6 +334,251 @@ export function CreateAdmin() {
                 <p className="text-destructive text-xs mt-1">
                   {errors.performanceTeamName.message}
                 </p>
+              )}
+            </div>
+          )}
+
+          {/*
+            운영 정보 (선택) — Booth/Performer 권한일 때만 펼침 가능.
+            모두 선택 입력. 비워 두면 본인(자기 페이지) 또는 운영진(배치도/공연 관리)이
+            후속 화면에서 채운다. 좌표는 PlacementEditor 의 graphical picker 가 잡으므로
+            텍스트 필드로 대체하지 않고 자리 메모만 받는다.
+          */}
+          {operationalInfoAvailable && (
+            <div className="rounded-lg border border-border bg-muted/30">
+              <button
+                type="button"
+                onClick={() => setShowOperationalInfo((v) => !v)}
+                aria-expanded={showOperationalInfo}
+                className="flex w-full items-center justify-between gap-3 p-4 text-left hover:bg-muted/50 transition-colors rounded-lg"
+              >
+                <div className="flex items-center gap-2">
+                  <Settings size={16} className="text-muted-foreground" />
+                  <span className="text-sm font-semibold text-foreground">운영 정보 (선택)</span>
+                  <span className="text-xs text-muted-foreground">
+                    — 알면 미리, 모르면 비워 두세요
+                  </span>
+                </div>
+                <ChevronDown
+                  size={16}
+                  className={`text-muted-foreground transition-transform ${
+                    showOperationalInfo ? 'rotate-180' : ''
+                  }`}
+                  aria-hidden="true"
+                />
+              </button>
+
+              {showOperationalInfo && needsBoothName && (
+                <div className="border-t border-border p-4 space-y-4">
+                  <div>
+                    <span
+                      id="booth-campus-label"
+                      className="block text-sm font-semibold text-foreground mb-2"
+                    >
+                      운영 캠퍼스
+                    </span>
+                    {/* role=group + aria-pressed 토글 버튼 — 운영 정보(선택)이라 미선택 허용.
+                        ARIA radiogroup 은 항상 1개 선택을 강제하므로 부적합. */}
+                    <div
+                      role="group"
+                      aria-labelledby="booth-campus-label"
+                      className="flex flex-wrap gap-2"
+                    >
+                      {(Object.values(MAP_SECTIONS) as (typeof MAP_SECTIONS)[MapSectionId][]).map(
+                        (section) => {
+                          const selected = watch('boothCampus') === section.id;
+                          return (
+                            <button
+                              key={section.id}
+                              type="button"
+                              aria-pressed={selected}
+                              onClick={() =>
+                                setValue(
+                                  'boothCampus',
+                                  selected ? undefined : (section.id as MapSectionId),
+                                )
+                              }
+                              className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+                                selected
+                                  ? 'bg-primary text-primary-foreground'
+                                  : 'bg-background border border-border text-muted-foreground hover:border-ds-border-strong'
+                              }`}
+                            >
+                              {section.label}
+                            </button>
+                          );
+                        },
+                      )}
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      자리 좌표는 발급 후 배치도 편집기에서 별도로 잡습니다.
+                    </p>
+                  </div>
+
+                  <div>
+                    <label
+                      htmlFor="booth-operating-hours"
+                      className="block text-sm font-semibold text-foreground mb-2"
+                    >
+                      운영시간
+                    </label>
+                    <input
+                      id="booth-operating-hours"
+                      type="text"
+                      placeholder="예: 11:00-19:00"
+                      {...register('boothOperatingHours')}
+                      className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring transition-all"
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      부스 운영자가 부스 정보 페이지에서 수정 가능합니다.
+                    </p>
+                  </div>
+
+                  <div>
+                    <label
+                      htmlFor="booth-location-note"
+                      className="block text-sm font-semibold text-foreground mb-2"
+                    >
+                      자리 메모
+                    </label>
+                    <input
+                      id="booth-location-note"
+                      type="text"
+                      placeholder="예: 백양로 B-12 후보 / 송도 C 구역 등"
+                      {...register('boothLocationNote')}
+                      className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring transition-all"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {showOperationalInfo && needsPerformanceTeamName && (
+                <div className="border-t border-border p-4 space-y-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <span
+                        id="performance-date-label"
+                        className="block text-sm font-semibold text-foreground mb-2"
+                      >
+                        공연 일자
+                      </span>
+                      <div
+                        role="group"
+                        aria-labelledby="performance-date-label"
+                        className="flex flex-wrap gap-2"
+                      >
+                        {FESTIVAL_DATES.map((d) => {
+                          const selected = watch('performanceDate') === d;
+                          const [, m, day] = d.split('-');
+                          return (
+                            <button
+                              key={d}
+                              type="button"
+                              aria-pressed={selected}
+                              onClick={() => {
+                                if (selected) {
+                                  setValue('performanceDate', undefined);
+                                } else {
+                                  setValue('performanceDate', d);
+                                  // 날짜 변경 시 기존 stage 가 그 날짜에 운영되지 않으면 reset.
+                                  const cur = watch('performanceStage');
+                                  if (
+                                    cur &&
+                                    !PERFORMANCE_STAGES[cur as PerformanceStage].dates.includes(d)
+                                  ) {
+                                    setValue('performanceStage', undefined);
+                                  }
+                                }
+                              }}
+                              className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+                                selected
+                                  ? 'bg-primary text-primary-foreground'
+                                  : 'bg-background border border-border text-muted-foreground hover:border-ds-border-strong'
+                              }`}
+                            >
+                              {Number(m)}/{Number(day)}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                    <div>
+                      <span
+                        id="performance-stage-label"
+                        className="block text-sm font-semibold text-foreground mb-2"
+                      >
+                        스테이지
+                      </span>
+                      <div
+                        role="group"
+                        aria-labelledby="performance-stage-label"
+                        className="flex flex-wrap gap-2"
+                      >
+                        {availablePerformanceStages.map((s) => {
+                          const selected = watch('performanceStage') === s.id;
+                          return (
+                            <button
+                              key={s.id}
+                              type="button"
+                              aria-pressed={selected}
+                              onClick={() =>
+                                setValue('performanceStage', selected ? undefined : s.id)
+                              }
+                              className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+                                selected
+                                  ? 'bg-primary text-primary-foreground'
+                                  : 'bg-background border border-border text-muted-foreground hover:border-ds-border-strong'
+                              }`}
+                            >
+                              {s.label}
+                            </button>
+                          );
+                        })}
+                      </div>
+                      {!performanceDate && (
+                        <p className="text-xs text-muted-foreground mt-1">
+                          공연 일자를 먼저 선택하면 그 날짜의 스테이지만 노출됩니다.
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label
+                        htmlFor="performance-start-time"
+                        className="block text-sm font-semibold text-foreground mb-2"
+                      >
+                        시작 시간
+                      </label>
+                      <input
+                        id="performance-start-time"
+                        type="time"
+                        step={300}
+                        {...register('performanceStartTime')}
+                        className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring transition-all"
+                      />
+                    </div>
+                    <div>
+                      <label
+                        htmlFor="performance-end-time"
+                        className="block text-sm font-semibold text-foreground mb-2"
+                      >
+                        종료 시간
+                      </label>
+                      <input
+                        id="performance-end-time"
+                        type="time"
+                        step={300}
+                        {...register('performanceEndTime')}
+                        className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring transition-all"
+                      />
+                    </div>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    공연 일정은 운영진(performance.manage) 만 수정 가능. 팀 본인은 보기만 됩니다.
+                  </p>
+                </div>
               )}
             </div>
           )}

@@ -2,14 +2,9 @@
  * 페이지에서 하드코딩해서 쓰던 mock 데이터를 뽑아둔 곳.
  * 백엔드 연결 시 features/notices/ 의 모델/훅으로 대체.
  */
+import type { Notice } from '@/features/notices/types';
 
-export interface Notice {
-  id: number;
-  title: string;
-  content: string;
-  date: string;
-  hasImage: boolean;
-}
+export type { Notice };
 
 export const mockNotices: Notice[] = [
   {
@@ -27,6 +22,7 @@ export const mockNotices: Notice[] = [
 문의: [기획단 안내 페이지](https://example.com)`,
     date: '2026-04-10',
     hasImage: true,
+    category: 'general',
   },
   {
     id: 2,
@@ -35,14 +31,16 @@ export const mockNotices: Notice[] = [
       '5/27(수) 송도 우천 예보로 부스 운영 시간을 12:00 → 13:00 시작으로 1시간 늦춥니다. 종료는 21:00 동일.',
     date: '2026-05-25',
     hasImage: false,
+    category: 'songdo',
   },
   {
     id: 3,
-    title: '5/28(목) 백양로 메인스테이지 공연 일정 변경',
+    title: '5/28(목) 동문광장 공연 일정 변경',
     content:
       'BTL 무대가 17:30 → 18:00 으로 30분 지연됩니다. 그에 따라 우주산책 / PURPLE 공연 시간도 순차 조정. 자세한 시간표는 사이드바의 "공연" 메뉴에서 확인.',
     date: '2026-05-26',
     hasImage: true,
+    category: 'sinchon_28',
   },
   {
     id: 4,
@@ -51,6 +49,7 @@ export const mockNotices: Notice[] = [
       '분실물은 학생복지위원회 안전 부스(5/27 송도 #안전 / 5/28-29 백양로 #안전) 에서 보관합니다. 사진과 함께 즉시 등록되니 분실물 메뉴를 먼저 확인해 주세요.',
     date: '2026-05-26',
     hasImage: false,
+    category: 'general',
   },
   {
     id: 5,
@@ -59,6 +58,7 @@ export const mockNotices: Notice[] = [
       '경미한 비는 그대로 진행. 강한 비/번개 시 야외 부스 천막 정리 + 공연은 중단/연기 결정. 결정 사항은 본 공지 + 사이드바 알림으로 즉시 전파됩니다.',
     date: '2026-05-26',
     hasImage: false,
+    category: 'general',
   },
   {
     id: 6,
@@ -67,6 +67,7 @@ export const mockNotices: Notice[] = [
       '교내 모든 부스는 무알콜 운영. 흡연은 지정된 흡연 구역(정문/공학원 뒤)에서만. 부스 내부 화기 사용은 가스 검사를 받은 부스에 한하며 운영진 인증 스티커가 부착돼 있어야 합니다.',
     date: '2026-05-22',
     hasImage: true,
+    category: 'general',
   },
   {
     id: 7,
@@ -75,6 +76,7 @@ export const mockNotices: Notice[] = [
       '5/27(수) 송도 행사 종료 후 22:00, 22:30 두 차례 신촌행 셔틀버스를 무료 운영합니다. 탑승 위치는 송도 캠퍼스 정문, 사전 예약 불필요.',
     date: '2026-05-20',
     hasImage: false,
+    category: 'songdo',
   },
   {
     id: 8,
@@ -83,22 +85,25 @@ export const mockNotices: Notice[] = [
       '대부분의 부스는 현장 결제(현금 + 계좌이체) 만 받습니다. 일부 부스는 카드 단말기 운영. 결제 수단은 부스 입구의 안내판에 표시되어 있으며, 테이블 이용 시 메인 메뉴 1개 이상 주문 정책은 부스마다 다릅니다.',
     date: '2026-05-15',
     hasImage: false,
+    category: 'general',
   },
   {
     id: 9,
     title: '폐쇄 구간 안내 (백양로)',
     content:
-      '5/28~29 백양로 메인스테이지 인근(공학원 ~ 백양관) 차량 진입이 전면 통제됩니다. 보행자도 메인 무대 리허설 시간(13:00-14:00, 16:00-17:00) 에는 우회 부탁드립니다.',
+      '5/28~29 동문광장 인근(공학원 ~ 백양관) 차량 진입이 전면 통제됩니다. 보행자도 메인 무대 리허설 시간(13:00-14:00, 16:00-17:00) 에는 우회 부탁드립니다.',
     date: '2026-05-15',
     hasImage: true,
+    category: 'sinchon_28',
   },
   {
     id: 10,
     title: '시상식 / 폐회식 안내',
     content:
-      '5/29(금) 21:30 백양로 메인스테이지에서 폐회식과 부스 시상식 진행. 부스 운영자분들은 21:00까지 부스 정리 후 메인스테이지 앞으로 모여주세요.',
+      '5/29(금) 21:30 동문광장에서 폐회식과 부스 시상식 진행. 부스 운영자분들은 21:00까지 부스 정리 후 동문광장 앞으로 모여주세요.',
     date: '2026-05-12',
     hasImage: true,
+    category: 'sinchon_29',
   },
   {
     id: 11,
@@ -107,5 +112,15 @@ export const mockNotices: Notice[] = [
       '2026 대동제는 ㈜OOO, ㈜△△△ 등 13개 기업의 후원으로 운영됩니다. 후원사 부스는 송도/신촌 메인 입구에 위치. 후원사 안내 책자는 안전 부스에서 무료 배부.',
     date: '2026-05-10',
     hasImage: false,
+    category: 'general',
+  },
+  {
+    id: 12,
+    title: '5/26(화) 블루런 코스 안내',
+    content:
+      '블루런(5/26) 코스는 신촌 캠퍼스 출발 → 백양로 → 한글탑 → 신촌 캠퍼스 복귀. 출발 7:00, 종료 9:30. 자세한 코스 지도는 총학생회 체육부 공지를 참조하세요.',
+    date: '2026-05-08',
+    hasImage: false,
+    category: 'bluerun',
   },
 ];

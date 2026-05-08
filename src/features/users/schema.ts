@@ -26,6 +26,25 @@ export const createUserSchema = z
     /** 권한이 Performer 일 때 필수 — 분기 검증은 아래 superRefine. */
     performanceTeamName: z.string().optional(),
     internalMemo: z.string().min(1, '내부 메모를 입력해주세요'),
+
+    // ---- 운영 정보 (선택) — Master 가 알면 발급 시점에 미리 잡아둘 수 있는 초기값들. ----
+    // 모두 optional. 비워 두면 본인 또는 운영진이 후속 화면에서 채운다.
+    // 좌표(부스 자리)는 booth-layout PlacementEditor 의 그래픽 picker 가 잡으므로
+    // 텍스트 필드로는 받지 않는다 — 자리 후보 메모(boothLocationNote) 만 받음.
+    /** Booth 캠퍼스 — MapSectionId 와 일치(global=송도, baekyang=백양로, hangeul=한글탑). */
+    boothCampus: z.enum(['global', 'baekyang', 'hangeul']).optional(),
+    /** Booth 운영시간 — 본인 수정 가능. 자유 텍스트(예: "11:00-19:00"). */
+    boothOperatingHours: z.string().optional(),
+    /** 부스 자리 후보 메모. 좌표 입력 X — PlacementEditor 에서 별도. */
+    boothLocationNote: z.string().optional(),
+    /** Performer 공연 일자(YYYY-MM-DD). FESTIVAL_DATES 와 일치 — 변경 시 같이 갱신. */
+    performanceDate: z.enum(['2026-05-27', '2026-05-28', '2026-05-29']).optional(),
+    /** Performer 스테이지 — PerformanceStage 와 일치. */
+    performanceStage: z.enum(['songdo', 'dongmoon', 'nocheon']).optional(),
+    /** Performer 시작 시각 (HH:MM, 24h). */
+    performanceStartTime: z.string().optional(),
+    /** Performer 종료 시각 (HH:MM, 24h). */
+    performanceEndTime: z.string().optional(),
   })
   .superRefine((data, ctx) => {
     if (data.permissionType === 'Booth' && !data.boothName?.trim()) {

@@ -17,6 +17,12 @@ export const toAdminUser = (d: AdminUserDTO): AdminUser => ({
   active: d.active,
 });
 
+/** 빈 문자열은 백엔드에 `undefined` 로 보냄 — 누락과 빈 값을 같게 취급. */
+const trimOrUndefined = (s: string | undefined): string | undefined => {
+  const v = s?.trim();
+  return v ? v : undefined;
+};
+
 export const fromCreateUserFormValues = (v: CreateUserFormValues): CreateUserDTO => ({
   user_id: v.userId,
   temp_password: v.tempPassword,
@@ -24,9 +30,25 @@ export const fromCreateUserFormValues = (v: CreateUserFormValues): CreateUserDTO
   role: v.permissionType,
   representative_name: v.representativeName,
   representative_phone: v.representativePhone,
-  booth_name: v.boothName?.trim() ? v.boothName.trim() : undefined,
-  performance_team_name: v.performanceTeamName?.trim() ? v.performanceTeamName.trim() : undefined,
+  booth_name: trimOrUndefined(v.boothName),
+  performance_team_name: trimOrUndefined(v.performanceTeamName),
   internal_memo: v.internalMemo,
+  // 권한별로 어울리는 영역만 보냄. Master/Super 권한이면 둘 다 비움.
+  ...(v.permissionType === 'Booth'
+    ? {
+        booth_campus: v.boothCampus,
+        booth_operating_hours: trimOrUndefined(v.boothOperatingHours),
+        booth_location_note: trimOrUndefined(v.boothLocationNote),
+      }
+    : {}),
+  ...(v.permissionType === 'Performer'
+    ? {
+        performance_date: trimOrUndefined(v.performanceDate),
+        performance_stage: v.performanceStage,
+        performance_start_time: trimOrUndefined(v.performanceStartTime),
+        performance_end_time: trimOrUndefined(v.performanceEndTime),
+      }
+    : {}),
 });
 
 export const toCreatedUser = (d: CreatedUserDTO): CreatedUser => ({

@@ -82,8 +82,8 @@ export function PlacementList({
   );
 
   return (
-    <aside className="flex h-full w-72 flex-col border-r border-border bg-background">
-      <header className="space-y-2 border-b border-border px-4 py-3">
+    <aside className="flex h-full min-h-0 w-72 flex-col border-r border-border bg-background">
+      <header className="shrink-0 space-y-2 border-b border-border px-4 py-3">
         <div>
           <h2 className="text-sm font-semibold text-foreground">운영자 (부스 계정)</h2>
           <p className="mt-1 text-xs text-muted-foreground">
@@ -138,7 +138,7 @@ export function PlacementList({
         </div>
       </header>
 
-      <ul className="flex-1 divide-y divide-border overflow-y-auto">
+      <ul className="min-h-0 flex-1 divide-y divide-border overflow-y-auto">
         {visibleBooths.length === 0 && (
           <li className="px-4 py-8 text-center text-xs text-muted-foreground">
             {normalizedQuery

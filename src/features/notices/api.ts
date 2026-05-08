@@ -27,6 +27,7 @@ async function createNoticeMock(input: CreateNoticeInput): Promise<Notice> {
     title: input.title.trim(),
     content: input.content.trim(),
     hasImage: input.hasImage,
+    category: input.category,
     date: todayString(),
   };
   memory.unshift(created);
@@ -42,6 +43,7 @@ async function updateNoticeMock(input: UpdateNoticeInput): Promise<Notice> {
     title: input.title.trim(),
     content: input.content.trim(),
     hasImage: input.hasImage,
+    category: input.category,
   };
   memory[idx] = next;
   return next;

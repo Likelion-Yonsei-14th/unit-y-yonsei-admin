@@ -16,7 +16,7 @@ export const mockLostItems: LostItem[] = [
   {
     id: 1,
     name: '검은색 가죽 지갑',
-    location: '백양로 메인스테이지 앞',
+    location: '동문광장 앞',
     date: '2026-05-28',
     hasImage: true,
     description: '현대카드와 학생증이 들어있습니다. 카드 명의: 김지우',
@@ -40,7 +40,7 @@ export const mockLostItems: LostItem[] = [
   {
     id: 4,
     name: '학생증 (연세대)',
-    location: '백양로 메인스테이지 후미',
+    location: '동문광장 후미',
     date: '2026-05-28',
     hasImage: true,
     description: '국제학부 24학번',
@@ -80,7 +80,7 @@ export const mockLostItems: LostItem[] = [
   {
     id: 9,
     name: '검정 모자 (뉴에라)',
-    location: '백양로 메인스테이지',
+    location: '동문광장',
     date: '2026-05-29',
     hasImage: false,
     description: 'NY 로고, 사이즈 M/L',
@@ -96,7 +96,7 @@ export const mockLostItems: LostItem[] = [
   {
     id: 11,
     name: '안경 (블루라이트 차단)',
-    location: '송도 메인스테이지 앞',
+    location: '언기도 앞',
     date: '2026-05-27',
     hasImage: true,
     description: '검정 뿔테, 케이스는 없음',
@@ -128,7 +128,7 @@ export const mockLostItems: LostItem[] = [
   {
     id: 15,
     name: '명찰 (운영팀)',
-    location: '백양로 메인 후미',
+    location: '동문광장 후미',
     date: '2026-05-29',
     hasImage: true,
     description: '운영팀 김지민 명찰. 본인 발견 즉시 운영팀 채널로 회수 부탁드립니다.',
