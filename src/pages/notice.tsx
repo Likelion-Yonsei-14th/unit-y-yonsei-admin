@@ -14,18 +14,6 @@ import {
   type NoticeCategory,
   type NoticeCategoryMeta,
 } from '@/features/notices/types';
-
-/**
- * 카테고리 톤 → Tailwind 배지 클래스 매핑.
- * NOTICE_CATEGORIES 의 tone 값과 1:1 대응.
- */
-const CATEGORY_TONE_CLASS: Record<NoticeCategoryMeta['tone'], string> = {
-  neutral: 'bg-muted text-muted-foreground',
-  secondary: 'bg-ds-secondary-a-subtle text-ds-secondary-a-pressed',
-  warning: 'bg-ds-warning-subtle text-ds-warning-pressed',
-  primary: 'bg-ds-primary-subtle text-ds-primary-pressed',
-  success: 'bg-ds-success-subtle text-ds-success-pressed',
-};
 import { PageHeaderAction } from '@/components/common/page-header-action';
 import { TableSkeleton } from '@/components/common/table-skeleton';
 import { Markdown } from '@/components/common/markdown';
@@ -39,6 +27,18 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+
+/**
+ * 카테고리 톤 → Tailwind 배지 클래스 매핑.
+ * NOTICE_CATEGORIES 의 tone 값과 1:1 대응.
+ */
+const CATEGORY_TONE_CLASS: Record<NoticeCategoryMeta['tone'], string> = {
+  neutral: 'bg-muted text-muted-foreground',
+  secondary: 'bg-ds-secondary-a-subtle text-ds-secondary-a-pressed',
+  warning: 'bg-ds-warning-subtle text-ds-warning-pressed',
+  primary: 'bg-ds-primary-subtle text-ds-primary-pressed',
+  success: 'bg-ds-success-subtle text-ds-success-pressed',
+};
 
 export function NoticePage() {
   const noticesQuery = useNotices();
