@@ -10,7 +10,7 @@
 // 축제 현장 운영을 기준으로 잡은 **임시** 스테이지 ID. 실제 무대 구성이 확정되면
 // 이 union + STAGES 레이블·기본 날짜만 맞추면 나머지는 따라 온다.
 
-export type PerformanceStage = 'songdo' | 'baekyang' | 'nocheon';
+export type PerformanceStage = 'songdo' | 'dongmoon' | 'nocheon';
 
 export interface PerformanceStageMeta {
   id: PerformanceStage;
@@ -20,8 +20,8 @@ export interface PerformanceStageMeta {
 }
 
 export const PERFORMANCE_STAGES: Record<PerformanceStage, PerformanceStageMeta> = {
-  songdo: { id: 'songdo', label: '송도 메인스테이지', dates: ['2026-05-27'] },
-  baekyang: { id: 'baekyang', label: '백양로 메인스테이지', dates: ['2026-05-28', '2026-05-29'] },
+  songdo: { id: 'songdo', label: '언기도 앞', dates: ['2026-05-27'] },
+  dongmoon: { id: 'dongmoon', label: '동문광장', dates: ['2026-05-28', '2026-05-29'] },
   nocheon: { id: 'nocheon', label: '노천극장', dates: ['2026-05-28', '2026-05-29'] },
 };
 

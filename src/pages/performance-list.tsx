@@ -81,7 +81,7 @@ export function PerformanceListPage() {
           <div className="flex flex-wrap gap-2">
             {stageOptions.map((s) => {
               const active = s === stage;
-              const label = s === 'all' ? '전체 스테이지' : PERFORMANCE_STAGES[s].label;
+              const label = s === 'all' ? '전체' : PERFORMANCE_STAGES[s].label;
               return (
                 <button
                   key={s}
