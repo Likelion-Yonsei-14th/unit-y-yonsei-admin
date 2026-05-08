@@ -62,7 +62,7 @@ export interface CreateUserDTO {
   // 백엔드는 이 값들로 booth_profile / performance_detail 행을 같이 채워서 만든다.
   // 비어 있으면 본인 또는 운영진이 후속 화면에서 채움.
   booth_campus?: 'global' | 'baekyang' | 'hangeul';
-  booth_operating_hours?: string;
+  booth_operating_dates?: string[];
   booth_location_note?: string;
   performance_date?: string;
   performance_stage?: 'songdo' | 'dongmoon' | 'nocheon';

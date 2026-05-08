@@ -45,7 +45,7 @@ const EMPTY_FORM: CreateUserFormValues = {
   internalMemo: '',
   // 운영 정보 (선택) — 모두 미입력 default. 펼침 영역에서만 노출.
   boothCampus: undefined,
-  boothOperatingHours: '',
+  boothOperatingDates: [],
   boothLocationNote: '',
   performanceDate: undefined,
   performanceStage: undefined,
@@ -416,21 +416,46 @@ export function CreateAdmin() {
                   </div>
 
                   <div>
-                    <label
-                      htmlFor="booth-operating-hours"
+                    <span
+                      id="booth-operating-dates-label"
                       className="block text-sm font-semibold text-foreground mb-2"
                     >
-                      운영시간
-                    </label>
-                    <input
-                      id="booth-operating-hours"
-                      type="text"
-                      placeholder="예: 11:00-19:00"
-                      {...register('boothOperatingHours')}
-                      className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring transition-all"
-                    />
+                      운영 날짜
+                    </span>
+                    {/* 부스 운영 가능일 — 5/26 블루런 은 부스 없음. 다중 선택. */}
+                    <div
+                      role="group"
+                      aria-labelledby="booth-operating-dates-label"
+                      className="flex flex-wrap gap-2"
+                    >
+                      {(['2026-05-27', '2026-05-28', '2026-05-29'] as const).map((d) => {
+                        const current = watch('boothOperatingDates') ?? [];
+                        const selected = current.includes(d);
+                        const [, m, day] = d.split('-');
+                        return (
+                          <button
+                            key={d}
+                            type="button"
+                            aria-pressed={selected}
+                            onClick={() => {
+                              const next = selected
+                                ? current.filter((x) => x !== d)
+                                : [...current, d];
+                              setValue('boothOperatingDates', next);
+                            }}
+                            className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+                              selected
+                                ? 'bg-primary text-primary-foreground'
+                                : 'bg-background border border-border text-muted-foreground hover:border-ds-border-strong'
+                            }`}
+                          >
+                            {Number(m)}/{Number(day)}
+                          </button>
+                        );
+                      })}
+                    </div>
                     <p className="text-xs text-muted-foreground mt-1">
-                      부스 운영자가 부스 정보 페이지에서 수정 가능합니다.
+                      한 부스가 여러 날 운영 가능합니다. 본인이 부스 정보 페이지에서 변경 가능.
                     </p>
                   </div>
 

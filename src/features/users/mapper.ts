@@ -37,7 +37,9 @@ export const fromCreateUserFormValues = (v: CreateUserFormValues): CreateUserDTO
   ...(v.permissionType === 'Booth'
     ? {
         booth_campus: v.boothCampus,
-        booth_operating_hours: trimOrUndefined(v.boothOperatingHours),
+        // 빈 배열은 누락과 동일 취급 — undefined 로 보내 백엔드가 'no preference'
+        // 로 해석하게.
+        booth_operating_dates: v.boothOperatingDates?.length ? v.boothOperatingDates : undefined,
         booth_location_note: trimOrUndefined(v.boothLocationNote),
       }
     : {}),
