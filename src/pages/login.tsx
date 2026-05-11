@@ -109,7 +109,6 @@ export function LoginPage() {
               <div>booth13 — 화학과 아이스크림 · 인기</div>
               <div>booth15 — 별빛 카페 · 다중 자리</div>
               <div>booth28 — 안전 부스 · 모든 날짜</div>
-              <div>booth30 — 비활성 부스</div>
               <div className="pt-1 text-[10px] opacity-80">─ Performer · 비밀번호 perf1234 ─</div>
               <div>performer1 — 멋사 · 5/28 백양로</div>
               <div>performer2 — 송도노인정양로원 · 5/27 송도</div>

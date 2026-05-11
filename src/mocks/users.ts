@@ -32,7 +32,6 @@ export interface MockUser {
   email: string;
   phone: string;
   infoCompleted: boolean;
-  active: boolean;
 }
 
 interface UserOverrides {
@@ -41,7 +40,6 @@ interface UserOverrides {
   performanceTeamId?: number | null;
   performanceTeamName?: string;
   infoCompleted?: boolean;
-  active?: boolean;
 }
 
 const u = (
@@ -66,7 +64,6 @@ const u = (
   email,
   phone,
   infoCompleted: options.infoCompleted ?? true,
-  active: options.active ?? true,
 });
 
 export const mockUsers: MockUser[] = [
@@ -253,12 +250,6 @@ export const mockUsers: MockUser[] = [
     'aero@yonsei.ac.kr',
     { boothId: 29, boothName: '(미작성)', infoCompleted: false },
   ),
-  u(3, 'inactive_user01', 'Booth', '체육교육학과', '김재현', '010-5678-5678', 'kim@yonsei.ac.kr', {
-    boothId: 30,
-    boothName: '체대 솜사탕',
-    infoCompleted: true,
-    active: false,
-  }),
 
   // ---- 공연팀 대표들 — performanceTeamId ↔ mockPerformanceDetailsById 매칭 ----
   u(

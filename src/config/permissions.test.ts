@@ -29,7 +29,6 @@ describe('hasPermission', () => {
 
   it('Master 는 user.update.role / user.manage / admin.create / booth.delete 외 관리 권한을 가진다', () => {
     expect(hasPermission('Master', 'user.read')).toBe(true);
-    expect(hasPermission('Master', 'user.deactivate')).toBe(true);
     expect(hasPermission('Master', 'booth.create')).toBe(true);
     expect(hasPermission('Master', 'reservation.manage')).toBe(true);
     expect(hasPermission('Master', 'performance.manage')).toBe(true);

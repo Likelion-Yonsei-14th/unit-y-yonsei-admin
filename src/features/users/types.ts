@@ -23,8 +23,6 @@ export interface AdminUser {
   phone: string;
   /** 백엔드가 booth/performance 테이블 join 으로 계산해 내려주는 플래그. */
   infoCompleted: boolean;
-  /** 현재 로그인 가능 여부. */
-  active: boolean;
 }
 
 export interface AdminUserDTO {
@@ -40,7 +38,6 @@ export interface AdminUserDTO {
   email: string;
   phone: string;
   info_completed: boolean;
-  active: boolean;
 }
 
 /**

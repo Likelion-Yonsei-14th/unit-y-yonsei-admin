@@ -15,7 +15,6 @@ export const PERMISSIONS = {
   // 유저
   'user.read': ['Super', 'Master'],
   'user.manage': ['Super'],
-  'user.deactivate': ['Super', 'Master'],
   // 역할 변경은 Super만. Super ↔ 다른 역할 전이는 시스템 전반에 파급이 커
   // 거버넌스 액션으로 취급. 인라인 Select 편집 가드로 사용.
   'user.update.role': ['Super'],

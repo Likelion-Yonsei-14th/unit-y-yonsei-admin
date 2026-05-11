@@ -39,7 +39,7 @@ export function DashboardPage() {
       activeBoothCount: booths.filter((b) => b.reservationEnabled && !!b.name).length,
       totalBoothCount: booths.length,
       performanceCount: performances.length,
-      activeUserCount: users.filter((u) => u.active).length,
+      userCount: users.length,
     };
   }, [reservationsQuery.data, boothsQuery.data, performancesQuery.data, usersQuery.data]);
 
@@ -115,14 +115,14 @@ export function DashboardPage() {
           to="/performance"
         />
         <KpiCard
-          label="활성 계정"
+          label="총 계정"
           loading={usersQuery.isLoading}
           isError={usersQuery.isError}
           icon={<Users size={24} />}
           tone="secondary"
-          value={stats.activeUserCount}
+          value={stats.userCount}
           unit="명"
-          hint="비활성 제외"
+          hint="운영진 + 운영자"
           to="/users"
         />
       </div>

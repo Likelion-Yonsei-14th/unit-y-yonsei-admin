@@ -1,13 +1,12 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router';
-import { ArrowDown, ArrowUp, ArrowUpDown, Search, UserPlus, Users, X } from 'lucide-react';
+import { Search, UserPlus, Users, X } from 'lucide-react';
 import { toast } from 'sonner';
-import { useAdminUsers, useSetUserActive, useSetUserRole } from '@/features/users/hooks';
+import { useAdminUsers, useSetUserRole } from '@/features/users/hooks';
 import type { AdminUser as User } from '@/features/users/types';
 import { PageHeaderAction } from '@/components/common/page-header-action';
 import { TableSkeleton } from '@/components/common/table-skeleton';
 import { useAuth } from '@/features/auth/hooks';
-import { Switch } from '@/components/ui/switch';
 import {
   Select,
   SelectContent,
@@ -51,38 +50,20 @@ interface PendingRoleChange {
   to: Role;
 }
 
-/**
- * 상태 컬럼 정렬 상태. 스프레드시트 관행을 따른다:
- * - 'none': 원본 순서 유지
- * - 'asc': 오름차순 = false(비활성) 먼저 — ArrowUp
- * - 'desc': 내림차순 = true(활성) 먼저 — ArrowDown
- */
-type SortDir = 'none' | 'asc' | 'desc';
-
-const nextSortDir: Record<SortDir, SortDir> = {
-  none: 'asc',
-  asc: 'desc',
-  desc: 'none',
-};
-
 export function UserManagement() {
   const usersQuery = useAdminUsers();
   // useMemo 로 묶어 매 렌더 새 빈 배열이 만들어지지 않게 — 하위 useMemo deps 안정.
   const users: User[] = useMemo(() => usersQuery.data ?? [], [usersQuery.data]);
-  const setActiveMutation = useSetUserActive();
   const setRoleMutation = useSetUserRole();
 
   const [selectedRole, setSelectedRole] = useState<RoleFilter>('전체');
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusSort, setStatusSort] = useState<SortDir>('none');
-  const [pendingDeactivate, setPendingDeactivate] = useState<User | null>(null);
   const [pendingRoleChange, setPendingRoleChange] = useState<PendingRoleChange | null>(null);
   const navigate = useNavigate();
   const { user: currentUser, can } = useAuth();
 
   const roles: RoleFilter[] = ['전체', 'Super', 'Master', 'Booth', 'Performer'];
   const canEditRole = can('user.update.role');
-  const canToggleStatus = can('user.deactivate');
 
   // 역할별 계정 수. pill 라벨에 "Super | 3" 형태로 노출해 필터 클릭 전에도 분포 파악.
   const roleCounts = useMemo<Record<RoleFilter, number>>(() => {
@@ -97,7 +78,7 @@ export function UserManagement() {
     return counts;
   }, [users]);
 
-  // 파이프: users → 검색 → 역할 필터 → 상태 정렬 → visibleUsers
+  // 파이프: users → 검색 → 역할 필터 → visibleUsers
   // 전화번호/이메일은 검색 대상 제외 — 값 형태가 제각각이라 매칭 체감이 나쁨.
   const normalizedQuery = searchQuery.trim().toLowerCase();
 
@@ -115,7 +96,7 @@ export function UserManagement() {
     });
   }, [users, normalizedQuery]);
 
-  const filteredUsers = useMemo(
+  const visibleUsers = useMemo(
     () =>
       selectedRole === '전체'
         ? searchedUsers
@@ -123,31 +104,7 @@ export function UserManagement() {
     [searchedUsers, selectedRole],
   );
 
-  const visibleUsers = useMemo(() => {
-    if (statusSort === 'none') return filteredUsers;
-    const copy = [...filteredUsers];
-    copy.sort((a, b) => {
-      if (a.active === b.active) return 0;
-      if (statusSort === 'desc') return a.active ? -1 : 1; // 활성 먼저
-      return a.active ? 1 : -1; // 비활성 먼저
-    });
-    return copy;
-  }, [filteredUsers, statusSort]);
-
   const hasActiveFilter = !!normalizedQuery || selectedRole !== '전체';
-
-  const SortIcon = statusSort === 'asc' ? ArrowUp : statusSort === 'desc' ? ArrowDown : ArrowUpDown;
-  const sortLabel =
-    statusSort === 'asc' ? '비활성 먼저' : statusSort === 'desc' ? '활성 먼저' : '정렬 없음';
-
-  const applyStatus = (id: number, active: boolean) => {
-    setActiveMutation.mutate(
-      { id, active },
-      {
-        onError: () => toast.error('상태 변경에 실패했습니다. 잠시 후 다시 시도해주세요.'),
-      },
-    );
-  };
 
   const applyRole = (id: number, role: Role) => {
     setRoleMutation.mutate(
@@ -156,21 +113,6 @@ export function UserManagement() {
         onError: () => toast.error('권한 변경에 실패했습니다. 잠시 후 다시 시도해주세요.'),
       },
     );
-  };
-
-  const handleToggleActive = (u: User) => {
-    if (u.active) {
-      // 활성 → 비활성은 로그인 차단으로 이어지므로 확인 받음.
-      setPendingDeactivate(u);
-    } else {
-      // 비활성 → 활성은 복구 방향이라 즉시 반영.
-      applyStatus(u.id, true);
-    }
-  };
-
-  const confirmDeactivate = () => {
-    if (pendingDeactivate) applyStatus(pendingDeactivate.id, false);
-    setPendingDeactivate(null);
   };
 
   const handleRoleSelect = (u: User, to: Role) => {
@@ -315,48 +257,33 @@ export function UserManagement() {
                 <th className="w-[5%] px-6 py-4 text-left text-sm font-semibold text-foreground">
                   No.
                 </th>
-                <th className="w-[10%] px-6 py-4 text-left text-sm font-semibold text-foreground">
+                <th className="w-[11%] px-6 py-4 text-left text-sm font-semibold text-foreground">
                   유저 ID
                 </th>
-                <th className="w-[10%] px-6 py-4 text-left text-sm font-semibold text-foreground">
+                <th className="w-[11%] px-6 py-4 text-left text-sm font-semibold text-foreground">
                   권한
                 </th>
-                <th className="w-[13%] px-6 py-4 text-left text-sm font-semibold text-foreground">
+                <th className="w-[14%] px-6 py-4 text-left text-sm font-semibold text-foreground">
                   소속
                 </th>
-                <th className="w-[18%] px-6 py-4 text-left text-sm font-semibold text-foreground">
+                <th className="w-[20%] px-6 py-4 text-left text-sm font-semibold text-foreground">
                   부스/공연팀
                 </th>
-                <th className="w-[12%] px-6 py-4 text-left text-sm font-semibold text-foreground">
+                <th className="w-[13%] px-6 py-4 text-left text-sm font-semibold text-foreground">
                   이름
                 </th>
-                <th className="w-[13%] px-6 py-4 text-left text-sm font-semibold text-foreground">
+                <th className="w-[15%] px-6 py-4 text-left text-sm font-semibold text-foreground">
                   전화번호
                 </th>
-                <th className="w-[10%] px-6 py-4 text-center text-sm font-semibold text-foreground">
+                <th className="w-[11%] px-6 py-4 text-center text-sm font-semibold text-foreground">
                   정보작성여부
-                </th>
-                <th className="w-[9%] px-6 py-4 text-center text-sm font-semibold text-foreground">
-                  <button
-                    type="button"
-                    onClick={() => setStatusSort((d) => nextSortDir[d])}
-                    className="inline-flex items-center gap-1 mx-auto hover:text-primary transition-colors"
-                    title={`상태 정렬: ${sortLabel} (클릭하여 전환)`}
-                    aria-label={`상태 정렬 — 현재: ${sortLabel}`}
-                  >
-                    상태
-                    <SortIcon
-                      size={14}
-                      className={statusSort === 'none' ? 'text-muted-foreground' : 'text-primary'}
-                    />
-                  </button>
                 </th>
               </tr>
             </thead>
             <tbody>
               {visibleUsers.length === 0 && (
                 <tr>
-                  <td colSpan={9} className="px-6 py-12 text-center text-sm text-muted-foreground">
+                  <td colSpan={8} className="px-6 py-12 text-center text-sm text-muted-foreground">
                     {hasActiveFilter
                       ? '검색 조건에 맞는 유저가 없습니다.'
                       : '표시할 유저가 없습니다.'}
@@ -365,7 +292,6 @@ export function UserManagement() {
               )}
               {visibleUsers.map((user, index) => {
                 const isSelf = currentUser?.userId === user.userId;
-                const rowDimmed = !user.active ? 'opacity-60' : '';
                 // 역할에 따라 상호 배타적 — 한 컬럼에 병합해서 렌더.
                 const boothOrTeamName =
                   user.role === 'Booth'
@@ -374,7 +300,7 @@ export function UserManagement() {
                       ? user.performanceTeamName
                       : '-';
                 return (
-                  <tr key={user.id} className={`hover:bg-muted transition-colors ${rowDimmed}`}>
+                  <tr key={user.id} className="hover:bg-muted transition-colors">
                     <td className="px-6 py-4 text-sm text-muted-foreground">
                       {String(index + 1).padStart(2, '0')}
                     </td>
@@ -448,21 +374,6 @@ export function UserManagement() {
                         {user.infoCompleted ? 'O' : 'X'}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-center">
-                      <Switch
-                        checked={user.active}
-                        onCheckedChange={() => handleToggleActive(user)}
-                        disabled={!canToggleStatus || isSelf}
-                        aria-label={user.active ? '비활성화' : '활성화'}
-                        title={
-                          isSelf
-                            ? '자신의 상태는 변경할 수 없습니다'
-                            : !canToggleStatus
-                              ? '상태 변경 권한이 없습니다'
-                              : undefined
-                        }
-                      />
-                    </td>
                   </tr>
                 );
               })}
@@ -470,37 +381,6 @@ export function UserManagement() {
           </table>
         </div>
       </div>
-
-      {/* 비활성화 확인 — 차단 방향은 파괴성이 커서 경고 패널을 동반한다 */}
-      <AlertDialog
-        open={!!pendingDeactivate}
-        onOpenChange={(o) => !o && setPendingDeactivate(null)}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>유저 비활성화</AlertDialogTitle>
-            <AlertDialogDescription>
-              {pendingDeactivate?.userId}
-              {pendingDeactivate?.representative ? ` (${pendingDeactivate.representative})` : ''}
-              을(를) 비활성화합니다.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          {pendingDeactivate && (
-            <div className="rounded-md border border-ds-warning bg-ds-warning-subtle px-3 py-2 text-sm text-ds-warning-pressed">
-              비활성화 즉시 해당 유저는 로그인할 수 없게 됩니다. 되돌리려면 다시 활성화해야 합니다.
-            </div>
-          )}
-          <AlertDialogFooter>
-            <AlertDialogCancel>취소</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={confirmDeactivate}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              비활성화
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
 
       {/* 권한 변경 확인 */}
       <AlertDialog

@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { createUser, listAdminUsers, setUserActive, setUserRole } from './api';
+import { createUser, listAdminUsers, setUserRole } from './api';
 
 /**
  * 관리자 페이지 — 어드민 풀 전체 조회.
@@ -9,16 +9,6 @@ export function useAdminUsers() {
   return useQuery({
     queryKey: ['users'],
     queryFn: listAdminUsers,
-  });
-}
-
-export function useSetUserActive() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: setUserActive,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['users'] });
-    },
   });
 }
 
