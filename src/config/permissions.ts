@@ -18,6 +18,9 @@ export const PERMISSIONS = {
   // 역할 변경은 Super만. Super ↔ 다른 역할 전이는 시스템 전반에 파급이 커
   // 거버넌스 액션으로 취급. 인라인 Select 편집 가드로 사용.
   'user.update.role': ['Super'],
+  // 비밀번호 강제 재설정 — 임시 비번 재발급. 사용자 본인이 못 들어오는 상황을
+  // 운영진이 즉시 풀어주는 액션이라 Master 까지 허용.
+  'user.password.reset': ['Super', 'Master'],
 
   // 부스
   'booth.read': ['Super', 'Master', 'Booth'],

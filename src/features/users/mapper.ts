@@ -1,5 +1,13 @@
 import type { CreateUserFormValues } from './schema';
-import type { AdminUser, AdminUserDTO, CreatedUser, CreatedUserDTO, CreateUserDTO } from './types';
+import type {
+  AdminUser,
+  AdminUserDTO,
+  CreatedUser,
+  CreatedUserDTO,
+  CreateUserDTO,
+  ResetPasswordDTO,
+  ResetPasswordResult,
+} from './types';
 
 export const toAdminUser = (d: AdminUserDTO): AdminUser => ({
   id: d.id,
@@ -55,4 +63,8 @@ export const fromCreateUserFormValues = (v: CreateUserFormValues): CreateUserDTO
 export const toCreatedUser = (d: CreatedUserDTO): CreatedUser => ({
   id: d.id,
   userId: d.user_id,
+});
+
+export const toResetPasswordResult = (d: ResetPasswordDTO): ResetPasswordResult => ({
+  tempPassword: d.temp_password,
 });

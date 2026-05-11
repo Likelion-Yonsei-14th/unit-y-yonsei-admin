@@ -76,3 +76,15 @@ export interface CreatedUser {
   id: number;
   userId: string;
 }
+
+/**
+ * 비밀번호 강제 재설정 응답.
+ * 새 임시 비밀번호는 응답에서만 노출 — 운영자가 사용자에게 직접 전달.
+ * 사용자가 이 비번으로 첫 로그인 시 변경 강제.
+ */
+export interface ResetPasswordDTO {
+  temp_password: string;
+}
+export interface ResetPasswordResult {
+  tempPassword: string;
+}
