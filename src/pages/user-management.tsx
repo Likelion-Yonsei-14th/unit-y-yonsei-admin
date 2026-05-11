@@ -312,23 +312,29 @@ export function UserManagement() {
                 <th className="w-[10%] px-6 py-4 text-left text-sm font-semibold text-foreground">
                   권한
                 </th>
-                <th className="w-[13%] px-6 py-4 text-left text-sm font-semibold text-foreground">
+                <th className="w-[12%] px-6 py-4 text-left text-sm font-semibold text-foreground">
                   소속
                 </th>
                 <th className="w-[18%] px-6 py-4 text-left text-sm font-semibold text-foreground">
                   부스/공연팀
                 </th>
-                <th className="w-[12%] px-6 py-4 text-left text-sm font-semibold text-foreground">
+                <th className="w-[11%] px-6 py-4 text-left text-sm font-semibold text-foreground">
                   이름
                 </th>
-                <th className="w-[14%] px-6 py-4 text-left text-sm font-semibold text-foreground">
+                <th className="w-[13%] px-6 py-4 text-left text-sm font-semibold text-foreground">
                   전화번호
                 </th>
-                <th className="w-[10%] px-6 py-4 text-center text-sm font-semibold text-foreground">
-                  정보작성여부
+                {/* 한국어 다음절 헤더는 좁은 컬럼 폭에서 '부' 같은 한 글자만 떨어져 어색하게
+                    줄바꿈됨 — 의미 단위로 명시적 줄바꿈해 시각 안정성 확보. */}
+                <th className="w-[10%] px-6 py-4 text-center text-sm font-semibold text-foreground leading-tight">
+                  정보작성
+                  <br />
+                  여부
                 </th>
-                <th className="w-[8%] px-6 py-4 text-center text-sm font-semibold text-foreground">
-                  작업
+                <th className="w-[11%] px-6 py-4 text-center text-sm font-semibold text-foreground leading-tight">
+                  비밀번호
+                  <br />
+                  재설정
                 </th>
               </tr>
             </thead>
