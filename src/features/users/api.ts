@@ -99,7 +99,9 @@ async function createUserReal(values: CreateUserFormValues): Promise<CreatedUser
 }
 
 async function resetUserPasswordReal(input: { id: number }): Promise<ResetPasswordResult> {
-  const dto = await api.post<ResetPasswordDTO>(`/admin/users/${input.id}/reset-password`, {});
+  // body 없음 — API_SPEC / backend.md 컨트랙트와 일치. 일부 백엔드는 빈 객체 `{}`
+  // 를 415/400 으로 거부할 수 있어 두 번째 인자 자체를 생략.
+  const dto = await api.post<ResetPasswordDTO>(`/admin/users/${input.id}/reset-password`);
   return toResetPasswordResult(dto);
 }
 
