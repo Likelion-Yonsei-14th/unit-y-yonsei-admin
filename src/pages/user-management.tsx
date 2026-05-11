@@ -59,10 +59,12 @@ interface PendingRoleChange {
 }
 
 /**
- * 비밀번호 재설정 결과 — 응답으로 받은 임시 비번을 운영자에게 1회 노출.
- * 닫으면 다시 못 보므로 항상 결과 다이얼로그로 노출하고 토스트로 갈음하지 않는다.
+ * 비밀번호 재설정 결과 다이얼로그 상태 — 응답으로 받은 임시 비번을 운영자에게
+ * 1회 노출. 닫으면 다시 못 보므로 항상 결과 다이얼로그로 노출하고 토스트로
+ * 갈음하지 않는다. (API 응답 모델 `ResetPasswordResult` 와 구분하기 위해
+ * UI 상태용 이름은 `DialogState` 접미사.)
  */
-interface ResetPasswordResult {
+interface ResetPasswordDialogState {
   user: User;
   tempPassword: string;
 }
@@ -78,7 +80,7 @@ export function UserManagement() {
   const [searchQuery, setSearchQuery] = useState('');
   const [pendingRoleChange, setPendingRoleChange] = useState<PendingRoleChange | null>(null);
   const [pendingPasswordReset, setPendingPasswordReset] = useState<User | null>(null);
-  const [resetResult, setResetResult] = useState<ResetPasswordResult | null>(null);
+  const [resetResult, setResetResult] = useState<ResetPasswordDialogState | null>(null);
   const navigate = useNavigate();
   const { user: currentUser, can } = useAuth();
 
@@ -499,14 +501,21 @@ export function UserManagement() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* 재설정 결과 — 임시 비번 1회 노출. 닫으면 다시 못 봄. */}
+      {/*
+        재설정 결과 — 임시 비번 1회 노출. 닫으면 다시 못 봄.
+        '1회 노출' 원칙상 실수로 닫히면 비번을 잃으므로
+        overlay 클릭 / ESC 로는 닫히지 않게 막고, 명시적 닫기 버튼만 허용.
+      */}
       <Dialog
         open={!!resetResult}
         onOpenChange={(o) => {
           if (!o) setResetResult(null);
         }}
       >
-        <DialogContent>
+        <DialogContent
+          onPointerDownOutside={(e) => e.preventDefault()}
+          onEscapeKeyDown={(e) => e.preventDefault()}
+        >
           <DialogHeader>
             <DialogTitle>임시 비밀번호 발급 완료</DialogTitle>
             <DialogDescription>
