@@ -23,8 +23,6 @@ export interface AdminUser {
   phone: string;
   /** 백엔드가 booth/performance 테이블 join 으로 계산해 내려주는 플래그. */
   infoCompleted: boolean;
-  /** 현재 로그인 가능 여부. */
-  active: boolean;
 }
 
 export interface AdminUserDTO {
@@ -40,7 +38,6 @@ export interface AdminUserDTO {
   email: string;
   phone: string;
   info_completed: boolean;
-  active: boolean;
 }
 
 /**
@@ -78,4 +75,16 @@ export interface CreatedUserDTO {
 export interface CreatedUser {
   id: number;
   userId: string;
+}
+
+/**
+ * 비밀번호 강제 재설정 응답.
+ * 새 임시 비밀번호는 응답에서만 노출 — 운영자가 사용자에게 직접 전달.
+ * 사용자가 이 비번으로 첫 로그인 시 변경 강제.
+ */
+export interface ResetPasswordDTO {
+  temp_password: string;
+}
+export interface ResetPasswordResult {
+  tempPassword: string;
 }

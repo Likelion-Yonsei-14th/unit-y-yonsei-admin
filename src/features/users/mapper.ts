@@ -1,5 +1,13 @@
 import type { CreateUserFormValues } from './schema';
-import type { AdminUser, AdminUserDTO, CreatedUser, CreatedUserDTO, CreateUserDTO } from './types';
+import type {
+  AdminUser,
+  AdminUserDTO,
+  CreatedUser,
+  CreatedUserDTO,
+  CreateUserDTO,
+  ResetPasswordDTO,
+  ResetPasswordResult,
+} from './types';
 
 export const toAdminUser = (d: AdminUserDTO): AdminUser => ({
   id: d.id,
@@ -14,7 +22,6 @@ export const toAdminUser = (d: AdminUserDTO): AdminUser => ({
   email: d.email,
   phone: d.phone,
   infoCompleted: d.info_completed,
-  active: d.active,
 });
 
 /** 빈 문자열은 백엔드에 `undefined` 로 보냄 — 누락과 빈 값을 같게 취급. */
@@ -56,4 +63,8 @@ export const fromCreateUserFormValues = (v: CreateUserFormValues): CreateUserDTO
 export const toCreatedUser = (d: CreatedUserDTO): CreatedUser => ({
   id: d.id,
   userId: d.user_id,
+});
+
+export const toResetPasswordResult = (d: ResetPasswordDTO): ResetPasswordResult => ({
+  tempPassword: d.temp_password,
 });

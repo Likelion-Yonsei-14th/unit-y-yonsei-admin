@@ -1,13 +1,12 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router';
-import { ArrowDown, ArrowUp, ArrowUpDown, Search, UserPlus, Users, X } from 'lucide-react';
+import { Copy, KeyRound, Search, UserPlus, Users, X } from 'lucide-react';
 import { toast } from 'sonner';
-import { useAdminUsers, useSetUserActive, useSetUserRole } from '@/features/users/hooks';
+import { useAdminUsers, useResetUserPassword, useSetUserRole } from '@/features/users/hooks';
 import type { AdminUser as User } from '@/features/users/types';
 import { PageHeaderAction } from '@/components/common/page-header-action';
 import { TableSkeleton } from '@/components/common/table-skeleton';
 import { useAuth } from '@/features/auth/hooks';
-import { Switch } from '@/components/ui/switch';
 import {
   Select,
   SelectContent,
@@ -25,6 +24,14 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import type { Role } from '@/types/role';
 
 type RoleFilter = '전체' | Role;
@@ -52,37 +59,34 @@ interface PendingRoleChange {
 }
 
 /**
- * 상태 컬럼 정렬 상태. 스프레드시트 관행을 따른다:
- * - 'none': 원본 순서 유지
- * - 'asc': 오름차순 = false(비활성) 먼저 — ArrowUp
- * - 'desc': 내림차순 = true(활성) 먼저 — ArrowDown
+ * 비밀번호 재설정 결과 다이얼로그 상태 — 응답으로 받은 임시 비번을 운영자에게
+ * 1회 노출. 닫으면 다시 못 보므로 항상 결과 다이얼로그로 노출하고 토스트로
+ * 갈음하지 않는다. (API 응답 모델 `ResetPasswordResult` 와 구분하기 위해
+ * UI 상태용 이름은 `DialogState` 접미사.)
  */
-type SortDir = 'none' | 'asc' | 'desc';
-
-const nextSortDir: Record<SortDir, SortDir> = {
-  none: 'asc',
-  asc: 'desc',
-  desc: 'none',
-};
+interface ResetPasswordDialogState {
+  user: User;
+  tempPassword: string;
+}
 
 export function UserManagement() {
   const usersQuery = useAdminUsers();
   // useMemo 로 묶어 매 렌더 새 빈 배열이 만들어지지 않게 — 하위 useMemo deps 안정.
   const users: User[] = useMemo(() => usersQuery.data ?? [], [usersQuery.data]);
-  const setActiveMutation = useSetUserActive();
   const setRoleMutation = useSetUserRole();
+  const resetPasswordMutation = useResetUserPassword();
 
   const [selectedRole, setSelectedRole] = useState<RoleFilter>('전체');
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusSort, setStatusSort] = useState<SortDir>('none');
-  const [pendingDeactivate, setPendingDeactivate] = useState<User | null>(null);
   const [pendingRoleChange, setPendingRoleChange] = useState<PendingRoleChange | null>(null);
+  const [pendingPasswordReset, setPendingPasswordReset] = useState<User | null>(null);
+  const [resetResult, setResetResult] = useState<ResetPasswordDialogState | null>(null);
   const navigate = useNavigate();
   const { user: currentUser, can } = useAuth();
 
   const roles: RoleFilter[] = ['전체', 'Super', 'Master', 'Booth', 'Performer'];
   const canEditRole = can('user.update.role');
-  const canToggleStatus = can('user.deactivate');
+  const canResetPassword = can('user.password.reset');
 
   // 역할별 계정 수. pill 라벨에 "Super | 3" 형태로 노출해 필터 클릭 전에도 분포 파악.
   const roleCounts = useMemo<Record<RoleFilter, number>>(() => {
@@ -97,7 +101,7 @@ export function UserManagement() {
     return counts;
   }, [users]);
 
-  // 파이프: users → 검색 → 역할 필터 → 상태 정렬 → visibleUsers
+  // 파이프: users → 검색 → 역할 필터 → visibleUsers
   // 전화번호/이메일은 검색 대상 제외 — 값 형태가 제각각이라 매칭 체감이 나쁨.
   const normalizedQuery = searchQuery.trim().toLowerCase();
 
@@ -115,7 +119,7 @@ export function UserManagement() {
     });
   }, [users, normalizedQuery]);
 
-  const filteredUsers = useMemo(
+  const visibleUsers = useMemo(
     () =>
       selectedRole === '전체'
         ? searchedUsers
@@ -123,31 +127,7 @@ export function UserManagement() {
     [searchedUsers, selectedRole],
   );
 
-  const visibleUsers = useMemo(() => {
-    if (statusSort === 'none') return filteredUsers;
-    const copy = [...filteredUsers];
-    copy.sort((a, b) => {
-      if (a.active === b.active) return 0;
-      if (statusSort === 'desc') return a.active ? -1 : 1; // 활성 먼저
-      return a.active ? 1 : -1; // 비활성 먼저
-    });
-    return copy;
-  }, [filteredUsers, statusSort]);
-
   const hasActiveFilter = !!normalizedQuery || selectedRole !== '전체';
-
-  const SortIcon = statusSort === 'asc' ? ArrowUp : statusSort === 'desc' ? ArrowDown : ArrowUpDown;
-  const sortLabel =
-    statusSort === 'asc' ? '비활성 먼저' : statusSort === 'desc' ? '활성 먼저' : '정렬 없음';
-
-  const applyStatus = (id: number, active: boolean) => {
-    setActiveMutation.mutate(
-      { id, active },
-      {
-        onError: () => toast.error('상태 변경에 실패했습니다. 잠시 후 다시 시도해주세요.'),
-      },
-    );
-  };
 
   const applyRole = (id: number, role: Role) => {
     setRoleMutation.mutate(
@@ -156,21 +136,6 @@ export function UserManagement() {
         onError: () => toast.error('권한 변경에 실패했습니다. 잠시 후 다시 시도해주세요.'),
       },
     );
-  };
-
-  const handleToggleActive = (u: User) => {
-    if (u.active) {
-      // 활성 → 비활성은 로그인 차단으로 이어지므로 확인 받음.
-      setPendingDeactivate(u);
-    } else {
-      // 비활성 → 활성은 복구 방향이라 즉시 반영.
-      applyStatus(u.id, true);
-    }
-  };
-
-  const confirmDeactivate = () => {
-    if (pendingDeactivate) applyStatus(pendingDeactivate.id, false);
-    setPendingDeactivate(null);
   };
 
   const handleRoleSelect = (u: User, to: Role) => {
@@ -187,6 +152,32 @@ export function UserManagement() {
       applyRole(pendingRoleChange.user.id, pendingRoleChange.to);
     }
     setPendingRoleChange(null);
+  };
+
+  const confirmPasswordReset = () => {
+    const target = pendingPasswordReset;
+    if (!target) return;
+    setPendingPasswordReset(null);
+    resetPasswordMutation.mutate(
+      { id: target.id },
+      {
+        onSuccess: ({ tempPassword }) => {
+          setResetResult({ user: target, tempPassword });
+        },
+        onError: () => toast.error('비밀번호 재설정에 실패했습니다. 잠시 후 다시 시도해주세요.'),
+      },
+    );
+  };
+
+  const copyTempPassword = async () => {
+    if (!resetResult) return;
+    try {
+      await navigator.clipboard.writeText(resetResult.tempPassword);
+      toast.success('임시 비밀번호를 복사했습니다.');
+    } catch {
+      // HTTPS 가 아닌 환경(개발 IP 접속 등) 에선 clipboard API 가 throw — 수동 복사 유도.
+      toast.error('자동 복사에 실패했습니다. 표시된 비밀번호를 직접 복사해주세요.');
+    }
   };
 
   const roleBadgeClass = (role: Role) =>
@@ -330,26 +321,14 @@ export function UserManagement() {
                 <th className="w-[12%] px-6 py-4 text-left text-sm font-semibold text-foreground">
                   이름
                 </th>
-                <th className="w-[13%] px-6 py-4 text-left text-sm font-semibold text-foreground">
+                <th className="w-[14%] px-6 py-4 text-left text-sm font-semibold text-foreground">
                   전화번호
                 </th>
                 <th className="w-[10%] px-6 py-4 text-center text-sm font-semibold text-foreground">
                   정보작성여부
                 </th>
-                <th className="w-[9%] px-6 py-4 text-center text-sm font-semibold text-foreground">
-                  <button
-                    type="button"
-                    onClick={() => setStatusSort((d) => nextSortDir[d])}
-                    className="inline-flex items-center gap-1 mx-auto hover:text-primary transition-colors"
-                    title={`상태 정렬: ${sortLabel} (클릭하여 전환)`}
-                    aria-label={`상태 정렬 — 현재: ${sortLabel}`}
-                  >
-                    상태
-                    <SortIcon
-                      size={14}
-                      className={statusSort === 'none' ? 'text-muted-foreground' : 'text-primary'}
-                    />
-                  </button>
+                <th className="w-[8%] px-6 py-4 text-center text-sm font-semibold text-foreground">
+                  작업
                 </th>
               </tr>
             </thead>
@@ -365,7 +344,6 @@ export function UserManagement() {
               )}
               {visibleUsers.map((user, index) => {
                 const isSelf = currentUser?.userId === user.userId;
-                const rowDimmed = !user.active ? 'opacity-60' : '';
                 // 역할에 따라 상호 배타적 — 한 컬럼에 병합해서 렌더.
                 const boothOrTeamName =
                   user.role === 'Booth'
@@ -374,7 +352,7 @@ export function UserManagement() {
                       ? user.performanceTeamName
                       : '-';
                 return (
-                  <tr key={user.id} className={`hover:bg-muted transition-colors ${rowDimmed}`}>
+                  <tr key={user.id} className="hover:bg-muted transition-colors">
                     <td className="px-6 py-4 text-sm text-muted-foreground">
                       {String(index + 1).padStart(2, '0')}
                     </td>
@@ -449,19 +427,22 @@ export function UserManagement() {
                       </span>
                     </td>
                     <td className="px-6 py-4 text-center">
-                      <Switch
-                        checked={user.active}
-                        onCheckedChange={() => handleToggleActive(user)}
-                        disabled={!canToggleStatus || isSelf}
-                        aria-label={user.active ? '비활성화' : '활성화'}
+                      <button
+                        type="button"
+                        onClick={() => setPendingPasswordReset(user)}
+                        disabled={!canResetPassword || isSelf || resetPasswordMutation.isPending}
                         title={
                           isSelf
-                            ? '자신의 상태는 변경할 수 없습니다'
-                            : !canToggleStatus
-                              ? '상태 변경 권한이 없습니다'
-                              : undefined
+                            ? '자신의 비밀번호는 재설정할 수 없습니다'
+                            : !canResetPassword
+                              ? '비밀번호 재설정 권한이 없습니다'
+                              : '임시 비밀번호 재발급'
                         }
-                      />
+                        aria-label="임시 비밀번호 재발급"
+                        className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                      >
+                        <KeyRound size={16} />
+                      </button>
                     </td>
                   </tr>
                 );
@@ -470,37 +451,6 @@ export function UserManagement() {
           </table>
         </div>
       </div>
-
-      {/* 비활성화 확인 — 차단 방향은 파괴성이 커서 경고 패널을 동반한다 */}
-      <AlertDialog
-        open={!!pendingDeactivate}
-        onOpenChange={(o) => !o && setPendingDeactivate(null)}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>유저 비활성화</AlertDialogTitle>
-            <AlertDialogDescription>
-              {pendingDeactivate?.userId}
-              {pendingDeactivate?.representative ? ` (${pendingDeactivate.representative})` : ''}
-              을(를) 비활성화합니다.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          {pendingDeactivate && (
-            <div className="rounded-md border border-ds-warning bg-ds-warning-subtle px-3 py-2 text-sm text-ds-warning-pressed">
-              비활성화 즉시 해당 유저는 로그인할 수 없게 됩니다. 되돌리려면 다시 활성화해야 합니다.
-            </div>
-          )}
-          <AlertDialogFooter>
-            <AlertDialogCancel>취소</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={confirmDeactivate}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              비활성화
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
 
       {/* 권한 변경 확인 */}
       <AlertDialog
@@ -523,6 +473,85 @@ export function UserManagement() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* 비밀번호 재설정 확인 — 기존 비번이 즉시 무효화되므로 경고 패널 동반. */}
+      <AlertDialog
+        open={!!pendingPasswordReset}
+        onOpenChange={(o) => !o && setPendingPasswordReset(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>임시 비밀번호 재발급</AlertDialogTitle>
+            <AlertDialogDescription>
+              {pendingPasswordReset?.userId}
+              {pendingPasswordReset?.representative
+                ? ` (${pendingPasswordReset.representative})`
+                : ''}
+              의 비밀번호를 재설정합니다.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="rounded-md border border-ds-warning bg-ds-warning-subtle px-3 py-2 text-sm text-ds-warning-pressed">
+            재발급 즉시 기존 비밀번호로는 로그인할 수 없습니다. 새 임시 비밀번호는 다음 화면에서
+            <b> 한 번만</b> 노출되므로 운영자가 사용자에게 직접 전달해야 합니다.
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel>취소</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmPasswordReset}>재발급</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/*
+        재설정 결과 — 임시 비번 1회 노출. 닫으면 다시 못 봄.
+        '1회 노출' 원칙상 실수로 닫히면 비번을 잃으므로
+        overlay 클릭 / ESC 로는 닫히지 않게 막고, 명시적 닫기 버튼만 허용.
+      */}
+      <Dialog
+        open={!!resetResult}
+        onOpenChange={(o) => {
+          if (!o) setResetResult(null);
+        }}
+      >
+        <DialogContent
+          onPointerDownOutside={(e) => e.preventDefault()}
+          onEscapeKeyDown={(e) => e.preventDefault()}
+        >
+          <DialogHeader>
+            <DialogTitle>임시 비밀번호 발급 완료</DialogTitle>
+            <DialogDescription>
+              {resetResult?.user.userId}
+              {resetResult?.user.representative ? ` (${resetResult.user.representative})` : ''}의 새
+              임시 비밀번호입니다. 사용자에게 전달 후 첫 로그인 시 변경하도록 안내해주세요.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex items-center gap-2 rounded-md border border-border bg-muted px-3 py-2">
+            <code className="flex-1 select-all font-mono text-sm text-foreground break-all">
+              {resetResult?.tempPassword}
+            </code>
+            <button
+              type="button"
+              onClick={copyTempPassword}
+              aria-label="임시 비밀번호 복사"
+              className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium text-foreground bg-background border border-border hover:bg-muted hover:border-ds-border-strong transition-colors"
+            >
+              <Copy size={14} />
+              복사
+            </button>
+          </div>
+          <p className="text-xs text-ds-warning-pressed">
+            이 창을 닫으면 비밀번호는 다시 볼 수 없습니다.
+          </p>
+          <DialogFooter>
+            <button
+              type="button"
+              onClick={() => setResetResult(null)}
+              className="px-4 py-2 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-ds-primary-pressed transition-colors"
+            >
+              닫기
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

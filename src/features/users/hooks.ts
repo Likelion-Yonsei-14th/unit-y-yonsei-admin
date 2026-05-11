@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { createUser, listAdminUsers, setUserActive, setUserRole } from './api';
+import { createUser, listAdminUsers, resetUserPassword, setUserRole } from './api';
 
 /**
  * 관리자 페이지 — 어드민 풀 전체 조회.
@@ -12,16 +12,6 @@ export function useAdminUsers() {
   });
 }
 
-export function useSetUserActive() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: setUserActive,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['users'] });
-    },
-  });
-}
-
 export function useSetUserRole() {
   const queryClient = useQueryClient();
   return useMutation({
@@ -29,6 +19,16 @@ export function useSetUserRole() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
     },
+  });
+}
+
+/**
+ * 비밀번호 강제 재설정 — 응답으로 받은 임시 비번을 운영자가 사용자에게 전달.
+ * 목록 캐시 무효화는 불필요 (active/role 등 표시 필드는 안 바뀜).
+ */
+export function useResetUserPassword() {
+  return useMutation({
+    mutationFn: resetUserPassword,
   });
 }
 
