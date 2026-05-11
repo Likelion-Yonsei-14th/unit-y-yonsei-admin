@@ -162,8 +162,7 @@ export function UserManagement() {
         onSuccess: ({ tempPassword }) => {
           setResetResult({ user: target, tempPassword });
         },
-        onError: () =>
-          toast.error('비밀번호 재설정에 실패했습니다. 잠시 후 다시 시도해주세요.'),
+        onError: () => toast.error('비밀번호 재설정에 실패했습니다. 잠시 후 다시 시도해주세요.'),
       },
     );
   };
@@ -512,8 +511,8 @@ export function UserManagement() {
             <DialogTitle>임시 비밀번호 발급 완료</DialogTitle>
             <DialogDescription>
               {resetResult?.user.userId}
-              {resetResult?.user.representative ? ` (${resetResult.user.representative})` : ''}의
-              새 임시 비밀번호입니다. 사용자에게 전달 후 첫 로그인 시 변경하도록 안내해주세요.
+              {resetResult?.user.representative ? ` (${resetResult.user.representative})` : ''}의 새
+              임시 비밀번호입니다. 사용자에게 전달 후 첫 로그인 시 변경하도록 안내해주세요.
             </DialogDescription>
           </DialogHeader>
           <div className="flex items-center gap-2 rounded-md border border-border bg-muted px-3 py-2">
