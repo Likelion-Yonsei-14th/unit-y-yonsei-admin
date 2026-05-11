@@ -98,11 +98,11 @@ performer1 / perf1234     (Performer, performance_team_id=1)
 
 | 메서드 | 경로 | 설명 | 권한 |
 |---|---|---|---|
-| GET   | `/users` | 전체 유저 목록 (페이지네이션 검토) | `user.read` — Super/Master |
-| POST  | `/users` | 신규 계정 생성 (ID/패스워드/역할/소속 등) | `admin.create` — Super |
-| PATCH | `/users/:id/role` | 역할 변경. body: `{ role }` | `user.update.role` — Super |
-| POST  | `/users/:id/reset-password` | 임시 비밀번호 재발급. body 없음, 응답 `{ temp_password }` | `user.password.reset` — Super/Master |
-| DELETE | `/users/:id` | 유저 삭제 | `user.manage` — Super |
+| GET   | `/admin/users` | 전체 유저 목록 (페이지네이션 검토) | `user.read` — Super/Master |
+| POST  | `/admin/users` | 신규 계정 생성 (ID/패스워드/역할/소속 등) | `admin.create` — Super |
+| PATCH | `/admin/users/:id` | 역할 변경. body: `{ role }` | `user.update.role` — Super |
+| POST  | `/admin/users/:id/reset-password` | 임시 비밀번호 재발급. body 없음, 응답 `{ temp_password }` | `user.password.reset` — Super/Master |
+| DELETE | `/admin/users/:id` | 유저 삭제 | `user.manage` — Super |
 
 ### 3.3 `info_completed` 계산 규칙 (백엔드가 계산해 내려주는 필드)
 

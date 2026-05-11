@@ -505,7 +505,7 @@ ERD: `공연` + `공연 이미지` + `셋리스트`.
     "team_id": 16,
     "team_name": "BTL",
     "date": "2026-05-28",
-    "stage": "baekyang",          // "songdo" | "baekyang" | "nocheon"
+    "stage": "dongmoon",          // "songdo" | "dongmoon" | "nocheon"
     "start_time": "18:00",
     "end_time": "19:00",
     "main_photo_url": "https://..." // null 가능
@@ -526,7 +526,7 @@ ERD: `공연` + `공연 이미지` + `셋리스트`.
   "instagram_url": "https://...",
   "youtube_url": "https://...",
   "date": "2026-05-28",
-  "stage": "baekyang",
+  "stage": "dongmoon",
   "start_time": "18:00",
   "end_time": "19:00",
   "images": [
@@ -720,7 +720,7 @@ CREATE TABLE lost_items (
 1. **인증 전략 최종 확정** — JWT vs 세션 쿠키. (메모리상 세션 쿠키 방향)
 2. **운영 일자 표기** — API 응답에 `int 1..4` 인덱스 vs `YYYY-MM-DD` 문자열 — 후자 권장.
 3. **이미지 업로드 엔드포인트** — `POST /uploads` (multipart) → `{ url }` 반환하는 공통 엔드포인트 둘 것인지. 부스/공지/공연 모두 image_url 만 들고 있음.
-4. **공연 stage enum vs ERD `지도 위치` 매핑** — 프론트 `'songdo' | 'baekyang' | 'nocheon'` 와 ERD 의 `지도 위치 id` 어떻게 sync.
+4. **공연 stage enum vs ERD `지도 위치` 매핑** — 프론트 `'songdo' | 'dongmoon' | 'nocheon'` 와 ERD 의 `지도 위치 id` 어떻게 sync.
 5. **`info_completed` 계산 시점** — 매 요청 JOIN vs 캐시 컬럼.
 6. **벌크 PATCH `/reservations` 라우팅 충돌** — 단건 `:id` 와 컬렉션 동일 prefix. `/reservations/bulk` 같은 sub-path 분리 권장.
 7. **공지/분실물의 has_image 외 실제 이미지 URL 모델** — 별도 테이블 vs 단일 컬럼.
