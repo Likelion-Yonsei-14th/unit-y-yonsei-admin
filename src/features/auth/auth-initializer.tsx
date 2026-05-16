@@ -1,6 +1,6 @@
 import { useEffect, type ReactNode } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { fetchMe, hasStoredToken } from './api';
+import { fetchMe, shouldRestoreSession } from './api';
 import { useAuthStore } from './store';
 import { setUnauthorizedHandler } from '@/lib/api-client';
 
@@ -15,19 +15,19 @@ export function AuthInitializer({ children }: { children: ReactNode }) {
   const setUser = useAuthStore((s) => s.setUser);
   const setInitializing = useAuthStore((s) => s.setInitializing);
 
-  const hasToken = hasStoredToken();
+  const shouldProbe = shouldRestoreSession();
 
   // isLoading 은 useAuth().isInitializing 으로 가드가 처리하므로 여기서 따로 다룰 필요 없음.
   const { data, isSuccess, isError } = useQuery({
     queryKey: ['auth', 'me'],
     queryFn: fetchMe,
-    enabled: hasToken,
+    enabled: shouldProbe,
     retry: false,
     staleTime: 60_000,
   });
 
   useEffect(() => {
-    if (!hasToken) {
+    if (!shouldProbe) {
       setInitializing(false);
       return;
     }
@@ -39,7 +39,7 @@ export function AuthInitializer({ children }: { children: ReactNode }) {
       setUser(null);
       setInitializing(false);
     }
-  }, [hasToken, isSuccess, isError, data, setUser, setInitializing]);
+  }, [shouldProbe, isSuccess, isError, data, setUser, setInitializing]);
 
   // 401 시 스토어에서 user 제거
   useEffect(() => {

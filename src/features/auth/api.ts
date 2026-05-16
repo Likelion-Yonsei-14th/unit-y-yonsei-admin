@@ -1,10 +1,12 @@
 import { api, ApiError } from '@/lib/api-client';
 import { authStrategy } from '@/lib/auth-strategy';
 import { env } from '@/lib/env';
-import type { CurrentUser, CurrentUserDTO, LoginPayload, LoginResultDTO } from './types';
+import type { Role } from '@/types/role';
+import type { AdminAuthDTO, CurrentUser, CurrentUserDTO, LoginPayload } from './types';
 
 // ---- DTO → Model 매퍼 ----
 
+/** mock 사용자 DTO(snake_case) → CurrentUser. */
 const toCurrentUser = (d: CurrentUserDTO): CurrentUser => ({
   id: d.id,
   userId: d.user_id,
@@ -12,6 +14,29 @@ const toCurrentUser = (d: CurrentUserDTO): CurrentUser => ({
   name: d.name,
   boothId: d.booth_id,
   performanceTeamId: d.performance_team_id,
+});
+
+/** 백엔드 대문자 역할('SUPER' 등) → 프론트 Role. */
+const ROLE_BY_BACKEND: Record<string, Role> = {
+  SUPER: 'Super',
+  MASTER: 'Master',
+  BOOTH: 'Booth',
+  PERFORMER: 'Performer',
+};
+
+function toRole(backendRole: string): Role {
+  const role = ROLE_BY_BACKEND[backendRole?.toUpperCase()];
+  if (!role) throw new Error(`알 수 없는 역할 값입니다: ${backendRole}`);
+  return role;
+}
+
+/** 실제 백엔드 인증 응답(AdminAuthDTO) → CurrentUser. */
+const toCurrentUserFromAuth = (d: AdminAuthDTO): CurrentUser => ({
+  id: d.adminUserId,
+  userId: d.loginId,
+  role: toRole(d.role),
+  name: d.representativeName,
+  // boothId / performanceTeamId 는 백엔드 인증 응답에 아직 없음 (백엔드 추가 요청 항목).
 });
 
 // ---- Mock 구현 (USE_MOCK=true일 때 사용) ----
@@ -157,25 +182,22 @@ async function logoutMock(): Promise<void> {
 // ---- 실제 구현 ----
 
 async function loginReal(payload: LoginPayload): Promise<CurrentUser> {
-  const result = await api.post<LoginResultDTO>('/auth/login', {
-    user_id: payload.userId,
+  // 세션 쿠키 방식 — 응답 바디에 토큰 없음. 서버가 Set-Cookie 로 처리.
+  const dto = await api.post<AdminAuthDTO>('/admin/auth/login', {
+    loginId: payload.userId,
     password: payload.password,
   });
-  authStrategy.persistLogin({
-    accessToken: result.access_token,
-    refreshToken: result.refresh_token,
-  });
-  return toCurrentUser(result.user);
+  return toCurrentUserFromAuth(dto);
 }
 
 async function fetchMeReal(): Promise<CurrentUser> {
-  const dto = await api.get<CurrentUserDTO>('/auth/me');
-  return toCurrentUser(dto);
+  const dto = await api.get<AdminAuthDTO>('/admin/auth/me');
+  return toCurrentUserFromAuth(dto);
 }
 
 async function logoutReal(): Promise<void> {
   try {
-    await api.post('/auth/logout');
+    await api.post('/admin/auth/logout');
   } finally {
     authStrategy.clearAuth();
   }
@@ -187,10 +209,16 @@ export const login = env.USE_MOCK ? loginMock : loginReal;
 export const fetchMe = env.USE_MOCK ? fetchMeMock : fetchMeReal;
 export const logout = env.USE_MOCK ? logoutMock : logoutReal;
 
-/** 현재 저장된 토큰이 있는지 (라우팅 초기화 전 빠른 체크용) */
-export function hasStoredToken(): boolean {
+/**
+ * 앱 시작 시 `/me` 로 세션 복원을 시도할지 여부 (라우팅 초기화 전 빠른 체크용).
+ * - mock: 저장된 mock user_id 가 있을 때.
+ * - 세션 쿠키 전략(real): 클라이언트가 HttpOnly 쿠키를 못 읽으므로 항상 시도하고,
+ *   로그인 여부는 서버 응답(200 / 401)으로 판정한다.
+ * - JWT 전략: 저장된 토큰이 있을 때만.
+ */
+export function shouldRestoreSession(): boolean {
   if (env.USE_MOCK) {
     return !!localStorage.getItem(MOCK_TOKEN_KEY);
   }
-  return !!authStrategy.getStoredToken();
+  return authStrategy.needsCredentials || !!authStrategy.getStoredToken();
 }
