@@ -1,7 +1,7 @@
 import { api, ApiError } from '@/lib/api-client';
 import { authStrategy } from '@/lib/auth-strategy';
 import { env } from '@/lib/env';
-import type { Role } from '@/types/role';
+import { roleFromBackend } from '@/types/role';
 import type { AdminAuthDTO, CurrentUser, CurrentUserDTO, LoginPayload } from './types';
 
 // ---- DTO → Model 매퍼 ----
@@ -16,25 +16,11 @@ const toCurrentUser = (d: CurrentUserDTO): CurrentUser => ({
   performanceTeamId: d.performance_team_id,
 });
 
-/** 백엔드 대문자 역할('SUPER' 등) → 프론트 Role. */
-const ROLE_BY_BACKEND: Record<string, Role> = {
-  SUPER: 'Super',
-  MASTER: 'Master',
-  BOOTH: 'Booth',
-  PERFORMER: 'Performer',
-};
-
-function toRole(backendRole: string): Role {
-  const role = ROLE_BY_BACKEND[backendRole?.toUpperCase()];
-  if (!role) throw new Error(`알 수 없는 역할 값입니다: ${backendRole}`);
-  return role;
-}
-
 /** 실제 백엔드 인증 응답(AdminAuthDTO) → CurrentUser. */
 const toCurrentUserFromAuth = (d: AdminAuthDTO): CurrentUser => ({
   id: d.adminUserId,
   userId: d.loginId,
-  role: toRole(d.role),
+  role: roleFromBackend(d.role),
   name: d.representativeName,
   // boothId / performanceTeamId 는 백엔드 인증 응답에 아직 없음 (백엔드 추가 요청 항목).
 });

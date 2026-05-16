@@ -19,3 +19,32 @@ export const ROLE_DESCRIPTION: Record<Role, string> = {
   Booth: '자신의 부스 정보만 관리 가능',
   Performer: '자신의 공연 정보만 관리 가능',
 };
+
+// ---- 백엔드 역할 enum 변환 ----
+// 백엔드는 역할을 대문자('SUPER' 등)로 주고받는다. 프론트 Role(PascalCase)과 양방향 변환.
+
+const ROLE_TO_BACKEND: Record<Role, string> = {
+  Super: 'SUPER',
+  Master: 'MASTER',
+  Booth: 'BOOTH',
+  Performer: 'PERFORMER',
+};
+
+const ROLE_FROM_BACKEND: Record<string, Role> = {
+  SUPER: 'Super',
+  MASTER: 'Master',
+  BOOTH: 'Booth',
+  PERFORMER: 'Performer',
+};
+
+/** 백엔드 대문자 역할 문자열 → 프론트 Role. 알 수 없는 값이면 throw. */
+export function roleFromBackend(value: string): Role {
+  const role = ROLE_FROM_BACKEND[value?.toUpperCase()];
+  if (!role) throw new Error(`알 수 없는 역할 값입니다: ${value}`);
+  return role;
+}
+
+/** 프론트 Role → 백엔드 대문자 역할 문자열. */
+export function roleToBackend(role: Role): string {
+  return ROLE_TO_BACKEND[role];
+}
