@@ -1,3 +1,4 @@
+import { roleFromBackend, roleToBackend } from '@/types/role';
 import type { CreateUserFormValues } from './schema';
 import type {
   AdminUser,
@@ -9,60 +10,47 @@ import type {
   ResetPasswordResult,
 } from './types';
 
+/**
+ * 백엔드 목록 DTO → AdminUser.
+ *
+ * boothName / performanceTeamName / email / phone / infoCompleted 는 백엔드
+ * 응답(AdminUserListResponse)에 없어 기본값으로 채운다. 백엔드가 해당 필드를
+ * 추가하면 이 매퍼만 갱신하면 된다.
+ */
 export const toAdminUser = (d: AdminUserDTO): AdminUser => ({
   id: d.id,
-  userId: d.user_id,
-  role: d.role,
-  affiliation: d.affiliation,
-  boothId: d.booth_id,
-  boothName: d.booth_name,
-  performanceTeamId: d.performance_team_id,
-  performanceTeamName: d.performance_team_name,
-  representative: d.representative,
-  email: d.email,
-  phone: d.phone,
-  infoCompleted: d.info_completed,
+  userId: d.loginId,
+  role: roleFromBackend(d.role),
+  affiliation: d.organization,
+  representative: d.representativeName,
+  boothId: null,
+  boothName: '-',
+  performanceTeamId: null,
+  performanceTeamName: '-',
+  email: '',
+  phone: '',
+  infoCompleted: false,
 });
 
-/** 빈 문자열은 백엔드에 `undefined` 로 보냄 — 누락과 빈 값을 같게 취급. */
-const trimOrUndefined = (s: string | undefined): string | undefined => {
-  const v = s?.trim();
-  return v ? v : undefined;
-};
-
+/**
+ * 계정 생성 폼 → 백엔드 생성 요청(AdminUserCreateRequest).
+ *
+ * 폼의 운영 정보(boothCampus / boothOperatingDates / performance* 등)는 현재
+ * 백엔드 생성 엔드포인트가 받지 않아 전송하지 않는다 (백엔드 협의 항목).
+ */
 export const fromCreateUserFormValues = (v: CreateUserFormValues): CreateUserDTO => ({
-  user_id: v.userId,
-  temp_password: v.tempPassword,
-  affiliation: v.affiliation,
-  role: v.permissionType,
-  representative_name: v.representativeName,
-  representative_phone: v.representativePhone,
-  booth_name: trimOrUndefined(v.boothName),
-  performance_team_name: trimOrUndefined(v.performanceTeamName),
-  internal_memo: v.internalMemo,
-  // 권한별로 어울리는 영역만 보냄. Master/Super 권한이면 둘 다 비움.
-  ...(v.permissionType === 'Booth'
-    ? {
-        booth_campus: v.boothCampus,
-        // 빈 배열은 누락과 동일 취급 — undefined 로 보내 백엔드가 'no preference'
-        // 로 해석하게.
-        booth_operating_dates: v.boothOperatingDates?.length ? v.boothOperatingDates : undefined,
-        booth_location_note: trimOrUndefined(v.boothLocationNote),
-      }
-    : {}),
-  ...(v.permissionType === 'Performer'
-    ? {
-        performance_date: trimOrUndefined(v.performanceDate),
-        performance_stage: v.performanceStage,
-        performance_start_time: trimOrUndefined(v.performanceStartTime),
-        performance_end_time: trimOrUndefined(v.performanceEndTime),
-      }
-    : {}),
+  loginId: v.userId,
+  password: v.tempPassword,
+  organization: v.affiliation,
+  role: roleToBackend(v.permissionType),
+  representativeName: v.representativeName,
+  representativePhone: v.representativePhone,
+  memo: v.internalMemo,
 });
 
 export const toCreatedUser = (d: CreatedUserDTO): CreatedUser => ({
   id: d.id,
-  userId: d.user_id,
+  userId: d.loginId,
 });
 
 export const toResetPasswordResult = (d: ResetPasswordDTO): ResetPasswordResult => ({

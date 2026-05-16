@@ -1,19 +1,12 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router';
-import { Copy, KeyRound, Search, UserPlus, Users, X } from 'lucide-react';
+import { Copy, KeyRound, Search, Trash2, UserPlus, Users, X } from 'lucide-react';
 import { toast } from 'sonner';
-import { useAdminUsers, useResetUserPassword, useSetUserRole } from '@/features/users/hooks';
+import { useAdminUsers, useDeleteUser, useResetUserPassword } from '@/features/users/hooks';
 import type { AdminUser as User } from '@/features/users/types';
 import { PageHeaderAction } from '@/components/common/page-header-action';
 import { TableSkeleton } from '@/components/common/table-skeleton';
 import { useAuth } from '@/features/auth/hooks';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -37,28 +30,6 @@ import type { Role } from '@/types/role';
 type RoleFilter = '전체' | Role;
 
 /**
- * Super 는 배포 시점 1인(시스템 오너) 고정이라 UI 승격·강등 경로를
- * 의도적으로 배제한다. 옵션에도 내놓지 않는다.
- */
-const ROLE_OPTIONS: Role[] = ['Master', 'Booth', 'Performer'];
-
-/**
- * 역할 전이의 확인 레벨.
- * - 0: 무확인 즉시 반영 (교정/강등 성격의 저위험 전이)
- * - 1: 단순 Confirm (Master로의 승격)
- */
-function getRoleChangeTier(from: Role, to: Role): 0 | 1 {
-  if (from === to) return 0;
-  if (to === 'Master') return 1;
-  return 0;
-}
-
-interface PendingRoleChange {
-  user: User;
-  to: Role;
-}
-
-/**
  * 비밀번호 재설정 결과 다이얼로그 상태 — 응답으로 받은 임시 비번을 운영자에게
  * 1회 노출. 닫으면 다시 못 보므로 항상 결과 다이얼로그로 노출하고 토스트로
  * 갈음하지 않는다. (API 응답 모델 `ResetPasswordResult` 와 구분하기 위해
@@ -73,20 +44,21 @@ export function UserManagement() {
   const usersQuery = useAdminUsers();
   // useMemo 로 묶어 매 렌더 새 빈 배열이 만들어지지 않게 — 하위 useMemo deps 안정.
   const users: User[] = useMemo(() => usersQuery.data ?? [], [usersQuery.data]);
-  const setRoleMutation = useSetUserRole();
   const resetPasswordMutation = useResetUserPassword();
+  const deleteMutation = useDeleteUser();
 
   const [selectedRole, setSelectedRole] = useState<RoleFilter>('전체');
   const [searchQuery, setSearchQuery] = useState('');
-  const [pendingRoleChange, setPendingRoleChange] = useState<PendingRoleChange | null>(null);
   const [pendingPasswordReset, setPendingPasswordReset] = useState<User | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<User | null>(null);
   const [resetResult, setResetResult] = useState<ResetPasswordDialogState | null>(null);
   const navigate = useNavigate();
   const { user: currentUser, can } = useAuth();
 
   const roles: RoleFilter[] = ['전체', 'Super', 'Master', 'Booth', 'Performer'];
-  const canEditRole = can('user.update.role');
   const canResetPassword = can('user.password.reset');
+  // 계정 삭제는 Super 전용 (user.manage). Super 계정 자체는 삭제 대상에서 제외.
+  const canDeleteUsers = can('user.manage');
 
   // 역할별 계정 수. pill 라벨에 "Super | 3" 형태로 노출해 필터 클릭 전에도 분포 파악.
   const roleCounts = useMemo<Record<RoleFilter, number>>(() => {
@@ -129,31 +101,6 @@ export function UserManagement() {
 
   const hasActiveFilter = !!normalizedQuery || selectedRole !== '전체';
 
-  const applyRole = (id: number, role: Role) => {
-    setRoleMutation.mutate(
-      { id, role },
-      {
-        onError: () => toast.error('권한 변경에 실패했습니다. 잠시 후 다시 시도해주세요.'),
-      },
-    );
-  };
-
-  const handleRoleSelect = (u: User, to: Role) => {
-    const tier = getRoleChangeTier(u.role, to);
-    if (tier === 0) {
-      applyRole(u.id, to);
-      return;
-    }
-    setPendingRoleChange({ user: u, to });
-  };
-
-  const confirmRoleChange = () => {
-    if (pendingRoleChange) {
-      applyRole(pendingRoleChange.user.id, pendingRoleChange.to);
-    }
-    setPendingRoleChange(null);
-  };
-
   const confirmPasswordReset = () => {
     const target = pendingPasswordReset;
     if (!target) return;
@@ -165,6 +112,19 @@ export function UserManagement() {
           setResetResult({ user: target, tempPassword });
         },
         onError: () => toast.error('비밀번호 재설정에 실패했습니다. 잠시 후 다시 시도해주세요.'),
+      },
+    );
+  };
+
+  const confirmDelete = () => {
+    const target = pendingDelete;
+    if (!target) return;
+    setPendingDelete(null);
+    deleteMutation.mutate(
+      { id: target.id },
+      {
+        onSuccess: () => toast.success(`${target.userId} 계정을 삭제했습니다.`),
+        onError: () => toast.error('계정 삭제에 실패했습니다. 잠시 후 다시 시도해주세요.'),
       },
     );
   };
@@ -185,11 +145,9 @@ export function UserManagement() {
       ? 'bg-ds-primary-subtle text-ds-primary-pressed'
       : 'bg-ds-secondary-a-subtle text-ds-secondary-a-pressed';
 
-  // 역할 배지는 table-fixed 로 폭이 고정된 컬럼(w-[10%]) 을 그대로 채운다.
-  // 배지에 절대 폭을 박으면 좁은 뷰포트에서 컬럼 경계를 넘어 인접 셀을 침범할 수 있어 w-full 로 붙인다.
-  // SelectTrigger 기본 클래스에 `data-[size=sm]:h-8` 이 포함돼 있어
-  // 같은 특이도의 `h-7` 로는 덮어써지지 않는다. data-variant 로 맞춰 높이를 통일.
-  const roleBadgeSize = 'h-7 data-[size=sm]:h-7 rounded-full text-xs font-medium';
+  // 역할 배지는 table-fixed 로 폭이 고정된 컬럼을 그대로 채운다. 배지에 절대 폭을
+  // 박으면 좁은 뷰포트에서 컬럼 경계를 넘어 인접 셀을 침범할 수 있어 w-full 로 붙인다.
+  const roleBadgeSize = 'h-7 rounded-full text-xs font-medium';
 
   if (usersQuery.isLoading) {
     return (
@@ -336,12 +294,15 @@ export function UserManagement() {
                   <br />
                   재설정
                 </th>
+                <th className="w-[7%] px-6 py-4 text-center text-sm font-semibold text-foreground">
+                  삭제
+                </th>
               </tr>
             </thead>
             <tbody>
               {visibleUsers.length === 0 && (
                 <tr>
-                  <td colSpan={9} className="px-6 py-12 text-center text-sm text-muted-foreground">
+                  <td colSpan={10} className="px-6 py-12 text-center text-sm text-muted-foreground">
                     {hasActiveFilter
                       ? '검색 조건에 맞는 유저가 없습니다.'
                       : '표시할 유저가 없습니다.'}
@@ -366,33 +327,11 @@ export function UserManagement() {
                       {user.userId}
                     </td>
                     <td className="px-6 py-4">
-                      {canEditRole && !isSelf ? (
-                        <Select
-                          value={user.role}
-                          onValueChange={(v) => handleRoleSelect(user, v as Role)}
-                        >
-                          <SelectTrigger
-                            size="sm"
-                            className={`${roleBadgeSize} w-full border-0 shadow-none px-3 ${roleBadgeClass(user.role)}`}
-                          >
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {ROLE_OPTIONS.map((r) => (
-                              <SelectItem key={r} value={r}>
-                                {r}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      ) : (
-                        <span
-                          className={`${roleBadgeSize} w-full inline-flex items-center justify-center px-3 ${roleBadgeClass(user.role)}`}
-                          title={isSelf ? '자신의 권한은 변경할 수 없습니다' : undefined}
-                        >
-                          {user.role}
-                        </span>
-                      )}
+                      <span
+                        className={`${roleBadgeSize} w-full inline-flex items-center justify-center px-3 ${roleBadgeClass(user.role)}`}
+                      >
+                        {user.role}
+                      </span>
                     </td>
                     <td
                       className="px-6 py-4 text-sm text-muted-foreground truncate"
@@ -450,6 +389,22 @@ export function UserManagement() {
                         <KeyRound size={16} />
                       </button>
                     </td>
+                    <td className="px-6 py-4 text-center">
+                      {canDeleteUsers && user.role !== 'Super' ? (
+                        <button
+                          type="button"
+                          onClick={() => setPendingDelete(user)}
+                          disabled={deleteMutation.isPending}
+                          title="계정 삭제"
+                          aria-label="계정 삭제"
+                          className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-ds-error-subtle hover:text-destructive transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      ) : (
+                        <span className="text-sm text-ds-text-disabled">-</span>
+                      )}
+                    </td>
                   </tr>
                 );
               })}
@@ -458,24 +413,23 @@ export function UserManagement() {
         </div>
       </div>
 
-      {/* 권한 변경 확인 */}
-      <AlertDialog
-        open={!!pendingRoleChange}
-        onOpenChange={(o) => {
-          if (!o) setPendingRoleChange(null);
-        }}
-      >
+      {/* 계정 삭제 확인 */}
+      <AlertDialog open={!!pendingDelete} onOpenChange={(o) => !o && setPendingDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>권한 변경</AlertDialogTitle>
+            <AlertDialogTitle>계정 삭제</AlertDialogTitle>
             <AlertDialogDescription>
-              {pendingRoleChange?.user.userId}의 권한을 <b>{pendingRoleChange?.user.role}</b> →{' '}
-              <b>{pendingRoleChange?.to}</b> 로 변경합니다.
+              {pendingDelete?.userId}
+              {pendingDelete?.representative ? ` (${pendingDelete.representative})` : ''} 계정을
+              삭제합니다.
             </AlertDialogDescription>
           </AlertDialogHeader>
+          <div className="rounded-md border border-ds-warning bg-ds-warning-subtle px-3 py-2 text-sm text-ds-warning-pressed">
+            삭제하면 되돌릴 수 없습니다. 해당 계정으로는 더 이상 로그인할 수 없습니다.
+          </div>
           <AlertDialogFooter>
             <AlertDialogCancel>취소</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmRoleChange}>확인</AlertDialogAction>
+            <AlertDialogAction onClick={confirmDelete}>삭제</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
