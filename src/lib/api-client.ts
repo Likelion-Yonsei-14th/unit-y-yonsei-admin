@@ -1,6 +1,6 @@
 import { authStrategy } from './auth-strategy';
 import { env } from './env';
-import type { ErrorBody } from '@/types/api';
+import type { ApiResponse, ErrorBody } from '@/types/api';
 
 /**
  * API 요청 중 발생한 HTTP 에러.
@@ -45,6 +45,11 @@ interface RequestOptions extends Omit<RequestInit, 'body'> {
   raw?: boolean;
 }
 
+/** 응답 본문이 백엔드 공통 봉투({ success, data, error }) 형태인지 판별. */
+function isApiEnvelope(x: unknown): x is ApiResponse<unknown> {
+  return typeof x === 'object' && x !== null && 'success' in x;
+}
+
 async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
   const { body, raw, ...init } = options;
   const headers = new Headers(init.headers);
@@ -69,29 +74,50 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
     throw new ApiError(401, 'Unauthorized', null);
   }
 
-  if (!res.ok) {
-    let errorBody: ErrorBody | null = null;
-    try {
-      errorBody = await res.json();
-    } catch {
-      // 빈 응답 또는 JSON이 아닌 응답
+  // raw 모드(파일 등) — 봉투 처리 없이 Response 그대로 넘긴다.
+  if (raw) {
+    if (!res.ok) {
+      throw new ApiError(res.status, res.statusText || `HTTP ${res.status}`, null);
     }
-    throw new ApiError(
-      res.status,
-      errorBody?.message ?? res.statusText ?? `HTTP ${res.status}`,
-      errorBody,
-    );
+    return res as unknown as T;
   }
 
-  // 204 No Content 등 본문이 없을 때
+  // 204 No Content 등 본문이 없을 때.
   if (res.status === 204) {
     return undefined as T;
   }
 
-  if (raw) {
-    return res as unknown as T;
+  let payload: unknown = null;
+  try {
+    payload = await res.json();
+  } catch {
+    // 빈 응답 또는 JSON이 아닌 응답
   }
-  return res.json() as Promise<T>;
+  const envelope = isApiEnvelope(payload) ? payload : null;
+
+  if (!res.ok) {
+    const err = envelope?.error ?? null;
+    const body: ErrorBody | null = err
+      ? { message: err.message, code: err.code }
+      : (payload as ErrorBody | null);
+    throw new ApiError(res.status, body?.message ?? res.statusText ?? `HTTP ${res.status}`, body);
+  }
+
+  // 백엔드는 모든 정상 JSON 응답을 { success, data, error } 봉투로 감싼다.
+  if (envelope) {
+    if (!envelope.success) {
+      const err = envelope.error;
+      throw new ApiError(
+        res.status,
+        err?.message ?? '요청 처리에 실패했습니다.',
+        err ? { message: err.message, code: err.code } : null,
+      );
+    }
+    return envelope.data as T;
+  }
+
+  // 봉투가 없는 JSON 응답은 그대로 반환 (호환성).
+  return payload as T;
 }
 
 /** 얇은 HTTP 래퍼. 도메인 api.ts는 이것만 사용. */

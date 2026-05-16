@@ -31,7 +31,9 @@ export interface AuthStrategy {
 
 /**
  * JWT: Authorization 헤더에 Bearer 토큰 부착, localStorage에 저장.
+ * (현재 백엔드는 세션 쿠키 방식 — 예비 구현으로만 유지)
  */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 class JwtStrategy implements AuthStrategy {
   private readonly KEY = 'daedongje.access_token';
   readonly needsCredentials = false;
@@ -58,9 +60,8 @@ class JwtStrategy implements AuthStrategy {
 
 /**
  * 세션 쿠키: 브라우저가 자동으로 쿠키 전송. credentials: 'include' 필요.
- * (현재는 참고용, 활성화 시 export const authStrategy = new SessionCookieStrategy() 로 교체)
+ * 실제 백엔드(`DDJ_ADMIN_SESSION` 쿠키, HttpOnly·SameSite=None)가 이 방식.
  */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 class SessionCookieStrategy implements AuthStrategy {
   readonly needsCredentials = true;
 
@@ -80,6 +81,6 @@ class SessionCookieStrategy implements AuthStrategy {
 
 /**
  * ⭐ 인증 전략 주입 지점.
- * 백엔드 방식이 확정되면 이 한 줄만 교체.
+ * 실제 백엔드가 세션 쿠키(`DDJ_ADMIN_SESSION`)를 쓰므로 SessionCookieStrategy 사용.
  */
-export const authStrategy: AuthStrategy = new JwtStrategy();
+export const authStrategy: AuthStrategy = new SessionCookieStrategy();
