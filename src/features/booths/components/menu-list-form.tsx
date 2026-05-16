@@ -19,6 +19,19 @@ interface Props {
   onClose: () => void;
 }
 
+/** 빈 메뉴 항목 한 줄. 메뉴 추가 버튼과 초기 디폴트 행 양쪽에서 사용. */
+function makeBlankMenuItem(order: number): BoothMenuItem {
+  return {
+    id: Date.now(),
+    order,
+    name: '',
+    description: '',
+    price: '',
+    image: null,
+    soldOut: false,
+  };
+}
+
 /**
  * 메뉴 리스트 + 주문 공지 편집 폼.
  *
@@ -37,6 +50,14 @@ export function MenuListForm({ booth, initiallyEditing, updateMutation, onClose 
     setMenuItems(booth.menuItems);
   }, [booth]);
 
+  // 편집 모드인데 메뉴가 하나도 없으면 디폴트로 빈 행 하나를 띄운다.
+  // 메뉴 추가 버튼을 누르지 않아도 바로 작성을 시작할 수 있게.
+  useEffect(() => {
+    if (isEditing && menuItems.length === 0) {
+      setMenuItems([makeBlankMenuItem(1)]);
+    }
+  }, [isEditing, menuItems.length]);
+
   const moveItem = (fromIndex: number, toIndex: number) => {
     const updated = [...menuItems];
     const [movedItem] = updated.splice(fromIndex, 1);
@@ -45,16 +66,7 @@ export function MenuListForm({ booth, initiallyEditing, updateMutation, onClose 
   };
 
   const addMenuItem = () => {
-    const newItem: BoothMenuItem = {
-      id: Date.now(),
-      order: menuItems.length + 1,
-      name: '',
-      description: '',
-      price: '',
-      image: null,
-      soldOut: false,
-    };
-    setMenuItems([...menuItems, newItem]);
+    setMenuItems([...menuItems, makeBlankMenuItem(menuItems.length + 1)]);
   };
 
   const updateMenuItem = (id: number, field: keyof BoothMenuItem, value: string | boolean) => {
