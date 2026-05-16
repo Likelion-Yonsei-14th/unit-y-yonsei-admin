@@ -3,6 +3,10 @@ import { ArrowLeft, Edit, Star, Trash2, Upload } from 'lucide-react';
 import { toast } from 'sonner';
 import type { UseMutationResult } from '@tanstack/react-query';
 import type { BoothImage, BoothProfile } from '@/features/booths/types';
+import { ThumbnailCropOverlay } from '@/features/booths/components/thumbnail-crop-overlay';
+
+/** 업로드 파일당 용량 상한. 원본 비율은 제한하지 않는다 — 등록 표시만 3:2/5:6 으로 크롭. */
+const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
 
 interface Props {
   booth: BoothProfile;
@@ -64,9 +68,29 @@ export function BoothInfoForm({
   }, [booth]);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
+    const input = e.target;
+    const files = input.files;
     if (!files) return;
-    const newImages: BoothImage[] = Array.from(files).map((file, index) => {
+
+    // 1차 필터: 이미지 타입 + 용량 상한. 초과분은 제외하고 알림.
+    const accepted: File[] = [];
+    const oversized: string[] = [];
+    for (const file of Array.from(files)) {
+      if (!file.type.startsWith('image/')) continue;
+      if (file.size > MAX_IMAGE_SIZE) {
+        oversized.push(file.name);
+        continue;
+      }
+      accepted.push(file);
+    }
+    if (oversized.length > 0) {
+      toast.error(`5MB를 초과한 이미지는 제외했습니다: ${oversized.join(', ')}`);
+    }
+    // 같은 파일 재선택이 onChange 를 다시 트리거하도록 input 초기화.
+    input.value = '';
+    if (accepted.length === 0) return;
+
+    const newImages: BoothImage[] = accepted.map((file, index) => {
       const url = URL.createObjectURL(file);
       blobUrlsRef.current.add(url);
       return {
@@ -232,11 +256,11 @@ export function BoothInfoForm({
           )}
         </div>
 
-        {isEditing && (
-          <div>
-            {/* 그룹 타이틀 — 실제 file input 은 아래 wrapping label 안. 시맨틱은 span. */}
-            <span className="block text-sm font-semibold text-foreground mb-2">부스 썸네일</span>
+        <div>
+          {/* 그룹 타이틀 — 편집 시 실제 file input 은 아래 wrapping label 안. 시맨틱은 span. */}
+          <span className="block text-sm font-semibold text-foreground mb-2">부스 이미지</span>
 
+          {isEditing && (
             <label className="block border-2 border-dashed border-ds-border-strong rounded-lg p-8 text-center hover:border-primary transition-colors cursor-pointer">
               <input
                 type="file"
@@ -249,19 +273,31 @@ export function BoothInfoForm({
               <p className="text-sm text-muted-foreground mb-1">
                 이미지를 드래그하거나 클릭하여 업로드
               </p>
-              <p className="text-xs text-muted-foreground">여러 장의 이미지를 선택할 수 있습니다</p>
+              <p className="text-xs text-muted-foreground">
+                상세 배너는 3:2, 목록 썸네일은 5:6 비율로 표시됩니다 · 원본 크기는 제한 없음 ·
+                파일당 최대 5MB · 여러 장 선택 가능
+              </p>
             </label>
+          )}
 
-            {boothImages.length > 0 && (
-              <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+          {boothImages.length > 0 ? (
+            <>
+              <p className="mt-3 text-xs text-muted-foreground">
+                대표 이미지는 이용자 페이지 상세 배너로 쓰이며, 가운데 점선 영역만 목록 카드
+                썸네일에 보입니다. 핵심 피사체를 가운데에 두세요.
+              </p>
+              <div className="mt-3 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
                 {boothImages.map((image) => (
                   <div
                     key={image.id}
-                    className={`relative group aspect-square rounded-lg overflow-hidden border-2 transition-all ${
+                    className={`relative group aspect-[3/2] rounded-lg overflow-hidden border-2 transition-all ${
                       image.isMain ? 'border-primary' : 'border-border'
                     }`}
                   >
                     <img src={image.url} alt="부스 이미지" className="w-full h-full object-cover" />
+
+                    {/* 대표 이미지에만 5:6 썸네일 크롭 영역 미리보기 */}
+                    {image.isMain && <ThumbnailCropOverlay />}
 
                     {image.isMain && (
                       <div className="absolute top-2 left-2 px-2 py-1 bg-primary text-primary-foreground text-xs font-semibold rounded-full flex items-center gap-1 shadow-lg">
@@ -270,28 +306,36 @@ export function BoothInfoForm({
                       </div>
                     )}
 
-                    <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-all duration-200 flex items-center justify-center gap-2">
-                      {!image.isMain && (
+                    {isEditing && (
+                      <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-all duration-200 flex items-center justify-center gap-2">
+                        {!image.isMain && (
+                          <button
+                            onClick={() => setMainImage(image.id)}
+                            className="opacity-0 group-hover:opacity-100 px-3 py-1.5 bg-background text-foreground rounded-lg text-xs font-medium hover:bg-primary hover:text-primary-foreground transition-all"
+                          >
+                            대표로 설정
+                          </button>
+                        )}
                         <button
-                          onClick={() => setMainImage(image.id)}
-                          className="opacity-0 group-hover:opacity-100 px-3 py-1.5 bg-background text-foreground rounded-lg text-xs font-medium hover:bg-primary hover:text-primary-foreground transition-all"
+                          onClick={() => removeImage(image.id)}
+                          className="opacity-0 group-hover:opacity-100 p-2 bg-destructive text-destructive-foreground rounded-lg hover:bg-ds-error-pressed transition-all"
                         >
-                          대표로 설정
+                          <Trash2 size={14} />
                         </button>
-                      )}
-                      <button
-                        onClick={() => removeImage(image.id)}
-                        className="opacity-0 group-hover:opacity-100 p-2 bg-destructive text-destructive-foreground rounded-lg hover:bg-ds-error-pressed transition-all"
-                      >
-                        <Trash2 size={14} />
-                      </button>
-                    </div>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
-            )}
-          </div>
-        )}
+            </>
+          ) : (
+            !isEditing && (
+              <div className="w-full px-4 py-8 border border-border rounded-lg bg-muted text-center text-sm text-muted-foreground">
+                등록된 이미지가 없습니다.
+              </div>
+            )
+          )}
+        </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
           <div>
