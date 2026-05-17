@@ -36,6 +36,7 @@ const filledBooth: BoothProfile = {
   signatureMenu: '후라이드 치킨',
   operatingHours: '12:00 - 21:00',
   reservationEnabled: true,
+  tags: ['#먹거리', '#치킨'],
   orderNotice: '테이블 이용 시 메인 메뉴를 하나 이상 주문해주셔야 합니다.',
   thumbnails: [
     thumb(1, FOOD_PHOTO('photo-1555939594-58d7cb561ad1'), true),
@@ -57,6 +58,7 @@ const emptyBooth: BoothProfile = {
   signatureMenu: '',
   operatingHours: '',
   reservationEnabled: false,
+  tags: [],
   orderNotice: '',
   thumbnails: [],
   menuItems: [],
@@ -70,6 +72,7 @@ const secondFilledBooth: BoothProfile = {
   signatureMenu: '치즈버거',
   operatingHours: '11:00 - 19:00',
   reservationEnabled: true,
+  tags: ['#먹거리', '#햄버거'],
   orderNotice: '테이블 이용 시 메뉴 주문 필수.',
   thumbnails: [thumb(10, FOOD_PHOTO('photo-1550547660-d9450f859349'), true)],
   menuItems: [
@@ -89,6 +92,7 @@ const computerScience: BoothProfile = {
   signatureMenu: '치즈 핫도그',
   operatingHours: '12:00 - 21:00',
   reservationEnabled: true,
+  tags: [],
   orderNotice: '머스타드 / 케첩 추가 가능합니다.',
   thumbnails: [thumb(40, FOOD_PHOTO('photo-1612392061787-2d078b3e573b'), true)],
   menuItems: [
@@ -106,6 +110,7 @@ const designArts: BoothProfile = {
   signatureMenu: '아이스크림 와플',
   operatingHours: '12:00 - 22:00',
   reservationEnabled: true,
+  tags: [],
   orderNotice: '아이스크림 와플은 매시간 30개 한정.',
   thumbnails: [thumb(50, FOOD_PHOTO('photo-1562376552-0d160a2f238d'), true)],
   menuItems: [
@@ -123,6 +128,7 @@ const stat: BoothProfile = {
   signatureMenu: '국물 떡볶이',
   operatingHours: '12:00 - 21:00',
   reservationEnabled: true,
+  tags: [],
   orderNotice: '매운맛 단계 1-3 선택 가능.',
   thumbnails: [thumb(60, FOOD_PHOTO('photo-1635363638580-c2809d049eee'), true)],
   menuItems: [
@@ -141,6 +147,7 @@ const socialWelfare: BoothProfile = {
   signatureMenu: '간장 닭강정',
   operatingHours: '13:00 - 21:00',
   reservationEnabled: true,
+  tags: [],
   orderNotice: '테이블 이용 시 닭강정 1개 이상 주문 부탁드립니다.',
   thumbnails: [thumb(70, FOOD_PHOTO('photo-1626645738196-c2a7c87a8f58'), true)],
   menuItems: [
@@ -158,6 +165,7 @@ const psych: BoothProfile = {
   signatureMenu: '심리상담 라떼',
   operatingHours: '11:00 - 20:00',
   reservationEnabled: true,
+  tags: [],
   orderNotice: '음료 1인 1잔 권장.',
   thumbnails: [thumb(80, FOOD_PHOTO('photo-1495474472287-4d71bcdd2085'), true)],
   menuItems: [
@@ -175,6 +183,7 @@ const english: BoothProfile = {
   signatureMenu: '문어 타코야끼',
   operatingHours: '12:00 - 21:00',
   reservationEnabled: true,
+  tags: [],
   orderNotice: '주문 후 7-10분 정도 소요.',
   thumbnails: [thumb(90, FOOD_PHOTO('photo-1639024471283-03518883512d'), true)],
   menuItems: [
@@ -192,6 +201,7 @@ const polisci: BoothProfile = {
   signatureMenu: '오리지널 추로스',
   operatingHours: '13:00 - 21:30',
   reservationEnabled: true,
+  tags: [],
   orderNotice: '딥소스 1종 무료 추가.',
   thumbnails: [thumb(100, FOOD_PHOTO('photo-1624371414361-e670edf4898d'), true)],
   menuItems: [
@@ -209,6 +219,7 @@ const anthro: BoothProfile = {
   signatureMenu: '김치 만두',
   operatingHours: '12:00 - 20:00',
   reservationEnabled: true,
+  tags: [],
   orderNotice: '채식 만두는 한정 수량.',
   thumbnails: [thumb(110, FOOD_PHOTO('photo-1496116218417-1a781b1c416c'), true)],
   menuItems: [
@@ -226,6 +237,7 @@ const history: BoothProfile = {
   signatureMenu: '흑설탕 호떡',
   operatingHours: '13:00 - 21:00',
   reservationEnabled: true,
+  tags: [],
   orderNotice: '뜨거우니 잡으실 때 주의해 주세요.',
   thumbnails: [thumb(120, FOOD_PHOTO('photo-1612874741407-2c6e0f1c9091'), true)],
   menuItems: [
@@ -243,6 +255,7 @@ const chem: BoothProfile = {
   signatureMenu: '딸기 아이스크림',
   operatingHours: '13:00 - 22:00',
   reservationEnabled: true,
+  tags: [],
   orderNotice: '안전을 위해 아이스크림은 받자마자 드세요.',
   thumbnails: [thumb(130, FOOD_PHOTO('photo-1501443762994-82bd5dace89a'), true)],
   menuItems: [
@@ -260,6 +273,7 @@ const bio: BoothProfile = {
   signatureMenu: '무지개 솜사탕',
   operatingHours: '13:00 - 21:00',
   reservationEnabled: false,
+  tags: [],
   orderNotice: '',
   thumbnails: [thumb(140, FOOD_PHOTO('photo-1581798459219-318e76aecc7b'), true)],
   menuItems: [
@@ -276,6 +290,7 @@ const astro: BoothProfile = {
   signatureMenu: '은하수 라떼',
   operatingHours: '14:00 - 22:00',
   reservationEnabled: true,
+  tags: [],
   orderNotice: '얼음은 별 모양으로 제공.',
   thumbnails: [thumb(150, FOOD_PHOTO('photo-1559496417-e7f25cb247f3'), true)],
   menuItems: [
@@ -294,6 +309,7 @@ const likelion: BoothProfile = {
   signatureMenu: '미니 사자 인형',
   operatingHours: '12:00 - 20:00',
   reservationEnabled: false,
+  tags: [],
   orderNotice: '',
   thumbnails: [thumb(160, FOOD_PHOTO('photo-1607082348824-0a96f2a4b9da'), true)],
   menuItems: [
@@ -311,6 +327,7 @@ const yonphoto: BoothProfile = {
   signatureMenu: '필름 폴라로이드',
   operatingHours: '13:00 - 21:00',
   reservationEnabled: true,
+  tags: [],
   orderNotice: '사진 출력까지 5분 소요.',
   thumbnails: [thumb(170, FOOD_PHOTO('photo-1469474968028-56623f02e42e'), true)],
   menuItems: [
@@ -327,6 +344,7 @@ const mediaArt: BoothProfile = {
   signatureMenu: 'VR 5분 체험',
   operatingHours: '13:00 - 20:00',
   reservationEnabled: true,
+  tags: [],
   orderNotice: '13세 이상 권장. 멀미 주의.',
   thumbnails: [thumb(180, FOOD_PHOTO('photo-1593508512255-86ab42a8e620'), true)],
   menuItems: [
@@ -343,6 +361,7 @@ const koreanMusic: BoothProfile = {
   signatureMenu: '장구 5분 레슨',
   operatingHours: '13:00 - 19:00',
   reservationEnabled: true,
+  tags: [],
   orderNotice: '체험은 매시 정각마다 진행.',
   thumbnails: [],
   menuItems: [
@@ -359,6 +378,7 @@ const fashionDesign: BoothProfile = {
   signatureMenu: '캐릭터 페인팅',
   operatingHours: '13:00 - 20:00',
   reservationEnabled: true,
+  tags: [],
   orderNotice: '피부 자극 우려 시 사전 알려주세요.',
   thumbnails: [thumb(200, FOOD_PHOTO('photo-1532635241-17e820acc59f'), true)],
   menuItems: [
@@ -375,6 +395,7 @@ const education: BoothProfile = {
   signatureMenu: '캐치마인드 한 판',
   operatingHours: '14:00 - 21:00',
   reservationEnabled: true,
+  tags: [],
   orderNotice: '4-8인용. 그룹으로 와주세요.',
   thumbnails: [],
   menuItems: [
@@ -391,6 +412,7 @@ const admin: BoothProfile = {
   signatureMenu: '꿀떡 만들기',
   operatingHours: '13:00 - 18:00',
   reservationEnabled: true,
+  tags: [],
   orderNotice: '체험은 매 30분 6명 진행.',
   thumbnails: [thumb(220, FOOD_PHOTO('photo-1574484184081-afea8a62f9ab'), true)],
   menuItems: [
@@ -407,6 +429,7 @@ const arch: BoothProfile = {
   signatureMenu: '본관 미니어처',
   operatingHours: '14:00 - 19:00',
   reservationEnabled: true,
+  tags: [],
   orderNotice: '한 워크샵 1시간 진행.',
   thumbnails: [],
   menuItems: [
@@ -423,6 +446,7 @@ const mech: BoothProfile = {
   signatureMenu: '오토 솜사탕',
   operatingHours: '13:00 - 20:00',
   reservationEnabled: false,
+  tags: [],
   orderNotice: '',
   thumbnails: [thumb(240, FOOD_PHOTO('photo-1505250469679-203ad9ced0cb'), true)],
   menuItems: [menu(240, 1, '솜사탕', '핑크 / 블루', '3,000원')],
@@ -436,6 +460,7 @@ const ee: BoothProfile = {
   signatureMenu: '럭키 드로우 1회',
   operatingHours: '12:00 - 21:00',
   reservationEnabled: false,
+  tags: [],
   orderNotice: '꽝 없는 추첨!',
   thumbnails: [],
   menuItems: [
@@ -452,6 +477,7 @@ const theology: BoothProfile = {
   signatureMenu: '나눔 머핀',
   operatingHours: '13:00 - 19:00',
   reservationEnabled: true,
+  tags: [],
   orderNotice: '수익금은 인근 보육원에 기부됩니다.',
   thumbnails: [thumb(260, FOOD_PHOTO('photo-1486427944299-d1955d23e34d'), true)],
   menuItems: [
@@ -469,6 +495,7 @@ const informatics: BoothProfile = {
   signatureMenu: '디버깅 + 라떼',
   operatingHours: '14:00 - 20:00',
   reservationEnabled: true,
+  tags: [],
   orderNotice: '코드는 100줄 이내 권장.',
   thumbnails: [],
   menuItems: [
@@ -485,6 +512,7 @@ const studentWelfare: BoothProfile = {
   signatureMenu: '무료 생수',
   operatingHours: '11:00 - 22:00',
   reservationEnabled: false,
+  tags: [],
   orderNotice: '응급 상황 시 가장 먼저 찾아주세요.',
   thumbnails: [],
   menuItems: [menu(280, 1, '생수', '500ml', '무료'), menu(281, 2, '응급처치 키트', '간이', '무료')],
@@ -498,6 +526,7 @@ const aerospaceEmpty: BoothProfile = {
   signatureMenu: '',
   operatingHours: '',
   reservationEnabled: false,
+  tags: [],
   orderNotice: '',
   thumbnails: [],
   menuItems: [],
@@ -511,6 +540,7 @@ const lastYearInactive: BoothProfile = {
   signatureMenu: '솜사탕',
   operatingHours: '13:00 - 19:00',
   reservationEnabled: false,
+  tags: [],
   orderNotice: '',
   thumbnails: [],
   menuItems: [menu(300, 1, '솜사탕', '대형', '3,000원')],

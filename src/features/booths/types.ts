@@ -30,6 +30,8 @@ export interface BoothProfile {
   name: string;
   organizationName: string;
   description: string;
+  /** 부스 분류 태그. 각 원소는 '#' 접두사 포함(예: '#먹거리'). 최대 3개. */
+  tags: string[];
   signatureMenu: string;
   operatingHours: string;
   /** 부스 운영 ON/OFF. 예약/주문 받을지 여부. */
@@ -62,6 +64,7 @@ export interface BoothProfileDTO {
   name: string;
   organization_name: string;
   description: string;
+  tags: string[];
   signature_menu: string;
   operating_hours: string;
   reservation_enabled: boolean;
