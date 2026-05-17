@@ -1,7 +1,20 @@
 import { useEffect, useRef, useState, type ChangeEvent } from 'react';
 import { useParams, Link } from 'react-router';
-import { DndProvider } from 'react-dnd';
-import { HTML5Backend } from 'react-dnd-html5-backend';
+import {
+  DndContext,
+  KeyboardSensor,
+  PointerSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  arrayMove,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
 import {
   ArrowLeft,
   Plus,
@@ -195,12 +208,21 @@ export function PerformanceManagement() {
     );
   };
 
-  const moveSetlistItem = (fromIndex: number, toIndex: number) => {
-    const updated = [...editingSetlist];
-    const [moved] = updated.splice(fromIndex, 1);
-    updated.splice(toIndex, 0, moved);
+  const setlistSensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+
+  const handleSetlistDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const oldIndex = editingSetlist.findIndex((s) => s.id === active.id);
+    const newIndex = editingSetlist.findIndex((s) => s.id === over.id);
+    if (oldIndex < 0 || newIndex < 0) return;
     // 드래그 후 order 를 위치 기준으로 다시 매긴다.
-    setEditingSetlist(updated.map((item, idx) => ({ ...item, order: idx + 1 })));
+    setEditingSetlist(
+      arrayMove(editingSetlist, oldIndex, newIndex).map((s, idx) => ({ ...s, order: idx + 1 })),
+    );
   };
 
   const handleSave = () => {
@@ -694,20 +716,28 @@ export function PerformanceManagement() {
         </div>
 
         {isEditMode ? (
-          <DndProvider backend={HTML5Backend}>
-            <div className="space-y-3">
-              {editingSetlist.map((item, index) => (
-                <DraggableSetlistItem
-                  key={item.id}
-                  item={item}
-                  index={index}
-                  moveItem={moveSetlistItem}
-                  onUpdate={updateSetlistItem}
-                  onDelete={removeSetlistItem}
-                />
-              ))}
-            </div>
-          </DndProvider>
+          <DndContext
+            sensors={setlistSensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleSetlistDragEnd}
+          >
+            <SortableContext
+              items={editingSetlist.map((s) => s.id)}
+              strategy={verticalListSortingStrategy}
+            >
+              <div className="space-y-3">
+                {editingSetlist.map((item, index) => (
+                  <DraggableSetlistItem
+                    key={item.id}
+                    item={item}
+                    index={index}
+                    onUpdate={updateSetlistItem}
+                    onDelete={removeSetlistItem}
+                  />
+                ))}
+              </div>
+            </SortableContext>
+          </DndContext>
         ) : (
           <div className="space-y-3">
             {setlist.map((item, index) => (

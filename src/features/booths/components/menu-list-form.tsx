@@ -1,7 +1,20 @@
 import { useEffect, useState } from 'react';
 import { ArrowLeft, Edit, Plus, Upload } from 'lucide-react';
-import { DndProvider } from 'react-dnd';
-import { HTML5Backend } from 'react-dnd-html5-backend';
+import {
+  DndContext,
+  KeyboardSensor,
+  PointerSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  arrayMove,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
 import { toast } from 'sonner';
 import type { UseMutationResult } from '@tanstack/react-query';
 import type { BoothMenuItem, BoothProfile } from '@/features/booths/types';
@@ -58,11 +71,20 @@ export function MenuListForm({ booth, initiallyEditing, updateMutation, onClose 
     }
   }, [isEditing, menuItems.length]);
 
-  const moveItem = (fromIndex: number, toIndex: number) => {
-    const updated = [...menuItems];
-    const [movedItem] = updated.splice(fromIndex, 1);
-    updated.splice(toIndex, 0, movedItem);
-    setMenuItems(updated.map((item, idx) => ({ ...item, order: idx + 1 })));
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const oldIndex = menuItems.findIndex((m) => m.id === active.id);
+    const newIndex = menuItems.findIndex((m) => m.id === over.id);
+    if (oldIndex < 0 || newIndex < 0) return;
+    setMenuItems(
+      arrayMove(menuItems, oldIndex, newIndex).map((m, idx) => ({ ...m, order: idx + 1 })),
+    );
   };
 
   const addMenuItem = () => {
@@ -170,20 +192,24 @@ export function MenuListForm({ booth, initiallyEditing, updateMutation, onClose 
       </div>
 
       {isEditing ? (
-        <DndProvider backend={HTML5Backend}>
-          <div className="space-y-4">
-            {menuItems.map((item, index) => (
-              <DraggableMenuItem
-                key={item.id}
-                item={item}
-                index={index}
-                moveItem={moveItem}
-                onUpdate={updateMenuItem}
-                onDelete={deleteMenuItem}
-              />
-            ))}
-          </div>
-        </DndProvider>
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+          <SortableContext
+            items={menuItems.map((m) => m.id)}
+            strategy={verticalListSortingStrategy}
+          >
+            <div className="space-y-4">
+              {menuItems.map((item, index) => (
+                <DraggableMenuItem
+                  key={item.id}
+                  item={item}
+                  index={index}
+                  onUpdate={updateMenuItem}
+                  onDelete={deleteMenuItem}
+                />
+              ))}
+            </div>
+          </SortableContext>
+        </DndContext>
       ) : (
         <div className="space-y-4">
           {menuItems.map((item) => (
