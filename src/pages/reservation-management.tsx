@@ -45,11 +45,6 @@ export function ReservationManagement() {
 
   // 백엔드는 부스별 조회만 제공 — 이 페이지는 한 부스(boothId)만 다룬다.
   const reservationsQuery = useBoothReservations(boothId);
-  // useMemo 로 묶어 매 렌더 새 빈 배열이 만들어지지 않게 — 하위 useMemo deps 안정.
-  const reservations: Reservation[] = useMemo(
-    () => reservationsQuery.data ?? [],
-    [reservationsQuery.data],
-  );
   const setStatusMutation = useSetReservationStatus();
   const setStatusBulkMutation = useSetReservationsStatusBulk();
 
@@ -70,9 +65,11 @@ export function ReservationManagement() {
   // 확정 시점에 상세 모달이 뒤에 깔려있으면 답답해서, 먼저 상세를 닫고 Alert 만 띄움.
   const [pendingCancel, setPendingCancel] = useState<Reservation | null>(null);
 
-  const boothReservations = useMemo(
-    () => reservations.filter((r) => r.boothId === boothId),
-    [reservations, boothId],
+  // useBoothReservations 가 이미 부스 단위로 조회하므로 추가 필터가 필요 없다.
+  // useMemo 로 묶어 매 렌더 새 빈 배열이 만들어지지 않게 — 하위 useMemo deps 안정.
+  const boothReservations: Reservation[] = useMemo(
+    () => reservationsQuery.data ?? [],
+    [reservationsQuery.data],
   );
 
   // 파이프: boothReservations → 검색 → 상태 필터 → filteredReservations.
