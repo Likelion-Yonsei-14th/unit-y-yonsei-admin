@@ -22,11 +22,7 @@
     "pre-commit": "pnpm lint-staged"
   },
   "lint-staged": {
-    "*.{ts,tsx}": [
-      "eslint --fix",
-      "prettier --write"
-    ],
-    "*.{js,jsx,json,css,html}": [
+    "*.{ts,tsx,js,jsx,json,css,html}": [
       "prettier --write"
     ]
   },
