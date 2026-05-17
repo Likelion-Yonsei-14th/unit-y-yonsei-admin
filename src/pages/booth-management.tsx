@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Store } from 'lucide-react';
+import { ArrowLeft, Store } from 'lucide-react';
 import { useMyBoothProfile, useUpdateMyBoothProfile } from '@/features/booths/hooks';
 import { isBoothInfoCompleted, isMenuListCompleted } from '@/features/booths/types';
 import { BoothInfoForm } from '@/features/booths/components/booth-info-form';
@@ -41,6 +41,12 @@ export function BoothManagement() {
   const boothInfoCompleted = isBoothInfoCompleted(booth);
   const menuListCompleted = isMenuListCompleted(booth);
 
+  // 폼 → 상태 카드로 복귀. 카드 밖 '이전으로' 버튼이 호출.
+  const handleBackToCards = () => {
+    setShowBoothInfoForm(false);
+    setShowMenuListForm(false);
+  };
+
   if (isPending) {
     return (
       <div className="p-4 md:p-8 flex items-center justify-center min-h-[60vh]">
@@ -60,6 +66,17 @@ export function BoothManagement() {
 
   return (
     <div className="p-4 md:p-8">
+      {/* '이전으로' — 폼 진입 시 카드 밖(헤더 위)에 노출해 복귀 동선을 명확히. */}
+      {(showBoothInfoForm || showMenuListForm) && (
+        <button
+          type="button"
+          onClick={handleBackToCards}
+          className="mb-4 inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <ArrowLeft size={18} />
+          이전으로
+        </button>
+      )}
       <div className="flex flex-wrap items-center justify-between gap-3 mb-6 md:mb-8">
         <div>
           {booth.organizationName && (
@@ -110,7 +127,6 @@ export function BoothManagement() {
           // 작성 안 된 부스 카드 클릭 → 바로 편집 모드로.
           initiallyEditing={!boothInfoCompleted}
           updateMutation={updateProfile}
-          onClose={() => setShowBoothInfoForm(false)}
         />
       )}
 
@@ -119,7 +135,6 @@ export function BoothManagement() {
           booth={booth}
           initiallyEditing={!menuListCompleted}
           updateMutation={updateProfile}
-          onClose={() => setShowMenuListForm(false)}
         />
       )}
     </div>

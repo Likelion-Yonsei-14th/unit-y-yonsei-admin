@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { ArrowLeft, Edit, Star, Trash2, Upload } from 'lucide-react';
+import { Check, Edit, Star, Trash2, Upload } from 'lucide-react';
 import { toast } from 'sonner';
 import type { UseMutationResult } from '@tanstack/react-query';
 import type { BoothImage, BoothProfile } from '@/features/booths/types';
@@ -17,7 +17,6 @@ interface Props {
   initiallyEditing: boolean;
   /** 부스 프로필 mutation 인스턴스. 페이지(MenuListForm 과 공유) 와 같은 객체. */
   updateMutation: UseMutationResult<BoothProfile, Error, Partial<BoothProfile>>;
-  onClose: () => void;
 }
 
 /**
@@ -31,7 +30,6 @@ export function BoothInfoForm({
   onReservationEnabledChange,
   initiallyEditing,
   updateMutation,
-  onClose,
 }: Props) {
   const [isEditing, setIsEditing] = useState(initiallyEditing);
   const [boothName, setBoothName] = useState(booth.name);
@@ -152,32 +150,24 @@ export function BoothInfoForm({
     <div className="bg-background rounded-2xl p-4 md:p-8 mb-6 shadow-sm">
       <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
         <h2 className="text-xl font-bold text-foreground">부스 상세 정보</h2>
-        <div className="flex items-center gap-3">
-          {!isEditing ? (
-            <button
-              onClick={() => setIsEditing(true)}
-              className="flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-ds-primary-pressed transition-colors duration-200"
-            >
-              <Edit size={18} />
-              편집
-            </button>
-          ) : (
-            <button
-              onClick={handleSave}
-              disabled={updateMutation.isPending}
-              className="px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-ds-primary-pressed transition-colors duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
-            >
-              {updateMutation.isPending ? '저장 중…' : '저장'}
-            </button>
-          )}
+        {!isEditing ? (
           <button
-            onClick={onClose}
-            className="flex items-center gap-2 px-4 py-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors"
+            onClick={() => setIsEditing(true)}
+            className="flex items-center justify-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-ds-primary-pressed transition-colors duration-200"
           >
-            <ArrowLeft size={18} />
-            <span className="text-sm font-medium">이전으로</span>
+            <Edit size={18} />
+            편집
           </button>
-        </div>
+        ) : (
+          <button
+            onClick={handleSave}
+            disabled={updateMutation.isPending}
+            className="flex items-center justify-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-ds-primary-pressed transition-colors duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
+          >
+            <Check size={18} />
+            {updateMutation.isPending ? '저장 중…' : '저장'}
+          </button>
+        )}
       </div>
 
       <div className="space-y-6">
