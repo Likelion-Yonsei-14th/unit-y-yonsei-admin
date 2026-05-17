@@ -72,6 +72,12 @@ export function ReservationManagement() {
     [reservationsQuery.data],
   );
 
+  // 대기자 목록 탭 뱃지용 — 미처리(waiting) 예약 건수.
+  const waitingCount = boothReservations.reduce(
+    (n, r) => (r.status === 'waiting' ? n + 1 : n),
+    0,
+  );
+
   // 파이프: boothReservations → 검색 → 상태 필터 → filteredReservations.
   // 연락처/시간/인원수는 검색 대상 제외(user-management 와 동일한 이유: 값 형태가 잡다).
   const normalizedQuery = searchQuery.trim().toLowerCase();
@@ -291,6 +297,7 @@ export function ReservationManagement() {
               key={status}
               onClick={() => setSelectedStatus(status)}
               className={`
+                inline-flex items-center gap-2
                 px-5 py-2 rounded-full text-sm font-medium transition-all duration-200
                 ${
                   selectedStatus === status
@@ -300,6 +307,20 @@ export function ReservationManagement() {
               `}
             >
               {status}
+              {status === '대기자 목록' && waitingCount > 0 && (
+                <span
+                  className={`
+                    inline-flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full text-xs font-semibold
+                    ${
+                      selectedStatus === status
+                        ? 'bg-primary-foreground text-foreground'
+                        : 'bg-primary text-primary-foreground'
+                    }
+                  `}
+                >
+                  {waitingCount}
+                </span>
+              )}
             </button>
           ))}
         </div>
