@@ -57,18 +57,18 @@ async function listLostItemsReal(): Promise<LostItem[]> {
 }
 
 async function createLostItemReal(input: CreateLostItemInput): Promise<LostItem> {
-  const dto = await api.post<LostItemDTO>('/lost-items', fromLostItem(input));
+  const dto = await api.post<LostItemDTO>('/admin/lost-items', fromLostItem(input));
   return toLostItem(dto);
 }
 
 async function updateLostItemReal(input: UpdateLostItemInput): Promise<LostItem> {
   const { id, ...patch } = input;
-  const dto = await api.put<LostItemDTO>(`/lost-items/${id}`, fromLostItem(patch));
+  const dto = await api.put<LostItemDTO>(`/admin/lost-items/${id}`, fromLostItem(patch));
   return toLostItem(dto);
 }
 
 async function deleteLostItemReal(id: number): Promise<void> {
-  await api.delete(`/lost-items/${id}`);
+  await api.delete(`/admin/lost-items/${id}`);
 }
 
 // ---- 분기 export ----
