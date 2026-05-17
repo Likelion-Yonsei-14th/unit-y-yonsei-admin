@@ -265,7 +265,7 @@ export function ReservationManagement() {
               onClick={() => setReservationEnabled(!reservationEnabled)}
               className={`
                 relative w-14 h-7 rounded-full transition-all duration-300
-                ${reservationEnabled ? 'bg-primary shadow-lg' : 'bg-ds-border-strong'}
+                ${reservationEnabled ? 'bg-primary shadow-lg' : 'bg-ds-gray-400'}
               `}
             >
               <div

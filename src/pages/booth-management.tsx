@@ -80,7 +80,7 @@ export function BoothManagement() {
             aria-label={reservationEnabled ? '부스 운영 끄기' : '부스 운영 켜기'}
             className={`
               relative w-14 h-7 rounded-full transition-all duration-300
-              ${reservationEnabled ? 'bg-primary shadow-lg' : 'bg-ds-border-strong'}
+              ${reservationEnabled ? 'bg-primary shadow-lg' : 'bg-ds-gray-400'}
             `}
           >
             <div

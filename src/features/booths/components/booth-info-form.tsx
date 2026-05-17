@@ -420,7 +420,7 @@ export function BoothInfoForm({
             disabled={!isEditing}
             className={`
               relative w-14 h-7 rounded-full transition-all duration-300
-              ${reservationEnabled ? 'bg-ds-success shadow-lg' : 'bg-ds-border-strong'}
+              ${reservationEnabled ? 'bg-ds-success shadow-lg' : 'bg-ds-gray-400'}
               ${!isEditing ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
             `}
           >
