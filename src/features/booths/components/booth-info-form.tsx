@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import type { UseMutationResult } from '@tanstack/react-query';
 import type { BoothImage, BoothProfile } from '@/features/booths/types';
 import { ThumbnailCropOverlay } from '@/features/booths/components/thumbnail-crop-overlay';
+import { BoothTagInput } from '@/features/booths/components/booth-tag-input';
 
 /** 업로드 파일당 용량 상한. 원본 비율은 제한하지 않는다 — 등록 표시만 3:2/5:6 으로 크롭. */
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
@@ -39,6 +40,7 @@ export function BoothInfoForm({
   const [signatureMenu, setSignatureMenu] = useState(booth.signatureMenu);
   const [operatingHours, setOperatingHours] = useState(booth.operatingHours);
   const [boothImages, setBoothImages] = useState<BoothImage[]>(booth.thumbnails);
+  const [tags, setTags] = useState<string[]>(booth.tags);
 
   // 직접 createObjectURL 로 만든 blob URL 만 추적 — 서버 URL 은 revoke 대상 아님.
   const blobUrlsRef = useRef<Set<string>>(new Set());
@@ -58,6 +60,7 @@ export function BoothInfoForm({
     setSignatureMenu(booth.signatureMenu);
     setOperatingHours(booth.operatingHours);
     setBoothImages(booth.thumbnails);
+    setTags(booth.tags);
     const stillUsed = new Set(booth.thumbnails.map((img) => img.url));
     for (const url of blobUrlsRef.current) {
       if (!stillUsed.has(url)) {
@@ -131,6 +134,7 @@ export function BoothInfoForm({
         operatingHours,
         reservationEnabled,
         thumbnails: boothImages,
+        tags,
       },
       {
         onSuccess: () => {
@@ -252,6 +256,28 @@ export function BoothInfoForm({
               className="w-full px-4 py-3 border border-border rounded-lg bg-muted text-foreground min-h-[112px]"
             >
               {boothDescription}
+            </div>
+          )}
+        </div>
+
+        <div>
+          <span className="block text-sm font-semibold text-foreground mb-2">부스 태그</span>
+          {isEditing ? (
+            <BoothTagInput value={tags} onChange={setTags} />
+          ) : tags.length > 0 ? (
+            <div className="flex flex-wrap gap-2">
+              {tags.map((tag) => (
+                <span
+                  key={tag}
+                  className="px-3 py-1 bg-muted text-foreground text-sm rounded-full"
+                >
+                  {tag}
+                </span>
+              ))}
+            </div>
+          ) : (
+            <div className="w-full px-4 py-3 border border-border rounded-lg bg-muted text-muted-foreground">
+              등록된 태그가 없습니다.
             </div>
           )}
         </div>
