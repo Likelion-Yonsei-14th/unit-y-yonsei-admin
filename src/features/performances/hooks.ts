@@ -1,6 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '@/features/auth/store';
-import { getMyPerformance, getPerformance, listPerformances, updatePerformance } from './api';
+import {
+  getLivePerformance,
+  getMyPerformance,
+  getPerformance,
+  listPerformances,
+  setLivePerformance,
+  updatePerformance,
+} from './api';
 import type { PerformanceDetail } from './types';
 
 /**
@@ -61,6 +68,32 @@ export function useUpdatePerformance() {
       }
       // 리스트 invalidation — 팀명/날짜/대표 사진 등 리스트 표시 필드가 바뀔 수 있어.
       queryClient.invalidateQueries({ queryKey: ['performances'], exact: true });
+    },
+  });
+}
+
+/**
+ * 현재 라이브로 지정된 공연팀 id 조회 (없으면 null) + 15초 폴링.
+ * 운영 중 다른 Super 스태프의 변경을 따라잡기 위한 폴링.
+ */
+export function useLivePerformance() {
+  return useQuery({
+    queryKey: ['performances', 'live'],
+    queryFn: getLivePerformance,
+    refetchInterval: 15_000,
+  });
+}
+
+/**
+ * 라이브 공연 지정/해제. teamId=null 이면 해제.
+ * 성공 시 라이브 쿼리 캐시를 즉시 갱신해 화면에 바로 반영.
+ */
+export function useSetLivePerformance() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: setLivePerformance,
+    onSuccess: (teamId) => {
+      queryClient.setQueryData(['performances', 'live'], teamId);
     },
   });
 }

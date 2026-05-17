@@ -1,14 +1,6 @@
 import { roleFromBackend, roleToBackend } from '@/types/role';
 import type { CreateUserFormValues } from './schema';
-import type {
-  AdminUser,
-  AdminUserDTO,
-  CreatedUser,
-  CreatedUserDTO,
-  CreateUserDTO,
-  ResetPasswordDTO,
-  ResetPasswordResult,
-} from './types';
+import type { AdminUser, AdminUserDTO, CreatedUser, CreatedUserDTO, CreateUserDTO } from './types';
 
 /**
  * 백엔드 목록 DTO → AdminUser.
@@ -51,8 +43,4 @@ export const fromCreateUserFormValues = (v: CreateUserFormValues): CreateUserDTO
 export const toCreatedUser = (d: CreatedUserDTO): CreatedUser => ({
   id: d.id,
   userId: d.loginId,
-});
-
-export const toResetPasswordResult = (d: ResetPasswordDTO): ResetPasswordResult => ({
-  tempPassword: d.temp_password,
 });

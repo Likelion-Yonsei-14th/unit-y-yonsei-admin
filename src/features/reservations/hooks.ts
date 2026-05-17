@@ -67,10 +67,15 @@ export function useSetReservationsStatusBulk() {
  * 풀에 없던 id 중 status 가 waiting 인 것만 "신규"로 센다 — 단순 건수 비교로는
  * '완료 → 대기로 되돌리기' 전이를 신규 도착으로 오인한다.
  * 첫 데이터 채움과 부스 전환 직후에는 토스트하지 않는다.
+ *
+ * `ready` 는 쿼리가 첫 응답을 줬는지 여부(reservationsQuery.isSuccess). 로딩 중에는
+ * reservations 가 빈 배열이라, 그때 기준 집합을 잡으면 실제 데이터 도착 시 전부
+ * "신규"로 오인된다 — ready 전에는 기준 집합을 잡지 않는다.
  */
 export function useNewReservationAlert(
   reservations: Reservation[],
   boothId: number,
+  ready: boolean,
   onViewWaiting: () => void,
 ) {
   // null = 아직 기준 집합 미설정 (첫 로드 토스트 스킵용).
@@ -86,6 +91,10 @@ export function useNewReservationAlert(
       prevBoothIdRef.current = boothId;
       prevIdsRef.current = null;
     }
+
+    // 쿼리 첫 응답 전에는 기준 집합을 잡지 않는다 — 로딩 중 빈 배열을 baseline 으로
+    // 삼으면 실제 데이터가 기존 예약 전부를 신규로 오인해 가짜 토스트를 띄운다.
+    if (!ready) return;
 
     const currentIds = new Set(reservations.map((r) => r.id));
 
@@ -109,5 +118,5 @@ export function useNewReservationAlert(
         },
       });
     }
-  }, [reservations, boothId]);
+  }, [reservations, boothId, ready]);
 }

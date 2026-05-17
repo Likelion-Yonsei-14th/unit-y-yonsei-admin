@@ -4,13 +4,13 @@ import { isNewNotice, type NoticeDTO } from './types';
 
 describe('notices mapper', () => {
   describe('toNotice', () => {
-    it('snake_case DTO 의 has_image 를 hasImage 로, 나머지는 그대로 옮긴다', () => {
+    it('백엔드 DTO 를 Notice 모델로 옮긴다', () => {
       const dto: NoticeDTO = {
         id: 7,
         title: '제목',
         content: '본문',
         date: '2026-05-01',
-        has_image: true,
+        hasImage: true,
         category: 'songdo',
       };
       expect(toNotice(dto)).toEqual({
@@ -23,33 +23,45 @@ describe('notices mapper', () => {
       });
     });
 
-    it('has_image false 도 그대로 false 로 매핑', () => {
+    it('hasImage false 도 그대로 false 로 매핑', () => {
       const dto: NoticeDTO = {
         id: 1,
         title: 't',
         content: 'c',
         date: '2026-01-01',
-        has_image: false,
+        hasImage: false,
         category: 'general',
       };
       expect(toNotice(dto).hasImage).toBe(false);
     });
 
-    it('category 는 그대로 통과', () => {
+    it('알려진 category 는 그대로 통과', () => {
       const dto: NoticeDTO = {
         id: 2,
         title: 't',
         content: 'c',
         date: '2026-05-26',
-        has_image: false,
+        hasImage: false,
         category: 'sinchon_29',
       };
       expect(toNotice(dto).category).toBe('sinchon_29');
     });
+
+    it('알 수 없는 category 문자열은 general 로 폴백', () => {
+      const dto: NoticeDTO = {
+        id: 3,
+        title: 't',
+        content: 'c',
+        date: '2026-05-26',
+        hasImage: false,
+        category: 'unknown_value',
+      };
+      expect(toNotice(dto).category).toBe('general');
+    });
   });
 
   describe('fromNotice', () => {
-    it('camelCase 모델의 hasImage → has_image + category 통과, id/date 는 보내지 않음', () => {
+    it('모델을 백엔드 생성 요청으로 변환 — imageUrl/isPinned 기본값 포함', () => {
       const result = fromNotice({
         title: 't',
         content: 'c',
@@ -59,29 +71,12 @@ describe('notices mapper', () => {
       expect(result).toEqual({
         title: 't',
         content: 'c',
-        has_image: true,
+        hasImage: true,
+        imageUrl: '',
+        isPinned: false,
         category: 'bluerun',
       });
     });
-  });
-
-  it('round-trip — toNotice(fromNotice + id/date) 는 원본과 동등', () => {
-    const original = {
-      id: 99,
-      title: '왕복 테스트',
-      content: '...',
-      date: '2026-05-02',
-      hasImage: true,
-      category: 'sinchon_28' as const,
-    };
-    // fromNotice 는 id/date 를 빼고 has_image 만 변환 — 백엔드는 id/date 를
-    // 별도로 채워서 응답한다는 가정. 그 가정 하에 형태가 round-trip 되는지 확인.
-    const dto: NoticeDTO = {
-      id: original.id,
-      date: original.date,
-      ...fromNotice(original),
-    };
-    expect(toNotice(dto)).toEqual(original);
   });
 });
 

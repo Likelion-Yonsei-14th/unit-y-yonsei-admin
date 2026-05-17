@@ -57,6 +57,21 @@ async function updatePerformanceMock(
   return next;
 }
 
+// ---- 라이브 공연 (현재 공연중 수동 지정) — mock ----
+// 단일 상태: 한 번에 한 팀만 라이브. mock 은 모듈 변수로 세션 동안 유지.
+let mockLiveTeamId: number | null = null;
+
+async function getLivePerformanceMock(): Promise<number | null> {
+  await new Promise((r) => setTimeout(r, 100));
+  return mockLiveTeamId;
+}
+
+async function setLivePerformanceMock(teamId: number | null): Promise<number | null> {
+  await new Promise((r) => setTimeout(r, 120));
+  mockLiveTeamId = teamId;
+  return mockLiveTeamId;
+}
+
 // ---- 실제 구현 ----
 
 async function listPerformancesReal(): Promise<PerformanceListItem[]> {
@@ -87,9 +102,21 @@ async function updatePerformanceReal(
   return toPerformanceDetail(dto);
 }
 
+async function getLivePerformanceReal(): Promise<number | null> {
+  const res = await api.get<{ teamId: number | null }>('/performances/live');
+  return res.teamId;
+}
+
+async function setLivePerformanceReal(teamId: number | null): Promise<number | null> {
+  const res = await api.put<{ teamId: number | null }>('/performances/live', { teamId });
+  return res.teamId;
+}
+
 // ---- 분기 export ----
 
 export const listPerformances = env.USE_MOCK ? listPerformancesMock : listPerformancesReal;
 export const getPerformance = env.USE_MOCK ? getPerformanceMock : getPerformanceReal;
 export const getMyPerformance = env.USE_MOCK ? getMyPerformanceMock : getMyPerformanceReal;
 export const updatePerformance = env.USE_MOCK ? updatePerformanceMock : updatePerformanceReal;
+export const getLivePerformance = env.USE_MOCK ? getLivePerformanceMock : getLivePerformanceReal;
+export const setLivePerformance = env.USE_MOCK ? setLivePerformanceMock : setLivePerformanceReal;

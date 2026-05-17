@@ -37,6 +37,8 @@ export const PERMISSIONS = {
   'performance.read': ['Super', 'Master', 'Performer'],
   'performance.manage': ['Super', 'Master'],
   'performance.update.own': ['Performer'],
+  // 라이브 공연 수동 지정 — 운영 단일 책임이라 Super 만.
+  'performance.live': ['Super'],
 
   // 공지
   'notice.read': ['Super', 'Master', 'Booth', 'Performer'],

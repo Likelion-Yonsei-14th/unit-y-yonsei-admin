@@ -56,15 +56,30 @@ export function isNewNotice(noticeDate: string, today: Date = new Date()): boole
   return diffDays >= 0 && diffDays <= 3;
 }
 
-// ---- 백엔드 DTO (snake_case). 스키마 확정 전까지는 Model 과 거의 동일. ----
+// ---- 백엔드 DTO (NoticeResponse / NoticeCreateRequest, camelCase) ----
 
+/**
+ * 백엔드 공지 응답 (NoticeResponse).
+ * 프론트가 쓰는 필드만 선언 — imageUrl/isPinned/viewCount/performanceId/boothId 는 미사용.
+ */
 export interface NoticeDTO {
   id: number;
   title: string;
   content: string;
   date: string;
-  has_image: boolean;
-  category: NoticeCategory;
+  hasImage: boolean;
+  /** 백엔드는 자유 문자열. toNotice 가 NoticeCategory 로 정규화. */
+  category: string;
+}
+
+/** 백엔드 공지 생성/수정 요청 (NoticeCreateRequest / NoticeUpdateRequest). */
+export interface NoticeWriteDTO {
+  title: string;
+  content: string;
+  hasImage: boolean;
+  imageUrl: string;
+  isPinned: boolean;
+  category: string;
 }
 
 export interface CreateNoticeInput {

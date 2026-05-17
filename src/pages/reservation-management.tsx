@@ -77,7 +77,10 @@ export function ReservationManagement() {
   const waitingCount = boothReservations.reduce((n, r) => (r.status === 'waiting' ? n + 1 : n), 0);
 
   // 폴링으로 새 PENDING 예약이 들어오면 토스트로 알리고, 클릭 시 대기자 탭으로 이동.
-  useNewReservationAlert(boothReservations, boothId, () => setSelectedStatus('대기자 목록'));
+  // isSuccess(첫 응답 완료)를 넘겨 로딩 중 빈 배열이 기준 집합이 되지 않게 한다.
+  useNewReservationAlert(boothReservations, boothId, reservationsQuery.isSuccess, () =>
+    setSelectedStatus('대기자 목록'),
+  );
 
   // 파이프: boothReservations → 검색 → 상태 필터 → filteredReservations.
   // 연락처/시간/인원수는 검색 대상 제외(user-management 와 동일한 이유: 값 형태가 잡다).

@@ -1,28 +1,23 @@
 import { api } from '@/lib/api-client';
 import { env } from '@/lib/env';
 import { mockUsers } from '@/mocks/users';
-import {
-  fromCreateUserFormValues,
-  toAdminUser,
-  toCreatedUser,
-  toResetPasswordResult,
-} from './mapper';
+import { fromCreateUserFormValues, toAdminUser, toCreatedUser } from './mapper';
 import type { CreateUserFormValues } from './schema';
 import type {
   AdminUser,
   AdminUserDTO,
   CreatedUser,
   CreatedUserDTO,
-  ResetPasswordDTO,
   ResetPasswordResult,
 } from './types';
 
 /**
- * Mock 임시 비밀번호 생성기.
+ * 임시 비밀번호 생성기.
  * 12자 영숫자 — 헷갈리는 글자(0/O, 1/l/I) 제외해 운영자가 사용자에게 구두/메신저로
- * 전달할 때 오해 줄임. 백엔드 정책 확정 전 임시값.
+ * 전달할 때 오해를 줄인다. 백엔드가 "클라이언트가 보낸 비밀번호로 설정" 방식이라
+ * mock·real 양쪽 모두 이 생성기로 임시값을 만든다.
  */
-function generateMockTempPassword(): string {
+function generateTempPassword(): string {
   const chars = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
   let out = '';
   for (let i = 0; i < 12; i++) {
@@ -44,7 +39,7 @@ async function resetUserPasswordMock(input: { id: number }): Promise<ResetPasswo
   await new Promise((r) => setTimeout(r, 200));
   const idx = memory.findIndex((u) => u.id === input.id);
   if (idx < 0) throw new Error(`mock: user ${input.id} 을(를) 찾을 수 없습니다.`);
-  return { tempPassword: generateMockTempPassword() };
+  return { tempPassword: generateTempPassword() };
 }
 
 async function createUserMock(values: CreateUserFormValues): Promise<CreatedUser> {
@@ -89,9 +84,11 @@ async function createUserReal(values: CreateUserFormValues): Promise<CreatedUser
 }
 
 async function resetUserPasswordReal(input: { id: number }): Promise<ResetPasswordResult> {
-  // body 없음. 백엔드 reset-password 엔드포인트는 현재 구현 중.
-  const dto = await api.post<ResetPasswordDTO>(`/admin/users/${input.id}/reset-password`);
-  return toResetPasswordResult(dto);
+  // 백엔드는 클라이언트가 새 비밀번호를 보내는 방식(PATCH .../password { password }).
+  // 프론트가 임시 비번을 생성해 설정하고, 운영자에게 보여줄 수 있게 그 값을 반환한다.
+  const tempPassword = generateTempPassword();
+  await api.patch(`/admin/users/${input.id}/password`, { password: tempPassword });
+  return { tempPassword };
 }
 
 /**
