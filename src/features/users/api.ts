@@ -16,7 +16,6 @@ import type {
   ResetPasswordDTO,
   ResetPasswordResult,
 } from './types';
-import type { Role } from '@/types/role';
 
 /**
  * Mock 임시 비밀번호 생성기.
@@ -41,14 +40,6 @@ async function listAdminUsersMock(): Promise<AdminUser[]> {
   return memory.slice();
 }
 
-async function setUserRoleMock(input: { id: number; role: Role }): Promise<AdminUser> {
-  await new Promise((r) => setTimeout(r, 100));
-  const idx = memory.findIndex((u) => u.id === input.id);
-  if (idx < 0) throw new Error(`mock: user ${input.id} 을(를) 찾을 수 없습니다.`);
-  memory[idx] = { ...memory[idx], role: input.role };
-  return memory[idx];
-}
-
 async function resetUserPasswordMock(input: { id: number }): Promise<ResetPasswordResult> {
   await new Promise((r) => setTimeout(r, 200));
   const idx = memory.findIndex((u) => u.id === input.id);
@@ -60,8 +51,6 @@ async function createUserMock(values: CreateUserFormValues): Promise<CreatedUser
   await new Promise((r) => setTimeout(r, 300));
   const id = Date.now();
   // mock 환경에서도 invalidate 후 새 항목이 목록에 보이도록 in-memory 풀에 반영.
-  // 백엔드 응답에 없는 필드(boothId/teamId 등) 는 mock 에서 생성 직후 null —
-  // 실제 백엔드는 booth/performance_team 행을 같이 만들고 FK 채워서 내려줌.
   const newAdminUser: AdminUser = {
     id,
     userId: values.userId,
@@ -81,16 +70,17 @@ async function createUserMock(values: CreateUserFormValues): Promise<CreatedUser
   return { id, userId: values.userId };
 }
 
+async function deleteUserMock(input: { id: number }): Promise<void> {
+  await new Promise((r) => setTimeout(r, 150));
+  const idx = memory.findIndex((u) => u.id === input.id);
+  if (idx >= 0) memory.splice(idx, 1);
+}
+
 // ---- list / mutations (real) ----
 
 async function listAdminUsersReal(): Promise<AdminUser[]> {
   const dtos = await api.get<AdminUserDTO[]>('/admin/users');
   return dtos.map(toAdminUser);
-}
-
-async function setUserRoleReal(input: { id: number; role: Role }): Promise<AdminUser> {
-  const dto = await api.patch<AdminUserDTO>(`/admin/users/${input.id}`, { role: input.role });
-  return toAdminUser(dto);
 }
 
 async function createUserReal(values: CreateUserFormValues): Promise<CreatedUser> {
@@ -99,15 +89,22 @@ async function createUserReal(values: CreateUserFormValues): Promise<CreatedUser
 }
 
 async function resetUserPasswordReal(input: { id: number }): Promise<ResetPasswordResult> {
-  // body 없음 — API_SPEC / backend.md 컨트랙트와 일치. 일부 백엔드는 빈 객체 `{}`
-  // 를 415/400 으로 거부할 수 있어 두 번째 인자 자체를 생략.
+  // body 없음. 백엔드 reset-password 엔드포인트는 현재 구현 중.
   const dto = await api.post<ResetPasswordDTO>(`/admin/users/${input.id}/reset-password`);
   return toResetPasswordResult(dto);
+}
+
+/**
+ * 계정 삭제 — Super 가 Master/Booth/Performer 계정을 제거.
+ * ⚠️ 백엔드 Swagger 에 DELETE /admin/users/{id} 가 아직 없음 (백엔드 추가 요청 항목).
+ */
+async function deleteUserReal(input: { id: number }): Promise<void> {
+  await api.delete(`/admin/users/${input.id}`);
 }
 
 // ---- 분기 export ----
 
 export const listAdminUsers = env.USE_MOCK ? listAdminUsersMock : listAdminUsersReal;
-export const setUserRole = env.USE_MOCK ? setUserRoleMock : setUserRoleReal;
 export const createUser = env.USE_MOCK ? createUserMock : createUserReal;
 export const resetUserPassword = env.USE_MOCK ? resetUserPasswordMock : resetUserPasswordReal;
+export const deleteUser = env.USE_MOCK ? deleteUserMock : deleteUserReal;

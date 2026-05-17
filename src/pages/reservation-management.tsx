@@ -3,7 +3,8 @@ import { Navigate, useParams } from 'react-router';
 import { Phone, MessageSquare, Check, X, Calendar, RotateCcw, Search } from 'lucide-react';
 import { toast } from 'sonner';
 import {
-  useReservations,
+  useBoothReservations,
+  useNewReservationAlert,
   useSetReservationStatus,
   useSetReservationsStatusBulk,
 } from '@/features/reservations/hooks';
@@ -43,12 +44,8 @@ export function ReservationManagement() {
   }, [boothId, boothsQuery.data]);
   const { user } = useAuth();
 
-  const reservationsQuery = useReservations();
-  // useMemo 로 묶어 매 렌더 새 빈 배열이 만들어지지 않게 — 하위 useMemo deps 안정.
-  const reservations: Reservation[] = useMemo(
-    () => reservationsQuery.data ?? [],
-    [reservationsQuery.data],
-  );
+  // 백엔드는 부스별 조회만 제공 — 이 페이지는 한 부스(boothId)만 다룬다.
+  const reservationsQuery = useBoothReservations(boothId);
   const setStatusMutation = useSetReservationStatus();
   const setStatusBulkMutation = useSetReservationsStatusBulk();
 
@@ -69,10 +66,18 @@ export function ReservationManagement() {
   // 확정 시점에 상세 모달이 뒤에 깔려있으면 답답해서, 먼저 상세를 닫고 Alert 만 띄움.
   const [pendingCancel, setPendingCancel] = useState<Reservation | null>(null);
 
-  const boothReservations = useMemo(
-    () => reservations.filter((r) => r.boothId === boothId),
-    [reservations, boothId],
+  // useBoothReservations 가 이미 부스 단위로 조회하므로 추가 필터가 필요 없다.
+  // useMemo 로 묶어 매 렌더 새 빈 배열이 만들어지지 않게 — 하위 useMemo deps 안정.
+  const boothReservations: Reservation[] = useMemo(
+    () => reservationsQuery.data ?? [],
+    [reservationsQuery.data],
   );
+
+  // 대기자 목록 탭 뱃지용 — 미처리(waiting) 예약 건수.
+  const waitingCount = boothReservations.reduce((n, r) => (r.status === 'waiting' ? n + 1 : n), 0);
+
+  // 폴링으로 새 PENDING 예약이 들어오면 토스트로 알리고, 클릭 시 대기자 탭으로 이동.
+  useNewReservationAlert(boothReservations, boothId, () => setSelectedStatus('대기자 목록'));
 
   // 파이프: boothReservations → 검색 → 상태 필터 → filteredReservations.
   // 연락처/시간/인원수는 검색 대상 제외(user-management 와 동일한 이유: 값 형태가 잡다).
@@ -293,6 +298,7 @@ export function ReservationManagement() {
               key={status}
               onClick={() => setSelectedStatus(status)}
               className={`
+                inline-flex items-center gap-2
                 px-5 py-2 rounded-full text-sm font-medium transition-all duration-200
                 ${
                   selectedStatus === status
@@ -302,6 +308,20 @@ export function ReservationManagement() {
               `}
             >
               {status}
+              {status === '대기자 목록' && waitingCount > 0 && (
+                <span
+                  className={`
+                    inline-flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full text-xs font-semibold
+                    ${
+                      selectedStatus === status
+                        ? 'bg-primary-foreground text-foreground'
+                        : 'bg-primary text-primary-foreground'
+                    }
+                  `}
+                >
+                  {waitingCount}
+                </span>
+              )}
             </button>
           ))}
         </div>

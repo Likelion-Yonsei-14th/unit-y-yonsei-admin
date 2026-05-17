@@ -28,6 +28,7 @@ export const toBoothProfile = (d: BoothProfileDTO): BoothProfile => ({
   name: d.name,
   organizationName: d.organization_name,
   description: d.description,
+  tags: d.tags,
   signatureMenu: d.signature_menu,
   operatingHours: d.operating_hours,
   reservationEnabled: d.reservation_enabled,

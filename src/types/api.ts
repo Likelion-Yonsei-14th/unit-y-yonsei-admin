@@ -22,6 +22,23 @@ export interface ErrorBody {
   details?: Record<string, string[]>; // 필드별 유효성 에러
 }
 
+/**
+ * 백엔드 공통 응답 봉투.
+ * 실제 백엔드는 모든 JSON 응답을 이 형태로 감싼다 — `api-client.ts` 가 `data` 를
+ * 벗겨 도메인 코드에 넘기고, `success=false` 또는 `error` 면 ApiError 를 던진다.
+ */
+export interface ApiResponse<T> {
+  success: boolean;
+  data: T;
+  error: ApiErrorBody | null;
+}
+
+/** 봉투 안의 에러 객체 (백엔드 ApiError). `details` 같은 필드 단위 에러는 없음. */
+export interface ApiErrorBody {
+  code: string;
+  message: string;
+}
+
 /** 공통 쿼리 파라미터 */
 export interface ListQuery {
   page?: number;
