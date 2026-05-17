@@ -6,8 +6,6 @@ import type {
   CreatedUser,
   CreatedUserDTO,
   CreateUserDTO,
-  ResetPasswordDTO,
-  ResetPasswordResult,
 } from './types';
 
 /**
@@ -51,8 +49,4 @@ export const fromCreateUserFormValues = (v: CreateUserFormValues): CreateUserDTO
 export const toCreatedUser = (d: CreatedUserDTO): CreatedUser => ({
   id: d.id,
   userId: d.loginId,
-});
-
-export const toResetPasswordResult = (d: ResetPasswordDTO): ResetPasswordResult => ({
-  tempPassword: d.temp_password,
 });

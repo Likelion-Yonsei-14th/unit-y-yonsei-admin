@@ -70,12 +70,10 @@ export interface CreatedUser {
 }
 
 /**
- * 비밀번호 강제 재설정 응답.
- * 백엔드가 reset-password 엔드포인트를 구현 중 — 스키마 확정 시 갱신.
+ * 비밀번호 강제 재설정 결과 (프론트 모델).
+ * 백엔드 PATCH /admin/users/{id}/password 는 클라이언트가 보낸 비밀번호로 설정하고
+ * 본문 없이 응답하므로, 프론트가 생성한 임시 비번을 그대로 담아 UI 에 노출한다.
  */
-export interface ResetPasswordDTO {
-  temp_password: string;
-}
 export interface ResetPasswordResult {
   tempPassword: string;
 }
