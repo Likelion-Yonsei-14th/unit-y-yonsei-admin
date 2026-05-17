@@ -267,10 +267,7 @@ export function BoothInfoForm({
           ) : tags.length > 0 ? (
             <div className="flex flex-wrap gap-2">
               {tags.map((tag) => (
-                <span
-                  key={tag}
-                  className="px-3 py-1 bg-muted text-foreground text-sm rounded-full"
-                >
+                <span key={tag} className="px-3 py-1 bg-muted text-foreground text-sm rounded-full">
                   {tag}
                 </span>
               ))}
