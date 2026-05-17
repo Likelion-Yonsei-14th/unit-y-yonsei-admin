@@ -1,6 +1,9 @@
-import { GripVertical, Trash2, Upload } from 'lucide-react';
+import { useState } from 'react';
+import { GripVertical, Loader2, Trash2, Upload } from 'lucide-react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { toast } from 'sonner';
+import { uploadImage } from '@/features/uploads/api';
 import type { BoothMenuItem } from '@/features/booths/types';
 
 export interface DraggableMenuItemProps {
@@ -18,6 +21,7 @@ export function DraggableMenuItem({ item, index, onUpdate, onDelete }: Draggable
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: item.id,
   });
+  const [uploading, setUploading] = useState(false);
 
   return (
     <div
@@ -41,20 +45,31 @@ export function DraggableMenuItem({ item, index, onUpdate, onDelete }: Draggable
         {index + 1}
       </div>
 
-      {/* 메뉴 사진 — 박스 클릭 시 파일 선택. 선택 즉시 blob URL 로 미리보기. */}
+      {/* 메뉴 사진 — 박스 클릭 시 파일 선택 → 업로드 후 imageUrl 저장. */}
       <label className="w-20 h-20 bg-muted rounded-lg flex-shrink-0 flex items-center justify-center overflow-hidden cursor-pointer hover:opacity-80 transition-opacity">
         <input
           type="file"
           accept="image/*"
           aria-label="메뉴 사진 첨부"
           className="hidden"
-          onChange={(e) => {
+          disabled={uploading}
+          onChange={async (e) => {
             const file = e.target.files?.[0];
             e.target.value = '';
-            if (file) onUpdate(item.id, 'image', URL.createObjectURL(file));
+            if (!file) return;
+            setUploading(true);
+            try {
+              onUpdate(item.id, 'image', await uploadImage(file, 'MENU'));
+            } catch {
+              toast.error('사진 업로드에 실패했습니다.');
+            } finally {
+              setUploading(false);
+            }
           }}
         />
-        {item.image ? (
+        {uploading ? (
+          <Loader2 size={24} className="animate-spin text-ds-text-disabled" />
+        ) : item.image ? (
           <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
         ) : (
           <Upload size={24} className="text-ds-text-disabled" />
