@@ -74,15 +74,10 @@ export function ReservationManagement() {
   );
 
   // 대기자 목록 탭 뱃지용 — 미처리(waiting) 예약 건수.
-  const waitingCount = boothReservations.reduce(
-    (n, r) => (r.status === 'waiting' ? n + 1 : n),
-    0,
-  );
+  const waitingCount = boothReservations.reduce((n, r) => (r.status === 'waiting' ? n + 1 : n), 0);
 
   // 폴링으로 새 PENDING 예약이 들어오면 토스트로 알리고, 클릭 시 대기자 탭으로 이동.
-  useNewReservationAlert(boothReservations, boothId, () =>
-    setSelectedStatus('대기자 목록'),
-  );
+  useNewReservationAlert(boothReservations, boothId, () => setSelectedStatus('대기자 목록'));
 
   // 파이프: boothReservations → 검색 → 상태 필터 → filteredReservations.
   // 연락처/시간/인원수는 검색 대상 제외(user-management 와 동일한 이유: 값 형태가 잡다).

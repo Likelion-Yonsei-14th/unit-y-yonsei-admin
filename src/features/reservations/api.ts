@@ -108,9 +108,7 @@ async function setReservationsStatusBulkReal(input: {
   ids: string[];
   status: ReservationState;
 }): Promise<Reservation[]> {
-  return Promise.all(
-    input.ids.map((id) => setReservationStatusReal({ id, status: input.status })),
-  );
+  return Promise.all(input.ids.map((id) => setReservationStatusReal({ id, status: input.status })));
 }
 
 // ---- 분기 export ----
