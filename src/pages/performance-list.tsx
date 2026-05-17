@@ -1,9 +1,15 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router';
-import { Music, Calendar, MapPin } from 'lucide-react';
-import { usePerformances } from '@/features/performances/hooks';
+import { Music, Calendar, MapPin, Radio } from 'lucide-react';
+import { toast } from 'sonner';
+import {
+  usePerformances,
+  useLivePerformance,
+  useSetLivePerformance,
+} from '@/features/performances/hooks';
 import { PERFORMANCE_STAGES, type PerformanceStage } from '@/features/performances/types';
 import { FESTIVAL_DATES } from '@/features/booth-layout/sections';
+import { useAuth } from '@/features/auth/hooks';
 
 /**
  * Super/Master 용 전체 공연 목록 페이지.
@@ -12,6 +18,26 @@ import { FESTIVAL_DATES } from '@/features/booth-layout/sections';
  */
 export function PerformanceListPage() {
   const { data, isLoading, isError, refetch } = usePerformances();
+
+  const { can } = useAuth();
+  const canLive = can('performance.live');
+  const { data: liveTeamId } = useLivePerformance();
+  const setLive = useSetLivePerformance();
+
+  // 라이브로 지정된 팀의 목록 아이템 — 현재 필터(날짜/스테이지)와 무관하게 전체에서 찾는다.
+  const liveTeam = useMemo(
+    () => (liveTeamId != null ? (data?.find((p) => p.teamId === liveTeamId) ?? null) : null),
+    [data, liveTeamId],
+  );
+
+  const handleSetLive = (teamId: number | null) => {
+    setLive.mutate(teamId, {
+      onSuccess: (next) => {
+        toast(next == null ? '라이브 공연을 해제했습니다.' : '라이브 공연으로 지정했습니다.');
+      },
+      onError: () => toast.error('라이브 지정에 실패했습니다. 잠시 후 다시 시도해주세요.'),
+    });
+  };
 
   const [date, setDate] = useState<string>(FESTIVAL_DATES[0]);
   const [stage, setStage] = useState<PerformanceStage | 'all'>('all');
@@ -47,6 +73,31 @@ export function PerformanceListPage() {
           공연 정보 관리
         </h1>
       </div>
+
+      {/* 현재 라이브 공연 배너 — Super 전용 */}
+      {canLive && (
+        <div className="bg-background rounded-2xl p-5 mb-6 shadow-sm border border-border flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <Radio size={20} className="text-destructive" aria-hidden="true" />
+            <div>
+              <div className="text-sm text-muted-foreground">현재 라이브 공연</div>
+              <div className="font-semibold text-foreground">
+                {liveTeam ? liveTeam.teamName : '지정된 라이브 공연 없음'}
+              </div>
+            </div>
+          </div>
+          {liveTeamId != null && (
+            <button
+              type="button"
+              onClick={() => handleSetLive(null)}
+              disabled={setLive.isPending}
+              className="px-4 py-2 rounded-lg border border-border bg-background text-foreground hover:bg-muted transition-colors text-sm disabled:opacity-50"
+            >
+              라이브 해제
+            </button>
+          )}
+        </div>
+      )}
 
       {/* Filters */}
       <div className="bg-background rounded-2xl p-6 mb-6 shadow-sm space-y-4">
@@ -129,30 +180,61 @@ export function PerformanceListPage() {
 
       {!isLoading && !isError && filtered.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filtered.map((p) => (
-            <Link
-              key={p.teamId}
-              to={`/performance/${p.teamId}`}
-              className="bg-background rounded-2xl p-5 shadow-sm border border-border hover:border-primary hover:shadow-md transition-all flex gap-4"
-            >
-              <div className="w-20 h-20 rounded-lg bg-muted flex-shrink-0 overflow-hidden flex items-center justify-center">
-                {p.mainPhotoUrl ? (
-                  <img src={p.mainPhotoUrl} alt="" className="w-full h-full object-cover" />
-                ) : (
-                  <Music size={24} className="text-ds-text-disabled" />
+          {filtered.map((p) => {
+            const isLive = p.teamId === liveTeamId;
+            return (
+              <div
+                key={p.teamId}
+                className={`bg-background rounded-2xl shadow-sm border transition-all ${
+                  isLive
+                    ? 'border-destructive'
+                    : 'border-border hover:border-primary hover:shadow-md'
+                }`}
+              >
+                <Link to={`/performance/${p.teamId}`} className="flex gap-4 p-5">
+                  <div className="w-20 h-20 rounded-lg bg-muted flex-shrink-0 overflow-hidden flex items-center justify-center">
+                    {p.mainPhotoUrl ? (
+                      <img src={p.mainPhotoUrl} alt="" className="w-full h-full object-cover" />
+                    ) : (
+                      <Music size={24} className="text-ds-text-disabled" />
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold text-foreground truncate">{p.teamName}</span>
+                      {isLive && (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-destructive text-destructive-foreground text-xs font-semibold flex-shrink-0">
+                          ● LIVE
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-sm text-muted-foreground mt-1">
+                      {PERFORMANCE_STAGES[p.stage].label}
+                    </div>
+                    <div className="text-sm text-muted-foreground mt-1">
+                      {p.startTime} ~ {p.endTime}
+                    </div>
+                  </div>
+                </Link>
+                {canLive && (
+                  <div className="px-5 pb-4">
+                    <button
+                      type="button"
+                      onClick={() => handleSetLive(isLive ? null : p.teamId)}
+                      disabled={setLive.isPending}
+                      className={`w-full px-3 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 ${
+                        isLive
+                          ? 'border border-border bg-background text-foreground hover:bg-muted'
+                          : 'bg-primary text-primary-foreground hover:bg-ds-primary-pressed'
+                      }`}
+                    >
+                      {isLive ? '라이브 해제' : '라이브로 지정'}
+                    </button>
+                  </div>
                 )}
               </div>
-              <div className="flex-1 min-w-0">
-                <div className="font-semibold text-foreground truncate">{p.teamName}</div>
-                <div className="text-sm text-muted-foreground mt-1">
-                  {PERFORMANCE_STAGES[p.stage].label}
-                </div>
-                <div className="text-sm text-muted-foreground mt-1">
-                  {p.startTime} ~ {p.endTime}
-                </div>
-              </div>
-            </Link>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
