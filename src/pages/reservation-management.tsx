@@ -4,6 +4,7 @@ import { Phone, MessageSquare, Check, X, Calendar, RotateCcw, Search } from 'luc
 import { toast } from 'sonner';
 import {
   useBoothReservations,
+  useNewReservationAlert,
   useSetReservationStatus,
   useSetReservationsStatusBulk,
 } from '@/features/reservations/hooks';
@@ -76,6 +77,11 @@ export function ReservationManagement() {
   const waitingCount = boothReservations.reduce(
     (n, r) => (r.status === 'waiting' ? n + 1 : n),
     0,
+  );
+
+  // 폴링으로 새 PENDING 예약이 들어오면 토스트로 알리고, 클릭 시 대기자 탭으로 이동.
+  useNewReservationAlert(boothReservations, boothId, () =>
+    setSelectedStatus('대기자 목록'),
   );
 
   // 파이프: boothReservations → 검색 → 상태 필터 → filteredReservations.
