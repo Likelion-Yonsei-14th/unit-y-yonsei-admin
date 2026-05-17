@@ -38,6 +38,20 @@ function ReservationManagementRoute() {
 }
 
 /**
+ * `/reservations` 진입 분기.
+ * Booth 계정은 부스가 하나뿐이라 지도 picker 를 건너뛰고 본인 예약 현황판
+ * (`/reservations/:boothId`) 으로 바로 보낸다. Super/Master 는 여러 부스를
+ * 다루므로 picker 를 본다. boothId 미설정 Booth 는 picker 가 빈 상태를 안내.
+ */
+function ReservationsEntry() {
+  const { user } = useAuth();
+  if (user?.role === 'Booth' && user.boothId != null) {
+    return <Navigate to={`/reservations/${user.boothId}`} replace />;
+  }
+  return <ReservationBoothPicker />;
+}
+
+/**
  * `/performance` 진입 분기.
  * Super/Master 는 전체 공연 목록(PerformanceListPage) 으로, Performer 는 본인 팀 상세
  * (`/performance/me`) 로 보낸다. Booth 계정은 performance.read 권한이 없어 가드 단계에서 차단.
@@ -123,12 +137,12 @@ export const router = createBrowserRouter([
       },
 
       {
-        // 모든 역할 공통 진입점 — Booth 계정의 자동 리다이렉트는 더 이상 안 함.
-        // 소속 부스 정보 없음 빈 상태 메시지는 ReservationBoothPicker 내부에서 처리.
+        // Booth 는 ReservationsEntry 가 본인 예약 현황판으로 직행시키고,
+        // Super/Master 는 부스 선택 picker(지도) 를 본다.
         path: 'reservations',
         element: (
           <RequirePermission permission="reservation.read">
-            <ReservationBoothPicker />
+            <ReservationsEntry />
           </RequirePermission>
         ),
       },
