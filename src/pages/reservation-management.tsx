@@ -3,7 +3,7 @@ import { Navigate, useParams } from 'react-router';
 import { Phone, MessageSquare, Check, X, Calendar, RotateCcw, Search } from 'lucide-react';
 import { toast } from 'sonner';
 import {
-  useReservations,
+  useBoothReservations,
   useSetReservationStatus,
   useSetReservationsStatusBulk,
 } from '@/features/reservations/hooks';
@@ -43,7 +43,8 @@ export function ReservationManagement() {
   }, [boothId, boothsQuery.data]);
   const { user } = useAuth();
 
-  const reservationsQuery = useReservations();
+  // 백엔드는 부스별 조회만 제공 — 이 페이지는 한 부스(boothId)만 다룬다.
+  const reservationsQuery = useBoothReservations(boothId);
   // useMemo 로 묶어 매 렌더 새 빈 배열이 만들어지지 않게 — 하위 useMemo deps 안정.
   const reservations: Reservation[] = useMemo(
     () => reservationsQuery.data ?? [],

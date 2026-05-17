@@ -40,12 +40,53 @@ async function setReservationsStatusBulkMock(input: {
   return updated;
 }
 
+// ---- mock: 새 예약 도착 시뮬레이션 ----
+// 정적 mock 만으로는 폴링해도 뱃지·토스트가 동작하지 않아 QA 가 불가능하다.
+// 부스별로 벽시계 ~20초마다 합성 PENDING 예약을 1건씩, 최대 3건까지 주입한다.
+const mockInjectBaseline = new Map<number, number>();
+const mockInjectCount = new Map<number, number>();
+
+function maybeInjectMockReservation(boothId: number): void {
+  const now = Date.now();
+  // 첫 호출은 기준 시각만 잡고 주입하지 않는다 — 진입 직후 토스트 방지.
+  if (!mockInjectBaseline.has(boothId)) {
+    mockInjectBaseline.set(boothId, now);
+    return;
+  }
+  const count = mockInjectCount.get(boothId) ?? 0;
+  if (count >= 3) return;
+  if (now - (mockInjectBaseline.get(boothId) ?? now) < 20_000) return;
+
+  mockInjectBaseline.set(boothId, now);
+  mockInjectCount.set(boothId, count + 1);
+  memory.push({
+    id: `MOCKNEW-${boothId}-${count + 1}`,
+    boothId,
+    time: '',
+    name: `신규예약자${count + 1}`,
+    people: 2,
+    contact: '010-0000-0000',
+    status: 'waiting',
+  });
+}
+
+async function listBoothReservationsMock(boothId: number): Promise<Reservation[]> {
+  await new Promise((r) => setTimeout(r, 100));
+  maybeInjectMockReservation(boothId);
+  return memory.filter((r) => r.boothId === boothId);
+}
+
 // ---- list / mutations (real) ----
 
 async function listReservationsReal(): Promise<Reservation[]> {
   // ⚠️ 백엔드는 부스별 조회(GET /admin/reservations/booths/{boothId})만 제공한다.
   // 전체 예약 목록 엔드포인트(GET /admin/reservations)는 아직 없음 — 백엔드 추가 요청 항목.
   const dtos = await api.get<ReservationDTO[]>('/admin/reservations');
+  return dtos.map(toReservation);
+}
+
+async function listBoothReservationsReal(boothId: number): Promise<Reservation[]> {
+  const dtos = await api.get<ReservationDTO[]>(`/admin/reservations/booths/${boothId}`);
   return dtos.map(toReservation);
 }
 
@@ -75,6 +116,9 @@ async function setReservationsStatusBulkReal(input: {
 // ---- 분기 export ----
 
 export const listReservations = env.USE_MOCK ? listReservationsMock : listReservationsReal;
+export const listBoothReservations = env.USE_MOCK
+  ? listBoothReservationsMock
+  : listBoothReservationsReal;
 export const setReservationStatus = env.USE_MOCK
   ? setReservationStatusMock
   : setReservationStatusReal;
