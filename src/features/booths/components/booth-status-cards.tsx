@@ -39,7 +39,7 @@ function StatusCard({ title, completed, decoration, onClick }: StatusCardProps) 
 
       <div className="mt-8">
         <div className="bg-background/80 backdrop-blur-sm rounded-xl p-4">
-          <div className="w-full h-32 bg-muted rounded-lg flex items-center justify-center text-muted-foreground/50">
+          <div className="w-full h-32 bg-muted rounded-lg flex items-center justify-center text-muted-foreground">
             {decoration}
           </div>
         </div>

@@ -5,6 +5,7 @@ import { createBrowserRouter, Navigate, useParams } from 'react-router';
 import { RequireAuth, RequireGuest, RequirePermission } from '@/features/auth/guard';
 import { useAuth } from '@/features/auth/hooks';
 import { AppLayout } from '@/components/layout/app-layout';
+import { useIsMobile } from '@/components/ui/use-mobile';
 
 /**
  * 로그인 직후 `/`에 접근했을 때:
@@ -35,6 +36,22 @@ function DefaultLanding() {
 function ReservationManagementRoute() {
   const { boothId } = useParams<{ boothId: string }>();
   return <ReservationManagement key={boothId ?? ''} />;
+}
+
+/**
+ * `/reservations` 진입 분기.
+ * Booth 계정은 부스가 하나뿐이라 **모바일에선** 지도 picker 를 건너뛰고 본인
+ * 예약 현황판(`/reservations/:boothId`) 으로 바로 보낸다. 데스크톱은 지도가
+ * 한눈에 들어와 임팩트가 있어 picker 를 유지. Super/Master 는 여러 부스를
+ * 다루므로 항상 picker. boothId 미설정 Booth 는 picker 가 빈 상태를 안내.
+ */
+function ReservationsEntry() {
+  const { user } = useAuth();
+  const isMobile = useIsMobile();
+  if (user?.role === 'Booth' && user.boothId != null && isMobile) {
+    return <Navigate to={`/reservations/${user.boothId}`} replace />;
+  }
+  return <ReservationBoothPicker />;
 }
 
 /**
@@ -123,12 +140,12 @@ export const router = createBrowserRouter([
       },
 
       {
-        // 모든 역할 공통 진입점 — Booth 계정의 자동 리다이렉트는 더 이상 안 함.
-        // 소속 부스 정보 없음 빈 상태 메시지는 ReservationBoothPicker 내부에서 처리.
+        // 모바일 Booth 는 ReservationsEntry 가 본인 예약 현황판으로 직행시키고,
+        // 그 외(데스크톱 Booth · Super/Master)는 부스 선택 picker(지도) 를 본다.
         path: 'reservations',
         element: (
           <RequirePermission permission="reservation.read">
-            <ReservationBoothPicker />
+            <ReservationsEntry />
           </RequirePermission>
         ),
       },

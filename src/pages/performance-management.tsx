@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState, type ChangeEvent } from 'react';
 import { useParams, Link } from 'react-router';
+import { DndProvider } from 'react-dnd';
+import { HTML5Backend } from 'react-dnd-html5-backend';
 import {
   ArrowLeft,
   Plus,
@@ -28,6 +30,7 @@ import {
   type SetlistItem,
 } from '@/features/performances/types';
 import { FESTIVAL_DATES } from '@/features/booth-layout/sections';
+import { DraggableSetlistItem } from '@/features/performances/components/draggable-setlist-item';
 
 /**
  * 공연 상세/편집. 두 진입 경로:
@@ -190,6 +193,14 @@ export function PerformanceManagement() {
     setEditingSetlist(
       editingSetlist.map((item) => (item.id === id ? { ...item, [field]: value } : item)),
     );
+  };
+
+  const moveSetlistItem = (fromIndex: number, toIndex: number) => {
+    const updated = [...editingSetlist];
+    const [moved] = updated.splice(fromIndex, 1);
+    updated.splice(toIndex, 0, moved);
+    // 드래그 후 order 를 위치 기준으로 다시 매긴다.
+    setEditingSetlist(updated.map((item, idx) => ({ ...item, order: idx + 1 })));
   };
 
   const handleSave = () => {
@@ -682,44 +693,43 @@ export function PerformanceManagement() {
           )}
         </div>
 
-        <div className="space-y-3">
-          {(isEditMode ? editingSetlist : setlist).map((item, index) => (
-            <div
-              key={item.id}
-              className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 p-4 border border-border rounded-lg hover:border-primary transition-colors"
-            >
-              <div className="flex items-center justify-center w-10 h-10 bg-primary text-primary-foreground font-bold rounded-lg">
-                {index + 1}
-              </div>
-              <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <input
-                  type="text"
-                  placeholder="곡명"
-                  value={item.songName}
-                  className="px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring disabled:bg-muted disabled:text-foreground"
-                  onChange={(e) => updateSetlistItem(item.id, 'songName', e.target.value)}
-                  disabled={!isEditMode}
+        {isEditMode ? (
+          <DndProvider backend={HTML5Backend}>
+            <div className="space-y-3">
+              {editingSetlist.map((item, index) => (
+                <DraggableSetlistItem
+                  key={item.id}
+                  item={item}
+                  index={index}
+                  moveItem={moveSetlistItem}
+                  onUpdate={updateSetlistItem}
+                  onDelete={removeSetlistItem}
                 />
-                <input
-                  type="text"
-                  placeholder="원곡자"
-                  value={item.artist}
-                  className="px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring disabled:bg-muted disabled:text-foreground"
-                  onChange={(e) => updateSetlistItem(item.id, 'artist', e.target.value)}
-                  disabled={!isEditMode}
-                />
-              </div>
-              {isEditMode && (
-                <button
-                  onClick={() => removeSetlistItem(item.id)}
-                  className="p-2 text-destructive hover:bg-ds-error-subtle rounded-lg transition-colors"
-                >
-                  <Trash2 size={18} />
-                </button>
-              )}
+              ))}
             </div>
-          ))}
-        </div>
+          </DndProvider>
+        ) : (
+          <div className="space-y-3">
+            {setlist.map((item, index) => (
+              <div
+                key={item.id}
+                className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 p-4 border border-border rounded-lg"
+              >
+                <div className="flex items-center justify-center w-10 h-10 bg-primary text-primary-foreground font-bold rounded-lg flex-shrink-0">
+                  {index + 1}
+                </div>
+                <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="px-3 py-2 border border-border rounded-lg bg-muted text-foreground">
+                    {item.songName}
+                  </div>
+                  <div className="px-3 py-2 border border-border rounded-lg bg-muted text-foreground">
+                    {item.artist}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
 
         {(isEditMode ? editingSetlist : setlist).length === 0 && (
           <div className="text-center py-12 text-ds-text-disabled">

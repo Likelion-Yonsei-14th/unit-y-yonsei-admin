@@ -106,7 +106,7 @@ export function DraggableMenuItem({
           aria-labelledby={`menu-${item.id}-soldout-label`}
           onClick={() => onUpdate(item.id, 'soldOut', !item.soldOut)}
           className={`relative w-12 h-6 rounded-full transition-colors ${
-            item.soldOut ? 'bg-destructive' : 'bg-ds-border-strong'
+            item.soldOut ? 'bg-destructive' : 'bg-ds-gray-400'
           }`}
         >
           <div
