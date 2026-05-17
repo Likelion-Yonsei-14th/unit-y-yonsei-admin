@@ -182,6 +182,8 @@ export function PerformanceListPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filtered.map((p) => {
             const isLive = p.teamId === liveTeamId;
+            // 라이브 지정은 노천극장(nocheon) 공연만 허용.
+            const liveDesignatable = p.stage === 'nocheon';
             return (
               <div
                 key={p.teamId}
@@ -221,7 +223,12 @@ export function PerformanceListPage() {
                     <button
                       type="button"
                       onClick={() => handleSetLive(isLive ? null : p.teamId)}
-                      disabled={setLive.isPending}
+                      disabled={setLive.isPending || (!isLive && !liveDesignatable)}
+                      title={
+                        !isLive && !liveDesignatable
+                          ? '노천극장 공연만 라이브로 지정할 수 있습니다.'
+                          : undefined
+                      }
                       className={`w-full px-3 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 ${
                         isLive
                           ? 'border border-border bg-background text-foreground hover:bg-muted'

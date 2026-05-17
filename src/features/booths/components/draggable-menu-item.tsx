@@ -1,74 +1,67 @@
 import { GripVertical, Trash2, Upload } from 'lucide-react';
-import { useDrag, useDrop } from 'react-dnd';
+import { useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import type { BoothMenuItem } from '@/features/booths/types';
-
-const ItemType = 'MENU_ITEM';
 
 export interface DraggableMenuItemProps {
   item: BoothMenuItem;
   index: number;
-  moveItem: (fromIndex: number, toIndex: number) => void;
   onUpdate: (id: number, field: keyof BoothMenuItem, value: string | boolean) => void;
   onDelete: (id: number) => void;
 }
 
 /**
- * 메뉴 리스트 편집 모드의 한 행. 드래그 핸들로 순서 변경, 인풋 직접 편집,
- * 품절 토글, 삭제. 동적 리스트라 visible label 대신 aria-label 로 매칭한다.
+ * 메뉴 리스트 편집 모드의 한 행. 핸들(≡)로 순서 변경, 인풋 직접 편집, 사진 첨부,
+ * 품절 토글, 삭제. @dnd-kit/sortable 기반 — 마우스·터치·키보드 모두 지원.
  */
-export function DraggableMenuItem({
-  item,
-  index,
-  moveItem,
-  onUpdate,
-  onDelete,
-}: DraggableMenuItemProps) {
-  const [{ isDragging }, drag, preview] = useDrag({
-    type: ItemType,
-    item: { index },
-    collect: (monitor) => ({
-      isDragging: monitor.isDragging(),
-    }),
-  });
-
-  const [, drop] = useDrop({
-    accept: ItemType,
-    hover: (draggedItem: { index: number }) => {
-      if (draggedItem.index !== index) {
-        moveItem(draggedItem.index, index);
-        draggedItem.index = index;
-      }
-    },
+export function DraggableMenuItem({ item, index, onUpdate, onDelete }: DraggableMenuItemProps) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: item.id,
   });
 
   return (
     <div
-      ref={(node) => preview(drop(node))}
-      className={`flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 p-4 border border-border rounded-lg transition-all ${
+      ref={setNodeRef}
+      style={{ transform: CSS.Transform.toString(transform), transition }}
+      className={`flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 p-4 border border-border rounded-lg bg-background hover:border-primary ${
         isDragging ? 'opacity-50' : 'opacity-100'
-      } hover:border-primary`}
+      }`}
     >
-      <div
-        ref={drag}
-        className="cursor-move text-ds-text-disabled hover:text-muted-foreground transition-colors"
+      <button
+        type="button"
+        aria-label="순서 변경 핸들"
+        className="cursor-grab active:cursor-grabbing touch-none text-ds-text-disabled hover:text-muted-foreground transition-colors"
+        {...attributes}
+        {...listeners}
       >
         <GripVertical size={20} />
-      </div>
+      </button>
 
       <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-semibold text-sm flex-shrink-0">
-        {item.order}
+        {index + 1}
       </div>
 
-      <div className="w-20 h-20 bg-muted rounded-lg flex-shrink-0 flex items-center justify-center overflow-hidden">
+      {/* 메뉴 사진 — 박스 클릭 시 파일 선택. 선택 즉시 blob URL 로 미리보기. */}
+      <label className="w-20 h-20 bg-muted rounded-lg flex-shrink-0 flex items-center justify-center overflow-hidden cursor-pointer hover:opacity-80 transition-opacity">
+        <input
+          type="file"
+          accept="image/*"
+          aria-label="메뉴 사진 첨부"
+          className="hidden"
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            e.target.value = '';
+            if (file) onUpdate(item.id, 'image', URL.createObjectURL(file));
+          }}
+        />
         {item.image ? (
           <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
         ) : (
           <Upload size={24} className="text-ds-text-disabled" />
         )}
-      </div>
+      </label>
 
       <div className="flex-1 space-y-2">
-        {/* 동적 리스트 행이라 visible label 대신 aria-label 로 매칭. */}
         <input
           type="text"
           placeholder="메뉴명"

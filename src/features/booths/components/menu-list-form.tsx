@@ -1,7 +1,20 @@
 import { useEffect, useState } from 'react';
-import { ArrowLeft, Edit, Plus, Upload } from 'lucide-react';
-import { DndProvider } from 'react-dnd';
-import { HTML5Backend } from 'react-dnd-html5-backend';
+import { Check, Edit, Plus, Upload } from 'lucide-react';
+import {
+  DndContext,
+  KeyboardSensor,
+  PointerSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  arrayMove,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
 import { toast } from 'sonner';
 import type { UseMutationResult } from '@tanstack/react-query';
 import type { BoothMenuItem, BoothProfile } from '@/features/booths/types';
@@ -16,7 +29,6 @@ interface Props {
    * mutation 자체는 페이지(BoothInfoForm 과 공유) 와 같은 객체.
    */
   updateMutation: UseMutationResult<BoothProfile, Error, Partial<BoothProfile>>;
-  onClose: () => void;
 }
 
 /** 빈 메뉴 항목 한 줄. 메뉴 추가 버튼과 초기 디폴트 행 양쪽에서 사용. */
@@ -38,7 +50,7 @@ function makeBlankMenuItem(order: number): BoothMenuItem {
  * 폼 자체에서 메뉴 항목 / 주문 공지 state 를 들고 있고, 저장 성공 시 view 모드로 복귀.
  * booth prop 이 외부 refetch 로 바뀌면 form state 를 다시 hydrate.
  */
-export function MenuListForm({ booth, initiallyEditing, updateMutation, onClose }: Props) {
+export function MenuListForm({ booth, initiallyEditing, updateMutation }: Props) {
   const [isEditing, setIsEditing] = useState(initiallyEditing);
   const [orderNotice, setOrderNotice] = useState(booth.orderNotice);
   const [menuItems, setMenuItems] = useState<BoothMenuItem[]>(booth.menuItems);
@@ -58,11 +70,20 @@ export function MenuListForm({ booth, initiallyEditing, updateMutation, onClose 
     }
   }, [isEditing, menuItems.length]);
 
-  const moveItem = (fromIndex: number, toIndex: number) => {
-    const updated = [...menuItems];
-    const [movedItem] = updated.splice(fromIndex, 1);
-    updated.splice(toIndex, 0, movedItem);
-    setMenuItems(updated.map((item, idx) => ({ ...item, order: idx + 1 })));
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const oldIndex = menuItems.findIndex((m) => m.id === active.id);
+    const newIndex = menuItems.findIndex((m) => m.id === over.id);
+    if (oldIndex < 0 || newIndex < 0) return;
+    setMenuItems(
+      arrayMove(menuItems, oldIndex, newIndex).map((m, idx) => ({ ...m, order: idx + 1 })),
+    );
   };
 
   const addMenuItem = () => {
@@ -116,7 +137,7 @@ export function MenuListForm({ booth, initiallyEditing, updateMutation, onClose 
           {!isEditing ? (
             <button
               onClick={() => setIsEditing(true)}
-              className="flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-ds-primary-pressed transition-colors duration-200"
+              className="flex items-center justify-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-ds-primary-pressed transition-colors duration-200"
             >
               <Edit size={18} />
               편집
@@ -125,18 +146,12 @@ export function MenuListForm({ booth, initiallyEditing, updateMutation, onClose 
             <button
               onClick={handleSave}
               disabled={updateMutation.isPending}
-              className="px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-ds-primary-pressed transition-colors duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
+              className="flex items-center justify-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-ds-primary-pressed transition-colors duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
             >
+              <Check size={18} />
               {updateMutation.isPending ? '저장 중…' : '저장'}
             </button>
           )}
-          <button
-            onClick={onClose}
-            className="flex items-center gap-2 px-4 py-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors"
-          >
-            <ArrowLeft size={18} />
-            <span className="text-sm font-medium">이전으로</span>
-          </button>
         </div>
       </div>
 
@@ -170,20 +185,24 @@ export function MenuListForm({ booth, initiallyEditing, updateMutation, onClose 
       </div>
 
       {isEditing ? (
-        <DndProvider backend={HTML5Backend}>
-          <div className="space-y-4">
-            {menuItems.map((item, index) => (
-              <DraggableMenuItem
-                key={item.id}
-                item={item}
-                index={index}
-                moveItem={moveItem}
-                onUpdate={updateMenuItem}
-                onDelete={deleteMenuItem}
-              />
-            ))}
-          </div>
-        </DndProvider>
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+          <SortableContext
+            items={menuItems.map((m) => m.id)}
+            strategy={verticalListSortingStrategy}
+          >
+            <div className="space-y-4">
+              {menuItems.map((item, index) => (
+                <DraggableMenuItem
+                  key={item.id}
+                  item={item}
+                  index={index}
+                  onUpdate={updateMenuItem}
+                  onDelete={deleteMenuItem}
+                />
+              ))}
+            </div>
+          </SortableContext>
+        </DndContext>
       ) : (
         <div className="space-y-4">
           {menuItems.map((item) => (

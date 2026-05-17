@@ -1,59 +1,46 @@
 import { GripVertical, Trash2 } from 'lucide-react';
-import { useDrag, useDrop } from 'react-dnd';
+import { useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import type { SetlistItem } from '@/features/performances/types';
-
-const ItemType = 'SETLIST_ITEM';
 
 export interface DraggableSetlistItemProps {
   item: SetlistItem;
   index: number;
-  moveItem: (fromIndex: number, toIndex: number) => void;
   onUpdate: (id: number, field: 'songName' | 'artist', value: string) => void;
   onDelete: (id: number) => void;
 }
 
 /**
- * 셋리스트 편집 모드의 한 행. 드래그 핸들로 순서 변경, 인풋 직접 편집, 삭제.
- * 동적 리스트라 visible label 대신 aria-label 로 매칭한다. (DraggableMenuItem 패턴)
+ * 셋리스트 편집 모드의 한 행. 핸들(≡)로 순서 변경, 인풋 직접 편집, 삭제.
+ * @dnd-kit/sortable 기반 — 마우스·터치·키보드 모두 지원.
  */
 export function DraggableSetlistItem({
   item,
   index,
-  moveItem,
   onUpdate,
   onDelete,
 }: DraggableSetlistItemProps) {
-  const [{ isDragging }, drag, preview] = useDrag({
-    type: ItemType,
-    item: { index },
-    collect: (monitor) => ({
-      isDragging: monitor.isDragging(),
-    }),
-  });
-
-  const [, drop] = useDrop({
-    accept: ItemType,
-    hover: (draggedItem: { index: number }) => {
-      if (draggedItem.index !== index) {
-        moveItem(draggedItem.index, index);
-        draggedItem.index = index;
-      }
-    },
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: item.id,
   });
 
   return (
     <div
-      ref={(node) => preview(drop(node))}
-      className={`flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 p-4 border border-border rounded-lg transition-all ${
+      ref={setNodeRef}
+      style={{ transform: CSS.Transform.toString(transform), transition }}
+      className={`flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 p-4 border border-border rounded-lg bg-background hover:border-primary ${
         isDragging ? 'opacity-50' : 'opacity-100'
-      } hover:border-primary`}
+      }`}
     >
-      <div
-        ref={drag}
-        className="cursor-move text-ds-text-disabled hover:text-muted-foreground transition-colors"
+      <button
+        type="button"
+        aria-label="순서 변경 핸들"
+        className="cursor-grab active:cursor-grabbing touch-none text-ds-text-disabled hover:text-muted-foreground transition-colors"
+        {...attributes}
+        {...listeners}
       >
         <GripVertical size={20} />
-      </div>
+      </button>
 
       <div className="flex items-center justify-center w-10 h-10 bg-primary text-primary-foreground font-bold rounded-lg flex-shrink-0">
         {index + 1}
