@@ -1,7 +1,9 @@
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
+import { useNavigate } from 'react-router';
+import { toast } from 'sonner';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { UserPlus, Check, Shield, FileText, X, ChevronDown, Settings } from 'lucide-react';
+import { UserPlus, Shield, FileText, X, ChevronDown, Settings } from 'lucide-react';
 import { useCreateUser } from '@/features/users/hooks';
 import { createUserSchema, type CreateUserFormValues } from '@/features/users/schema';
 import type { Role } from '@/types/role';
@@ -55,6 +57,7 @@ const EMPTY_FORM: CreateUserFormValues = {
 
 export function CreateAdmin() {
   const createMutation = useCreateUser();
+  const navigate = useNavigate();
 
   const {
     register,
@@ -82,31 +85,15 @@ export function CreateAdmin() {
     Object.values(PERFORMANCE_STAGES) as (typeof PERFORMANCE_STAGES)[PerformanceStage][]
   ).filter((s) => !performanceDate || s.dates.includes(performanceDate));
 
-  // 성공 알림 3초 뒤 폼 초기화 타이머 — 다음 submit / unmount 시 반드시 정리해야
-  // 이미 입력 중인 값을 뒤늦게 날리거나, unmount 후 작업이 발생하지 않는다.
-  const resetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const clearResetTimer = () => {
-    if (resetTimerRef.current != null) {
-      clearTimeout(resetTimerRef.current);
-      resetTimerRef.current = null;
-    }
-  };
-  useEffect(() => clearResetTimer, []);
-
   const onSubmit = (values: CreateUserFormValues) => {
-    clearResetTimer(); // 이전 타이머가 살아있으면 취소.
     createMutation.mutate(values, {
       onSuccess: () => {
-        resetTimerRef.current = setTimeout(() => {
-          reset(EMPTY_FORM);
-          createMutation.reset();
-          resetTimerRef.current = null;
-        }, 3000);
+        // 생성 성공 → 유저 관리 목록으로 이동. 목록 캐시는 useCreateUser 가 invalidate.
+        toast.success('계정이 생성되었습니다.');
+        navigate('/users');
       },
     });
   };
-
-  const isSuccess = createMutation.isSuccess && !createMutation.isPending;
 
   return (
     <div className="p-4 md:p-8 max-w-4xl mx-auto">
@@ -121,18 +108,7 @@ export function CreateAdmin() {
         </p>
       </div>
 
-      {/* 성공/실패 알림 — mutation 결과만을 신뢰 (이전: 무조건 success 토스트로 거짓말). */}
-      {isSuccess && (
-        <div
-          role="status"
-          className="mb-6 flex items-center gap-2 px-4 py-3 bg-ds-success-subtle border border-ds-success text-ds-success-pressed rounded-lg shadow-lg"
-        >
-          <div className="w-6 h-6 bg-ds-success rounded-full flex items-center justify-center">
-            <Check size={14} className="text-white" />
-          </div>
-          <span className="font-medium">계정이 성공적으로 생성되었습니다!</span>
-        </div>
-      )}
+      {/* 실패 알림 — 성공 시엔 유저 관리 페이지로 이동하므로 별도 배너 없음. */}
       {createMutation.isError && (
         <div
           role="alert"
@@ -707,7 +683,6 @@ export function CreateAdmin() {
           <button
             type="button"
             onClick={() => {
-              clearResetTimer();
               reset(EMPTY_FORM);
               createMutation.reset();
             }}
