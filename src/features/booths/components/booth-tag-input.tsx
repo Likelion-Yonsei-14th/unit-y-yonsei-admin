@@ -23,10 +23,10 @@ export function BoothTagInput({ value, onChange }: Props) {
   const [draft, setDraft] = useState('');
   const atMax = value.length >= MAX_TAGS;
 
-  /** 토큰 문자열들을 정규화·검증해 value 에 누적 추가. */
-  const commitTokens = (raw: string) => {
+  /** 토큰 문자열들을 정규화·검증해 value 에 누적 추가. 하나라도 추가됐으면 true. */
+  const commitTokens = (raw: string): boolean => {
     const tokens = raw.split(SEPARATOR).filter(Boolean);
-    if (tokens.length === 0) return;
+    if (tokens.length === 0) return false;
 
     const next = [...value];
     let rejectedLong = false;
@@ -57,14 +57,20 @@ export function BoothTagInput({ value, onChange }: Props) {
     if (rejectedDup) toast('이미 추가된 태그입니다.');
     if (rejectedFull) toast(`태그는 최대 ${MAX_TAGS}개까지 추가할 수 있습니다.`);
 
-    if (next.length !== value.length) onChange(next);
+    if (next.length !== value.length) {
+      onChange(next);
+      return true;
+    }
+    return false;
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    // 한글 IME 조합 중의 Enter 는 음절 확정용 — 태그 확정으로 가로채지 않는다.
+    if (e.nativeEvent.isComposing) return;
     if (e.key === 'Enter' || e.key === ',' || e.key === ' ') {
       e.preventDefault();
-      commitTokens(draft);
-      setDraft('');
+      // 거부돼 아무것도 추가되지 않으면 입력값을 지우지 않는다 (재입력 부담 방지).
+      if (commitTokens(draft)) setDraft('');
     } else if (e.key === 'Backspace' && draft === '' && value.length > 0) {
       // 빈 입력에서 Backspace → 마지막 칩 제거.
       onChange(value.slice(0, -1));
@@ -77,8 +83,7 @@ export function BoothTagInput({ value, onChange }: Props) {
     // 구분자가 섞인 붙여넣기만 가로채 일괄 처리. 단일 토큰은 기본 입력에 맡긴다.
     if (SEPARATOR.test(text)) {
       e.preventDefault();
-      commitTokens(`${draft}${text}`);
-      setDraft('');
+      if (commitTokens(`${draft}${text}`)) setDraft('');
     }
   };
 
@@ -109,6 +114,7 @@ export function BoothTagInput({ value, onChange }: Props) {
           <input
             type="text"
             value={draft}
+            aria-label="부스 태그 입력"
             maxLength={MAX_TAG_CONTENT + 1}
             placeholder={value.length === 0 ? '태그 입력 후 Enter (예: 먹거리)' : '태그 추가'}
             onChange={(e) => setDraft(e.target.value)}
