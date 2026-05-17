@@ -22,11 +22,7 @@
     "pre-commit": "pnpm lint-staged"
   },
   "lint-staged": {
-    "*.{ts,tsx}": [
-      "eslint --fix",
-      "prettier --write"
-    ],
-    "*.{js,jsx,json,css,html}": [
+    "*.{ts,tsx,js,jsx,json,css,html}": [
       "prettier --write"
     ]
   },
@@ -92,7 +88,7 @@
     "zustand": "^5.0.0"
   },
   "devDependencies": {
-    "@eslint/js": "^10.0.1",
+    "@eslint/js": "^9.39.4",
     "@tailwindcss/vite": "4.1.12",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
@@ -115,7 +111,7 @@
     "simple-git-hooks": "^2.13.1",
     "tailwindcss": "4.1.12",
     "typescript": "^5.5.4",
-    "typescript-eslint": "^8.59.1",
+    "typescript-eslint": "^8.59.3",
     "vite": "6.3.5",
     "vitest": "^2.1.9"
   },
