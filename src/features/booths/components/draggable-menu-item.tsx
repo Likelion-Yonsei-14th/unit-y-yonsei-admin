@@ -59,13 +59,26 @@ export function DraggableMenuItem({
         {item.order}
       </div>
 
-      <div className="w-20 h-20 bg-muted rounded-lg flex-shrink-0 flex items-center justify-center overflow-hidden">
+      {/* 메뉴 사진 — 박스 클릭 시 파일 선택. 선택 즉시 blob URL 로 미리보기. */}
+      <label className="w-20 h-20 bg-muted rounded-lg flex-shrink-0 flex items-center justify-center overflow-hidden cursor-pointer hover:opacity-80 transition-opacity">
+        <input
+          type="file"
+          accept="image/*"
+          aria-label="메뉴 사진 첨부"
+          className="hidden"
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            // 같은 파일 재선택도 onChange 가 다시 트리거되도록 초기화.
+            e.target.value = '';
+            if (file) onUpdate(item.id, 'image', URL.createObjectURL(file));
+          }}
+        />
         {item.image ? (
           <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
         ) : (
           <Upload size={24} className="text-ds-text-disabled" />
         )}
-      </div>
+      </label>
 
       <div className="flex-1 space-y-2">
         {/* 동적 리스트 행이라 visible label 대신 aria-label 로 매칭. */}
