@@ -63,18 +63,18 @@ async function listNoticesReal(): Promise<Notice[]> {
 }
 
 async function createNoticeReal(input: CreateNoticeInput): Promise<Notice> {
-  const dto = await api.post<NoticeDTO>('/notices', fromNotice(input));
+  const dto = await api.post<NoticeDTO>('/admin/notices', fromNotice(input));
   return toNotice(dto);
 }
 
 async function updateNoticeReal(input: UpdateNoticeInput): Promise<Notice> {
   const { id, ...patch } = input;
-  const dto = await api.put<NoticeDTO>(`/notices/${id}`, fromNotice(patch));
+  const dto = await api.put<NoticeDTO>(`/admin/notices/${id}`, fromNotice(patch));
   return toNotice(dto);
 }
 
 async function deleteNoticeReal(id: number): Promise<void> {
-  await api.delete(`/notices/${id}`);
+  await api.delete(`/admin/notices/${id}`);
 }
 
 // ---- 분기 export ----
