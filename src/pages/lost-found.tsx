@@ -166,8 +166,7 @@ export function LostFoundPage() {
           </h1>
           {!canManage && (
             <p className="mt-2 text-sm text-muted-foreground">
-              부스 운영 중 발견한 분실물을 등록해주세요. 등록된 분실물은 운영진이 확인해
-              관리합니다.
+              부스 운영 중 발견한 분실물을 등록해주세요. 등록된 분실물은 운영진이 확인해 관리합니다.
             </p>
           )}
         </div>
