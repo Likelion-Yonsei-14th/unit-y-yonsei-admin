@@ -7,18 +7,15 @@ export interface CurrentUser {
   role: Role;
   name: string;
   /** Booth 권한 사용자의 소속 부스 ID. 자기 부스만 수정 가능한지 판단용 */
-  boothId?: number;
+  boothId?: number | null;
   /** Performer 권한 사용자의 소속 공연팀 ID */
-  performanceTeamId?: number;
+  performanceTeamId?: number | null;
 }
 
 /**
  * 실제 백엔드 인증 응답 DTO.
  * `POST /admin/auth/login`(AdminLoginResponse) 와 `GET /admin/auth/me`
  * (CurrentAdminUserResponse) 가 동일 형태라 하나로 둔다.
- *
- * ⚠️ boothId / performanceTeamId 가 없음 — Booth/Performer 사용자가 자기 부스·
- * 공연팀을 join 하려면 백엔드가 응답에 추가해 줘야 한다 (백엔드 요청 항목).
  */
 export interface AdminAuthDTO {
   adminUserId: number;
@@ -29,6 +26,10 @@ export interface AdminAuthDTO {
   /** 계정 상태 — 'ACTIVE' 등 */
   status: string;
   representativeName: string;
+  /** Booth 역할 계정일 때 본인 부스 ID. 백엔드 도입 전엔 undefined. */
+  boothId?: number | null;
+  /** Performer 역할 계정일 때 본인 공연팀 ID. */
+  performanceTeamId?: number | null;
 }
 
 /** mock 전용 사용자 DTO. mock 데이터가 snake_case 라 별도 유지. */
