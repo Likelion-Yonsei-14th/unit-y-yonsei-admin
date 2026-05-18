@@ -8,9 +8,13 @@ export interface LostItem {
   name: string;
   location: string;
   date: string;
-  hasImage: boolean;
+  /** 첨부 사진의 공개 URL. 없으면 undefined. */
+  imageUrl?: string;
   description?: string;
 }
+
+/** 사진이 있는 mock 항목용 시드 이미지 — id 별로 안정적인 더미 사진. */
+const seedImage = (id: number) => `https://picsum.photos/seed/lost-${id}/320/240`;
 
 export const mockLostItems: LostItem[] = [
   {
@@ -18,7 +22,7 @@ export const mockLostItems: LostItem[] = [
     name: '검은색 가죽 지갑',
     location: '동문광장 앞',
     date: '2026-05-28',
-    hasImage: true,
+    imageUrl: seedImage(1),
     description: '현대카드와 학생증이 들어있습니다. 카드 명의: 김지우',
   },
   {
@@ -26,7 +30,6 @@ export const mockLostItems: LostItem[] = [
     name: 'iPhone 14 Pro',
     location: '한글탑 부스 #3 근처',
     date: '2026-05-28',
-    hasImage: false,
     description: '검은색 케이스, 케이스 안쪽에 사진 1장',
   },
   {
@@ -34,7 +37,7 @@ export const mockLostItems: LostItem[] = [
     name: '갤럭시 S22',
     location: '송도 워터슬라이드 입구',
     date: '2026-05-27',
-    hasImage: true,
+    imageUrl: seedImage(3),
     description: '보라색, 잠금화면 강아지 사진',
   },
   {
@@ -42,7 +45,7 @@ export const mockLostItems: LostItem[] = [
     name: '학생증 (연세대)',
     location: '동문광장 후미',
     date: '2026-05-28',
-    hasImage: true,
+    imageUrl: seedImage(4),
     description: '국제학부 24학번',
   },
   {
@@ -50,7 +53,6 @@ export const mockLostItems: LostItem[] = [
     name: '검정 우산',
     location: '한글탑 부스 #5',
     date: '2026-05-28',
-    hasImage: false,
     description: '3단 자동 우산, 손잡이 검정',
   },
   {
@@ -58,7 +60,7 @@ export const mockLostItems: LostItem[] = [
     name: '에어팟 프로 (케이스만)',
     location: '경영학과 푸드트럭 옆',
     date: '2026-05-29',
-    hasImage: true,
+    imageUrl: seedImage(6),
     description: '본체 없이 케이스만, 흰색',
   },
   {
@@ -66,7 +68,7 @@ export const mockLostItems: LostItem[] = [
     name: '키링 + 차키',
     location: '백양로 입구',
     date: '2026-05-28',
-    hasImage: true,
+    imageUrl: seedImage(7),
     description: '카카오 라이언 키링 + 기아 차키 1개',
   },
   {
@@ -74,7 +76,7 @@ export const mockLostItems: LostItem[] = [
     name: '검정 백팩 (Eastpak)',
     location: '안전 부스',
     date: '2026-05-28',
-    hasImage: true,
+    imageUrl: seedImage(8),
     description: '내부에 노트, 펜케이스, 무선 이어폰. 학생증 없음.',
   },
   {
@@ -82,7 +84,6 @@ export const mockLostItems: LostItem[] = [
     name: '검정 모자 (뉴에라)',
     location: '동문광장',
     date: '2026-05-29',
-    hasImage: false,
     description: 'NY 로고, 사이즈 M/L',
   },
   {
@@ -90,7 +91,6 @@ export const mockLostItems: LostItem[] = [
     name: '돗자리',
     location: '한글탑 입구',
     date: '2026-05-29',
-    hasImage: false,
     description: '체크무늬 빨간색, 4-5인용',
   },
   {
@@ -98,7 +98,7 @@ export const mockLostItems: LostItem[] = [
     name: '안경 (블루라이트 차단)',
     location: '언기도 앞',
     date: '2026-05-27',
-    hasImage: true,
+    imageUrl: seedImage(11),
     description: '검정 뿔테, 케이스는 없음',
   },
   {
@@ -106,7 +106,6 @@ export const mockLostItems: LostItem[] = [
     name: '텀블러 (스타벅스)',
     location: '경영학과 푸드트럭',
     date: '2026-05-29',
-    hasImage: false,
     description: '스타벅스 23 한정판, 핑크',
   },
   {
@@ -114,7 +113,7 @@ export const mockLostItems: LostItem[] = [
     name: '에코백 (서점 굿즈)',
     location: '한글탑 부스 #4',
     date: '2026-05-28',
-    hasImage: true,
+    imageUrl: seedImage(13),
     description: '연세 책방 로고. 안에 책 2권',
   },
   {
@@ -122,7 +121,6 @@ export const mockLostItems: LostItem[] = [
     name: '아이패드 펜슬',
     location: 'VR 체험존',
     date: '2026-05-28',
-    hasImage: false,
     description: '2세대, 흰색',
   },
   {
@@ -130,7 +128,7 @@ export const mockLostItems: LostItem[] = [
     name: '명찰 (운영팀)',
     location: '동문광장 후미',
     date: '2026-05-29',
-    hasImage: true,
+    imageUrl: seedImage(15),
     description: '운영팀 김지민 명찰. 본인 발견 즉시 운영팀 채널로 회수 부탁드립니다.',
   },
 ];

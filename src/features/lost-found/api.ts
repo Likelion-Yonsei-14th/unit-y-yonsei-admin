@@ -21,7 +21,7 @@ async function createLostItemMock(input: CreateLostItemInput): Promise<LostItem>
     name: input.name.trim(),
     location: input.location.trim(),
     description: input.description?.trim() || undefined,
-    hasImage: input.hasImage,
+    imageUrl: input.imageUrl,
     date: todayString(),
   };
   memory.unshift(created);
@@ -37,7 +37,7 @@ async function updateLostItemMock(input: UpdateLostItemInput): Promise<LostItem>
     name: input.name.trim(),
     location: input.location.trim(),
     description: input.description?.trim() || undefined,
-    hasImage: input.hasImage,
+    imageUrl: input.imageUrl,
   };
   memory[idx] = next;
   return next;
