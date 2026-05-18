@@ -16,7 +16,7 @@ import {
 } from '@/features/notices/types';
 import { PageHeaderAction } from '@/components/common/page-header-action';
 import { TableSkeleton } from '@/components/common/table-skeleton';
-import { Markdown } from '@/components/common/markdown';
+import { Markdown, stripMarkdown } from '@/components/common/markdown';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -247,7 +247,7 @@ export function NoticePage() {
                             {notice.title}
                           </div>
                           <div className="text-xs text-muted-foreground mt-1 line-clamp-1">
-                            {notice.content}
+                            {stripMarkdown(notice.content)}
                           </div>
                         </button>
                       </td>
