@@ -224,18 +224,19 @@ export function PerformanceListPage() {
                       type="button"
                       onClick={() => handleSetLive(isLive ? null : p.teamId)}
                       disabled={setLive.isPending || (!isLive && !liveDesignatable)}
-                      title={
-                        !isLive && !liveDesignatable
-                          ? '노천극장 공연만 라이브로 지정할 수 있습니다.'
-                          : undefined
-                      }
-                      className={`w-full px-3 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 ${
+                      className={`w-full px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                         isLive
-                          ? 'border border-border bg-background text-foreground hover:bg-muted'
-                          : 'bg-primary text-primary-foreground hover:bg-ds-primary-pressed'
+                          ? 'border border-border bg-background text-foreground hover:bg-muted disabled:opacity-50'
+                          : liveDesignatable
+                            ? 'bg-primary text-primary-foreground hover:bg-ds-primary-pressed disabled:opacity-50'
+                            : 'cursor-not-allowed bg-muted text-ds-text-disabled'
                       }`}
                     >
-                      {isLive ? '라이브 해제' : '라이브로 지정'}
+                      {isLive
+                        ? '라이브 해제'
+                        : liveDesignatable
+                          ? '라이브로 지정'
+                          : '노천극장 공연만 지정 가능'}
                     </button>
                   </div>
                 )}
