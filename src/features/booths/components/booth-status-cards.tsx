@@ -60,7 +60,7 @@ interface Props {
  */
 export function BoothStatusCards({ boothInfoCompleted, onOpenBoothInfo }: Props) {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-8">
+    <div className="mb-8">
       <StatusCard
         title={
           <>

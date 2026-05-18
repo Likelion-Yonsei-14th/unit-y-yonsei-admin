@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '@/features/auth/store';
-import { getMyBooth, listBooths, setBoothReservable, updateMyBooth } from './api';
+import { getMyBooth, listBooths, updateMyBooth } from './api';
 import type { Booth } from './types';
 
 /** 로그인한 Booth 역할 사용자의 자기 부스 조회. boothId 없으면 enabled=false. */
@@ -30,19 +30,6 @@ export function useUpdateMyBooth() {
 
   return useMutation({
     mutationFn: (booth: Booth) => updateMyBooth(booth),
-    onSuccess: (data) => {
-      queryClient.setQueryData(['booths', 'me', user?.boothId], data);
-    },
-  });
-}
-
-/** 부스 운영 ON/OFF (isReservable) 단독 토글. */
-export function useSetBoothReservable() {
-  const user = useAuthStore((s) => s.user);
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: (input: { boothId: number; isReservable: boolean }) => setBoothReservable(input),
     onSuccess: (data) => {
       queryClient.setQueryData(['booths', 'me', user?.boothId], data);
     },

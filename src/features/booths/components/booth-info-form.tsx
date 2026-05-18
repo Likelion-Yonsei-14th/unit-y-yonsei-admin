@@ -50,7 +50,11 @@ export function BoothInfoForm({
   const [isFood, setIsFood] = useState(booth.isFood);
   const [instagram, setInstagram] = useState(booth.instagram);
   const [account, setAccount] = useState(booth.account);
-  const [representativeMenus, setRepresentativeMenus] = useState(booth.representativeMenus);
+  // 대표 메뉴는 쉼표 구분 텍스트 입력. 편집 중 자유로운 쉼표/공백 입력을 위해
+  // raw 문자열을 그대로 들고 있다가 저장 시점에만 string[] 로 파싱한다.
+  const [representativeMenusRaw, setRepresentativeMenusRaw] = useState(
+    booth.representativeMenus.join(', '),
+  );
   const [tags, setTags] = useState<string[]>(booth.tags);
 
   // 서버 데이터로 다시 채워질 때 form state 를 다시 hydrate.
@@ -67,7 +71,7 @@ export function BoothInfoForm({
     setIsFood(booth.isFood);
     setInstagram(booth.instagram);
     setAccount(booth.account);
-    setRepresentativeMenus(booth.representativeMenus);
+    setRepresentativeMenusRaw(booth.representativeMenus.join(', '));
     setTags(booth.tags);
   }, [booth]);
 
@@ -87,7 +91,10 @@ export function BoothInfoForm({
       instagram,
       account,
       isReservable,
-      representativeMenus,
+      representativeMenus: representativeMenusRaw
+        .split(',')
+        .map((m) => m.trim())
+        .filter(Boolean),
       tags,
     };
     updateMutation.mutate(next, {
@@ -437,20 +444,13 @@ export function BoothInfoForm({
               id="booth-representative-menus"
               type="text"
               placeholder="쉼표로 구분해 입력 (예: 치킨, 맥주)"
-              value={representativeMenus.join(', ')}
-              onChange={(e) =>
-                setRepresentativeMenus(
-                  e.target.value
-                    .split(',')
-                    .map((m) => m.trim())
-                    .filter(Boolean),
-                )
-              }
+              value={representativeMenusRaw}
+              onChange={(e) => setRepresentativeMenusRaw(e.target.value)}
               className={inputClass}
             />
-          ) : representativeMenus.length > 0 ? (
+          ) : booth.representativeMenus.length > 0 ? (
             <div id="booth-representative-menus" className={readonlyClass}>
-              {representativeMenus.join(', ')}
+              {booth.representativeMenus.join(', ')}
             </div>
           ) : (
             <div className="w-full px-4 py-3 border border-border rounded-lg bg-muted text-muted-foreground">
