@@ -12,6 +12,27 @@ import { FESTIVAL_DATES } from '@/features/booth-layout/sections';
 import { useAuth } from '@/features/auth/hooks';
 
 /**
+ * 라이브 표시용 펄스 점 — 방송 ON AIR 사인처럼 빨간 점에서 halo 가 퍼져나간다.
+ * 동작 민감 사용자(prefers-reduced-motion)에게는 정적인 점만 보이도록 motion-safe 게이트.
+ */
+function LiveDot({
+  size = 'h-3.5 w-3.5',
+  tone = 'bg-destructive',
+}: {
+  size?: string;
+  tone?: string;
+}) {
+  return (
+    <span className={`relative flex ${size}`} aria-hidden="true">
+      <span
+        className={`absolute inline-flex h-full w-full rounded-full ${tone} opacity-75 motion-safe:animate-ping`}
+      />
+      <span className={`relative inline-flex rounded-full ${tone} ${size}`} />
+    </span>
+  );
+}
+
+/**
  * Super/Master 용 전체 공연 목록 페이지.
  * 날짜 탭(5/27·28·29) × 스테이지 드롭다운(전체/개별) 으로 필터링, 시간 오름차순 정렬.
  * 카드 클릭 시 `/performance/:teamId` 상세로 이동.
@@ -74,13 +95,29 @@ export function PerformanceListPage() {
         </h1>
       </div>
 
-      {/* 현재 라이브 공연 배너 — Super 전용 */}
+      {/* 현재 라이브 공연 배너 — Super 전용. 라이브 지정 시 빨간 톤 + ON AIR 펄스로 강조. */}
       {canLive && (
-        <div className="bg-background rounded-2xl p-5 mb-6 shadow-sm border border-border flex flex-wrap items-center justify-between gap-3">
+        <div
+          className={`rounded-2xl p-5 mb-6 shadow-sm border flex flex-wrap items-center justify-between gap-3 transition-colors ${
+            liveTeamId != null
+              ? 'bg-ds-error-subtle border-destructive'
+              : 'bg-background border-border'
+          }`}
+        >
           <div className="flex items-center gap-3">
-            <Radio size={20} className="text-destructive" aria-hidden="true" />
+            {liveTeamId != null ? (
+              <LiveDot />
+            ) : (
+              <Radio size={20} className="text-muted-foreground" aria-hidden="true" />
+            )}
             <div>
-              <div className="text-sm text-muted-foreground">현재 라이브 공연</div>
+              <div
+                className={`text-sm font-semibold tracking-wide ${
+                  liveTeamId != null ? 'text-destructive' : 'text-muted-foreground'
+                }`}
+              >
+                {liveTeamId != null ? 'ON AIR' : '현재 라이브 공연'}
+              </div>
               <div className="font-semibold text-foreground">
                 {liveTeam ? liveTeam.teamName : '지정된 라이브 공연 없음'}
               </div>
@@ -187,10 +224,10 @@ export function PerformanceListPage() {
             return (
               <div
                 key={p.teamId}
-                className={`bg-background rounded-2xl shadow-sm border transition-all ${
+                className={`bg-background rounded-2xl border transition-all ${
                   isLive
-                    ? 'border-destructive'
-                    : 'border-border hover:border-primary hover:shadow-md'
+                    ? 'border-destructive ring-2 ring-destructive/30 shadow-md'
+                    : 'border-border shadow-sm hover:border-primary hover:shadow-md'
                 }`}
               >
                 <Link to={`/performance/${p.teamId}`} className="flex gap-4 p-5">
@@ -205,8 +242,9 @@ export function PerformanceListPage() {
                     <div className="flex items-center gap-2">
                       <span className="font-semibold text-foreground truncate">{p.teamName}</span>
                       {isLive && (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-destructive text-destructive-foreground text-xs font-semibold shrink-0">
-                          ● LIVE
+                        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-destructive text-destructive-foreground text-xs font-semibold shrink-0">
+                          <LiveDot size="h-1.5 w-1.5" tone="bg-destructive-foreground" />
+                          LIVE
                         </span>
                       )}
                     </div>
