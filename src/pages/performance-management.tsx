@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ChangeEvent } from 'react';
+import { useRef, useState, type ChangeEvent } from 'react';
 import { useParams, Link } from 'react-router';
 import {
   DndContext,
@@ -64,9 +64,6 @@ const PERFORMANCE_DATE_OPTIONS: { value: number; label: string }[] = [
 const dateLabel = (d: number | null): string =>
   PERFORMANCE_DATE_OPTIONS.find((o) => o.value === d)?.label ?? '-';
 
-/** 로컬에서 신규 추가한 셋리스트 행은 음수 임시 id 로 구분(서버 id 와 충돌 방지). */
-let tempSetlistSeq = -1;
-
 /**
  * 공연 상세/편집. 두 진입 경로:
  *   - `/performance/me`       — Performer 본인 공연 (useMyPerformance, 편집 가능)
@@ -123,6 +120,10 @@ export function PerformanceManagement() {
   // 직접 업로드 진행 상태 — 업로드 중 중복 클릭 차단.
   const [isUploading, setIsUploading] = useState(false);
   const uploadInputRef = useRef<HTMLInputElement>(null);
+
+  // 로컬에서 신규 추가한 셋리스트 행은 음수 임시 id 로 구분(서버 id 와 충돌 방지).
+  // 마운트 단위로 스코프 — 편집 세션 내에서 고유한 음수 id 를 발급한다.
+  const tempSetlistSeq = useRef(-1);
 
   // 편집 모드 진입 시 서버 데이터를 버퍼에 복사.
   const handleEdit = () => {
@@ -181,7 +182,7 @@ export function PerformanceManagement() {
     setEditingSetlist((prev) => [
       ...prev,
       {
-        id: tempSetlistSeq--,
+        id: tempSetlistSeq.current--,
         performanceId: performanceId ?? 0,
         songTitle: '',
         singerName: '',
@@ -245,6 +246,10 @@ export function PerformanceManagement() {
       }
 
       // 2) 셋리스트 diff.
+      // NOTE: 항목별 POST/PATCH/DELETE 를 순차 실행한다 — 비원자적(non-atomic).
+      // 중간 항목에서 실패하면 일부만 서버에 반영된 부분 저장 상태가 되고,
+      // 편집 버퍼는 여전히 전체를 보여준다(서버와 불일치). 백엔드에 일괄 저장
+      // 엔드포인트가 생기기 전까지의 한계.
       const serverIds = new Set(setlist.map((s) => s.id));
       const bufferIds = new Set(editingSetlist.filter((s) => s.id > 0).map((s) => s.id));
 

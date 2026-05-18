@@ -53,7 +53,9 @@ export function useMyPerformance() {
   const isPerformer = user?.role === 'Performer' && user.performanceTeamId != null;
 
   return useQuery({
-    queryKey: ['performances', 'me', user?.performanceTeamId],
+    // `/me` 는 단수형 엔드포인트라 id 가 필요 없다 — 정적 키.
+    // (performanceTeamId 는 enabled 게이트에만 쓰고 캐시 키엔 넣지 않는다.)
+    queryKey: ['performances', 'me'],
     queryFn: getMyPerformance,
     enabled: isPerformer,
   });
@@ -64,13 +66,12 @@ export function useMyPerformance() {
  * 성공 시 본인 공연 캐시를 직접 갱신하고 목록을 invalidate 한다.
  */
 export function useUpdateMyPerformance() {
-  const user = useAuthStore((s) => s.user);
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (patch: Partial<Performance>) => updateMyPerformance(patch),
     onSuccess: (data) => {
-      queryClient.setQueryData(['performances', 'me', user?.performanceTeamId], data);
+      queryClient.setQueryData(['performances', 'me'], data);
       queryClient.setQueryData(['performances', data.id], data);
       // 리스트 invalidation — 공연명/날짜/상태 등 리스트 표시 필드가 바뀔 수 있어.
       queryClient.invalidateQueries({ queryKey: ['performances'], exact: true });

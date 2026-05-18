@@ -4,7 +4,7 @@
  *
  * 일관성 매핑(부스/공연 mock 과 같은 ID 공간):
  *  - boothId 1-30  → mocks/booth-profile.ts 의 mockBoothsById[id]
- *  - performanceTeamId 1-25 → mocks/performances.ts 의 mockPerformanceDetailsById[id]
+ *  - performanceTeamId 1-25 → mocks/performances.ts 의 performances 배열 (공연 id)
  *  - 인증 가능한 계정은 features/auth/api.ts 의 MOCK_USERS 와 boothId/teamId 일치
  *    (booth1-3, 5, 7, 13, 15, 28 / performer1-2, 16, 23 등 — 자세한 건 auth/api.ts)
  *
@@ -251,7 +251,7 @@ export const mockUsers: MockUser[] = [
     { boothId: 29, boothName: '(미작성)', infoCompleted: false },
   ),
 
-  // ---- 공연팀 대표들 — performanceTeamId ↔ mockPerformanceDetailsById 매칭 ----
+  // ---- 공연팀 대표들 — performanceTeamId ↔ mocks/performances.ts 의 공연 id 매칭 ----
   u(
     200,
     'performer1',
