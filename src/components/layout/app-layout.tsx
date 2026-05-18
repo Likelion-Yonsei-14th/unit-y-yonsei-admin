@@ -125,8 +125,14 @@ export function AppLayout() {
           )}
         </button>
 
-        {/* 헤더 (로고) */}
-        <div className={`p-6 border-b border-border ${effectiveCollapsed ? 'px-3' : ''}`}>
+        {/* 헤더 (로고) — 클릭 시 대시보드로 이동 */}
+        <Link
+          to="/"
+          aria-label="대시보드로 이동"
+          className={`block p-6 border-b border-border transition-colors hover:bg-muted ${
+            effectiveCollapsed ? 'px-3' : ''
+          }`}
+        >
           {effectiveCollapsed ? (
             <div className="flex justify-center">
               <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center">
@@ -139,7 +145,7 @@ export function AppLayout() {
               <h1 className="ds-heading-2 text-primary">대동제 어드민</h1>
             </>
           )}
-        </div>
+        </Link>
 
         {/* 사용자 정보 */}
         {!effectiveCollapsed && user && (
@@ -342,7 +348,9 @@ export function AppLayout() {
           >
             <Menu size={20} />
           </button>
-          <span className="text-sm font-semibold text-foreground">대동제 어드민</span>
+          <Link to="/" className="text-sm font-semibold text-foreground">
+            대동제 어드민
+          </Link>
         </div>
         {/* outlet 래퍼는 flex-col + min-h-0 — 자식의 h-full / flex-1 캐스케이드가
             정확히 동작해야 하는 페이지(booth-layout 편집기, reservation-booth-picker
