@@ -234,8 +234,16 @@ export function BoothInfoForm({
           {isEditing ? (
             <textarea
               id="booth-description"
-              rows={4}
-              placeholder="부스를 소개하는 내용을 작성하세요"
+              rows={9}
+              placeholder={`아래 내용을 참고해 부스를 소개해주세요!
+
+부스 컨셉 및 소개
+판매 메뉴와 가격 안내
+진행 예정 이벤트 및 참여 방법
+예약 방법 및 운영 시간
+현장 주문/웨이팅 방법
+결제 가능 수단 안내
+방문 시 유의사항 및 공지사항`}
               value={boothDescription}
               onChange={(e) => setBoothDescription(e.target.value)}
               className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all resize-none"
