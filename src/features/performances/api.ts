@@ -1,122 +1,133 @@
 import { api } from '@/lib/api-client';
 import { env } from '@/lib/env';
-import { useAuthStore } from '@/features/auth/store';
-import { mockPerformanceDetails, mockPerformanceDetailsById } from '@/mocks/performances';
-import { fromPerformanceDetailPatch, toPerformanceDetail, toPerformanceListItem } from './mapper';
+import {
+  fromPerformancePatch,
+  toPerformance,
+  toPerformanceImage,
+  toPerformanceListItem,
+  toSetlistItem,
+} from './mapper';
 import type {
-  PerformanceDetail,
-  PerformanceDetailDTO,
+  Performance,
+  PerformanceDTO,
+  PerformanceImage,
+  PerformanceImageCreateDTO,
+  PerformanceImageDTO,
   PerformanceListItem,
   PerformanceListItemDTO,
+  SetlistCreateDTO,
+  SetlistItem,
+  SetlistItemDTO,
+  SetlistUpdateDTO,
 } from './types';
+import * as mock from '@/mocks/performances';
 
-// ---- Mock 구현 ----
-// 상세 mock 을 가공해 리스트 아이템을 파생. 네트워크 지연을 흉내내 스켈레톤·로딩 상태 검증.
-
-async function listPerformancesMock(): Promise<PerformanceListItem[]> {
-  await new Promise((r) => setTimeout(r, 200));
-  return mockPerformanceDetails.map((p) => ({
-    teamId: p.teamId,
-    teamName: p.teamName,
-    date: p.date,
-    stage: p.stage,
-    startTime: p.startTime,
-    endTime: p.endTime,
-    mainPhotoUrl: p.images.find((img) => img.isMain)?.url ?? null,
-  }));
-}
-
-async function getPerformanceMock(teamId: number): Promise<PerformanceDetail | null> {
-  await new Promise((r) => setTimeout(r, 150));
-  return mockPerformanceDetailsById[teamId] ?? null;
-}
-
-async function getMyPerformanceMock(): Promise<PerformanceDetail | null> {
-  await new Promise((r) => setTimeout(r, 150));
-  const user = useAuthStore.getState().user;
-  if (!user || user.role !== 'Performer' || user.performanceTeamId == null) return null;
-  return mockPerformanceDetailsById[user.performanceTeamId] ?? null;
-}
-
-/**
- * mock 구현은 in-memory 사전에 직접 머지해 같은 세션 동안 수정사항이 살아있게 한다.
- * 실제 백엔드 결정 전까지의 임시 — refetch 로 다시 mockPerformanceDetailsById 에서 읽으면
- * 같은 데이터를 받게 됨.
- */
-async function updatePerformanceMock(
-  teamId: number,
-  patch: Partial<PerformanceDetail>,
-): Promise<PerformanceDetail> {
-  await new Promise((r) => setTimeout(r, 200));
-  const existing = mockPerformanceDetailsById[teamId];
-  if (!existing) {
-    throw new Error(`mock: performance team ${teamId} not found`);
-  }
-  const next = { ...existing, ...patch, teamId };
-  mockPerformanceDetailsById[teamId] = next;
-  return next;
-}
-
-// ---- 라이브 공연 (현재 공연중 수동 지정) — mock ----
-// 단일 상태: 한 번에 한 팀만 라이브. mock 은 모듈 변수로 세션 동안 유지.
-let mockLiveTeamId: number | null = null;
-
-async function getLivePerformanceMock(): Promise<number | null> {
-  await new Promise((r) => setTimeout(r, 100));
-  return mockLiveTeamId;
-}
-
-async function setLivePerformanceMock(teamId: number | null): Promise<number | null> {
-  await new Promise((r) => setTimeout(r, 120));
-  mockLiveTeamId = teamId;
-  return mockLiveTeamId;
-}
-
-// ---- 실제 구현 ----
+// ---- real 구현 ----
+// 주의: 백엔드 PerformanceReadController 가 /api 프리픽스 누락 상태 → 백엔드 수정 후 동작.
 
 async function listPerformancesReal(): Promise<PerformanceListItem[]> {
   const dtos = await api.get<PerformanceListItemDTO[]>('/performances');
   return dtos.map(toPerformanceListItem);
 }
 
-async function getPerformanceReal(teamId: number): Promise<PerformanceDetail | null> {
-  const dto = await api.get<PerformanceDetailDTO>(`/performances/${teamId}`);
-  return toPerformanceDetail(dto);
+async function getPerformanceReal(id: number): Promise<Performance | null> {
+  const dto = await api.get<PerformanceDTO>(`/performances/${id}`);
+  return toPerformance(dto);
 }
 
-async function getMyPerformanceReal(): Promise<PerformanceDetail | null> {
-  const dto = await api.get<PerformanceDetailDTO>('/performances/me');
-  return toPerformanceDetail(dto);
+async function getMyPerformanceReal(): Promise<Performance | null> {
+  const dto = await api.get<PerformanceDTO>('/admin/performances/me');
+  return toPerformance(dto);
 }
 
-async function updatePerformanceReal(
-  teamId: number,
-  patch: Partial<PerformanceDetail>,
-): Promise<PerformanceDetail> {
-  // 백엔드 DTO 는 snake_case 라 camelCase Partial 을 그대로 보내면 필드가 무시될 수 있음.
-  // mapper 의 fromPerformanceDetailPatch 로 전송된 필드만 snake_case 로 매핑.
-  const dto = await api.put<PerformanceDetailDTO>(
-    `/performances/${teamId}`,
-    fromPerformanceDetailPatch(patch),
+async function updateMyPerformanceReal(patch: Partial<Performance>): Promise<Performance> {
+  const dto = await api.patch<PerformanceDTO>(
+    '/admin/performances/me',
+    fromPerformancePatch(patch),
   );
-  return toPerformanceDetail(dto);
+  return toPerformance(dto);
 }
 
+async function getPerformanceImagesReal(performanceId: number): Promise<PerformanceImage[]> {
+  const dtos = await api.get<PerformanceImageDTO[]>(`/performances/${performanceId}/images`);
+  return dtos.map(toPerformanceImage);
+}
+
+async function addPerformanceImageReal(
+  input: PerformanceImageCreateDTO,
+): Promise<PerformanceImage> {
+  const dto = await api.post<PerformanceImageDTO>('/admin/performances/me/images', input);
+  return toPerformanceImage(dto);
+}
+
+async function deletePerformanceImageReal(imageId: number): Promise<void> {
+  await api.delete(`/admin/performances/me/images/${imageId}`);
+}
+
+async function getSetlistReal(performanceId: number): Promise<SetlistItem[]> {
+  const dtos = await api.get<SetlistItemDTO[]>(`/performances/${performanceId}/setlists`);
+  return dtos.map(toSetlistItem);
+}
+
+async function addSetlistItemReal(input: SetlistCreateDTO): Promise<SetlistItem> {
+  const dto = await api.post<SetlistItemDTO>('/admin/performances/me/setlists', input);
+  return toSetlistItem(dto);
+}
+
+async function updateSetlistItemReal(
+  setlistId: number,
+  input: SetlistUpdateDTO,
+): Promise<SetlistItem> {
+  const dto = await api.patch<SetlistItemDTO>(
+    `/admin/performances/me/setlists/${setlistId}`,
+    input,
+  );
+  return toSetlistItem(dto);
+}
+
+async function deleteSetlistItemReal(setlistId: number): Promise<void> {
+  await api.delete(`/admin/performances/me/setlists/${setlistId}`);
+}
+
+// ---- 라이브 (백엔드 수동지정 엔드포인트 미구현 — 추가 예정) ----
+// 백엔드가 GET/PUT /performances/live 를 추가하기 전까지 real 은 사실상 미동작.
+// 스펙은 plan "범위 외" 절 참고.
 async function getLivePerformanceReal(): Promise<number | null> {
-  const res = await api.get<{ teamId: number | null }>('/performances/live');
-  return res.teamId;
+  const res = await api.get<{ performanceId: number | null }>('/performances/live');
+  return res.performanceId;
 }
 
-async function setLivePerformanceReal(teamId: number | null): Promise<number | null> {
-  const res = await api.put<{ teamId: number | null }>('/performances/live', { teamId });
-  return res.teamId;
+async function setLivePerformanceReal(performanceId: number | null): Promise<number | null> {
+  const res = await api.put<{ performanceId: number | null }>('/performances/live', {
+    performanceId,
+  });
+  return res.performanceId;
 }
 
 // ---- 분기 export ----
 
-export const listPerformances = env.USE_MOCK ? listPerformancesMock : listPerformancesReal;
-export const getPerformance = env.USE_MOCK ? getPerformanceMock : getPerformanceReal;
-export const getMyPerformance = env.USE_MOCK ? getMyPerformanceMock : getMyPerformanceReal;
-export const updatePerformance = env.USE_MOCK ? updatePerformanceMock : updatePerformanceReal;
-export const getLivePerformance = env.USE_MOCK ? getLivePerformanceMock : getLivePerformanceReal;
-export const setLivePerformance = env.USE_MOCK ? setLivePerformanceMock : setLivePerformanceReal;
+export const listPerformances = env.USE_MOCK ? mock.listPerformancesMock : listPerformancesReal;
+export const getPerformance = env.USE_MOCK ? mock.getPerformanceMock : getPerformanceReal;
+export const getMyPerformance = env.USE_MOCK ? mock.getMyPerformanceMock : getMyPerformanceReal;
+export const updateMyPerformance = env.USE_MOCK
+  ? mock.updateMyPerformanceMock
+  : updateMyPerformanceReal;
+export const getPerformanceImages = env.USE_MOCK
+  ? mock.getPerformanceImagesMock
+  : getPerformanceImagesReal;
+export const addPerformanceImage = env.USE_MOCK
+  ? mock.addPerformanceImageMock
+  : addPerformanceImageReal;
+export const deletePerformanceImage = env.USE_MOCK
+  ? mock.deletePerformanceImageMock
+  : deletePerformanceImageReal;
+export const getSetlist = env.USE_MOCK ? mock.getSetlistMock : getSetlistReal;
+export const addSetlistItem = env.USE_MOCK ? mock.addSetlistItemMock : addSetlistItemReal;
+export const updateSetlistItem = env.USE_MOCK ? mock.updateSetlistItemMock : updateSetlistItemReal;
+export const deleteSetlistItem = env.USE_MOCK ? mock.deleteSetlistItemMock : deleteSetlistItemReal;
+export const getLivePerformance = env.USE_MOCK
+  ? mock.getLivePerformanceMock
+  : getLivePerformanceReal;
+export const setLivePerformance = env.USE_MOCK
+  ? mock.setLivePerformanceMock
+  : setLivePerformanceReal;

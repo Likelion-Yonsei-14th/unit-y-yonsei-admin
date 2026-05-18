@@ -11,7 +11,8 @@ interface OwnableBooth {
   id: number;
 }
 interface OwnablePerformance {
-  teamId: number;
+  /** 공연 id — Performer 의 performanceTeamId 와 동일 식별자. */
+  id: number;
 }
 
 /**
@@ -47,7 +48,7 @@ export function useAuth() {
       if (!user || !perf) return false;
       if (hasPermission(user.role, 'performance.manage')) return true;
       if (hasPermission(user.role, 'performance.update.own')) {
-        return user.performanceTeamId === perf.teamId;
+        return user.performanceTeamId === perf.id;
       }
       return false;
     },

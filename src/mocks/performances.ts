@@ -1,192 +1,260 @@
 /**
- * Performance 도메인 mock 시드.
+ * Performance 도메인 mock 시드 + in-memory mock API.
  *
- * 세 날짜(5/27 송도, 5/28·5/29 신촌) × 스테이지(송도 / 백양로 / 노천극장) 에 팀 분산.
- * 작년(scent-yonsei) 운영 사례를 참고해 시간 슬롯을 촘촘히 잡아 리스트 UI 의 정렬·빈 시간대
- * 처리·필터 동작을 모두 점검할 수 있게 했다.
+ * 세 날짜(5/27 송도, 5/28·5/29 신촌) × 위치(언기도 앞 / 동문광장 / 노천극장) 에 공연 분산.
+ * `api.ts` 가 `import * as mock` 로 쓰는 mock 함수 전부를 여기서 export 한다.
+ * 세션 동안 살아있는 in-memory 구현 — 같은 세션 동안 수정사항이 유지된다.
  *
- * teamId=1 은 Performer 로그인 유저(performer1)가 바라보는 "내 공연팀". 이 파일의
- * 목록/상세 mock 간 식별자 일관성을 유지한다.
+ * id=1 은 Performer 로그인 유저(performer1, performanceTeamId=1) 의 "내 공연".
+ * id=1 은 라이브/current 데모용으로 `performanceStatus: 'ONGOING'`.
  */
 
+import { useAuthStore } from '@/features/auth/store';
 import type {
-  PerformanceDetail,
+  Performance,
+  PerformanceCategory,
   PerformanceImage,
+  PerformanceImageCreateDTO,
+  PerformanceListItem,
+  PerformanceStatus,
+  SetlistCreateDTO,
   SetlistItem,
+  SetlistUpdateDTO,
 } from '@/features/performances/types';
 
-const setlist = (...items: Array<[string, string]>): SetlistItem[] =>
-  items.map(([songName, artist], i) => ({ id: i + 1, order: i + 1, songName, artist }));
+const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-const PHOTO = (seed: string): PerformanceImage[] => [
-  { id: 1, url: `https://images.unsplash.com/${seed}?w=600&q=80`, isMain: true },
+// 공연 날짜 정수: 1=5/26 블루런 · 2=5/27 송도 · 3=5/28 신촌 · 4=5/29 신촌.
+const D_SONGDO = 2;
+const D_SINCHON_1 = 3;
+const D_SINCHON_2 = 4;
+
+// 위치(locationId / locationName) — 기존 stage 라벨 유지.
+const LOC = {
+  songdo: { id: 1, name: '언기도 앞' },
+  dongmoon: { id: 2, name: '동문광장' },
+  nocheon: { id: 3, name: '노천극장' },
+} as const;
+
+interface PerformanceSeed extends Performance {
+  /** 시드 전용 — 별도 sub-resource 로 분리되기 전 원본 데이터. */
+  _images: Array<{ imageUrl: string; imageType: 'PROFILE' | 'DETAIL' }>;
+  _setlist: Array<{ songTitle: string; singerName: string }>;
+}
+
+const photo = (seed: string): PerformanceSeed['_images'] => [
+  { imageUrl: `https://images.unsplash.com/${seed}?w=600&q=80`, imageType: 'PROFILE' },
 ];
 
-// 상세 시드: 리스트 아이템은 detail 로부터 파생해서 일관성 유지.
-export const mockPerformanceDetails: PerformanceDetail[] = [
+const songs = (...items: Array<[string, string]>): PerformanceSeed['_setlist'] =>
+  items.map(([songTitle, singerName]) => ({ songTitle, singerName }));
+
+interface RawPerformance {
+  id: number;
+  performanceName: string;
+  performanceDescription: string;
+  instagramUrl: string;
+  youtubeUrl: string;
+  performanceDate: number;
+  loc: (typeof LOC)[keyof typeof LOC];
+  startTime: string;
+  endTime: string;
+  category: PerformanceCategory;
+  status: PerformanceStatus;
+  images: PerformanceSeed['_images'];
+  setlist: PerformanceSeed['_setlist'];
+}
+
+const RAW: RawPerformance[] = [
   // ==== 5/27 송도 ============================================================
   {
-    teamId: 2,
-    teamName: '송도노인정양로원',
-    description: '송도 국제캠퍼스의 밤을 밝히는 인디 밴드. 잔잔한 발라드부터 신나는 록까지.',
+    id: 2,
+    performanceName: '송도노인정양로원',
+    performanceDescription:
+      '송도 국제캠퍼스의 밤을 밝히는 인디 밴드. 잔잔한 발라드부터 신나는 록까지.',
     instagramUrl: 'https://instagram.com/songdo_oldfolks',
     youtubeUrl: '',
-    date: '2026-05-27',
-    stage: 'songdo',
+    performanceDate: D_SONGDO,
+    loc: LOC.songdo,
     startTime: '19:00',
     endTime: '19:30',
-    images: PHOTO('photo-1470225620780-dba8ba36b745'),
-    setlist: setlist(['좋은 날', '아이유'], ['I Need You', '백예린']),
+    category: 'ARTIST',
+    status: 'SCHEDULED',
+    images: photo('photo-1470225620780-dba8ba36b745'),
+    setlist: songs(['좋은 날', '아이유'], ['I Need You', '백예린']),
   },
   {
-    teamId: 3,
-    teamName: '팔레트',
-    description: '다양한 장르를 조합해 연주하는 어쿠스틱 팀.',
+    id: 3,
+    performanceName: '팔레트',
+    performanceDescription: '다양한 장르를 조합해 연주하는 어쿠스틱 팀.',
     instagramUrl: '',
     youtubeUrl: '',
-    date: '2026-05-27',
-    stage: 'songdo',
+    performanceDate: D_SONGDO,
+    loc: LOC.songdo,
     startTime: '17:00',
     endTime: '17:30',
+    category: 'ARTIST',
+    status: 'SCHEDULED',
     images: [],
-    setlist: setlist(['좋니', '윤종신'], ['그게 너야', '폴킴']),
+    setlist: songs(['좋니', '윤종신'], ['그게 너야', '폴킴']),
   },
   {
-    teamId: 4,
-    teamName: 'Occlusion',
-    description: '록 사운드 기반의 5인조 밴드. 연세대 중앙 락밴드 동아리.',
+    id: 4,
+    performanceName: 'Occlusion',
+    performanceDescription: '록 사운드 기반의 5인조 밴드. 연세대 중앙 락밴드 동아리.',
     instagramUrl: 'https://instagram.com/occlusion_band',
     youtubeUrl: '',
-    date: '2026-05-27',
-    stage: 'songdo',
+    performanceDate: D_SONGDO,
+    loc: LOC.songdo,
     startTime: '21:30',
     endTime: '22:00',
-    images: PHOTO('photo-1493225457124-a3eb161ffa5f'),
-    setlist: setlist(
+    category: 'CLUB',
+    status: 'SCHEDULED',
+    images: photo('photo-1493225457124-a3eb161ffa5f'),
+    setlist: songs(
       ['Beautiful Stranger', '잔나비'],
       ['주저하는 연인들을 위해', '잔나비'],
       ['빨간 목도리', 'JANNABI'],
     ),
   },
   {
-    teamId: 11,
-    teamName: '하늘소리',
-    description: '연세대 합창단. 평화롭고 깊이 있는 무대.',
+    id: 11,
+    performanceName: '하늘소리',
+    performanceDescription: '연세대 합창단. 평화롭고 깊이 있는 무대.',
     instagramUrl: '',
     youtubeUrl: '',
-    date: '2026-05-27',
-    stage: 'songdo',
+    performanceDate: D_SONGDO,
+    loc: LOC.songdo,
     startTime: '17:30',
     endTime: '18:00',
+    category: 'CLUB',
+    status: 'SCHEDULED',
     images: [],
-    setlist: setlist(['낭만에 대하여', '최백호'], ['걱정말아요 그대', '들국화']),
+    setlist: songs(['낭만에 대하여', '최백호'], ['걱정말아요 그대', '들국화']),
   },
   {
-    teamId: 12,
-    teamName: 'Bluemoon',
-    description: '재즈 + 블루스 4인조.',
+    id: 12,
+    performanceName: 'Bluemoon',
+    performanceDescription: '재즈 + 블루스 4인조.',
     instagramUrl: '',
     youtubeUrl: '',
-    date: '2026-05-27',
-    stage: 'songdo',
+    performanceDate: D_SONGDO,
+    loc: LOC.songdo,
     startTime: '18:00',
     endTime: '18:30',
-    images: PHOTO('photo-1511671782779-c97d3d27a1d4'),
-    setlist: setlist(['Autumn Leaves', 'Eva Cassidy'], ['Fly Me to the Moon', 'Frank Sinatra']),
+    category: 'ARTIST',
+    status: 'SCHEDULED',
+    images: photo('photo-1511671782779-c97d3d27a1d4'),
+    setlist: songs(['Autumn Leaves', 'Eva Cassidy'], ['Fly Me to the Moon', 'Frank Sinatra']),
   },
   {
-    teamId: 13,
-    teamName: '네온하트',
-    description: '연세대 댄스 동아리. 신스팝 베이스 퍼포먼스.',
+    id: 13,
+    performanceName: '네온하트',
+    performanceDescription: '연세대 댄스 동아리. 신스팝 베이스 퍼포먼스.',
     instagramUrl: 'https://instagram.com/neonheart_yonsei',
     youtubeUrl: '',
-    date: '2026-05-27',
-    stage: 'songdo',
+    performanceDate: D_SONGDO,
+    loc: LOC.songdo,
     startTime: '20:00',
     endTime: '20:30',
-    images: PHOTO('photo-1493676304819-0d7a8d026dcf'),
-    setlist: setlist(['Sneakers', 'ITZY'], ['Cookie', 'NewJeans'], ['DDU-DU DDU-DU', 'BLACKPINK']),
+    category: 'CLUB',
+    status: 'SCHEDULED',
+    images: photo('photo-1493676304819-0d7a8d026dcf'),
+    setlist: songs(['Sneakers', 'ITZY'], ['Cookie', 'NewJeans'], ['DDU-DU DDU-DU', 'BLACKPINK']),
   },
   {
-    teamId: 14,
-    teamName: 'YAGV',
-    description: '연세대 어쿠스틱 보컬 그룹. 차분한 곡 위주.',
+    id: 14,
+    performanceName: 'YAGV',
+    performanceDescription: '연세대 어쿠스틱 보컬 그룹. 차분한 곡 위주.',
     instagramUrl: '',
     youtubeUrl: '',
-    date: '2026-05-27',
-    stage: 'songdo',
+    performanceDate: D_SONGDO,
+    loc: LOC.songdo,
     startTime: '20:30',
     endTime: '21:00',
+    category: 'CLUB',
+    status: 'SCHEDULED',
     images: [],
-    setlist: setlist(['오늘 헤어졌어요', '권진아'], ['헤어지자 말해요', '박재정']),
+    setlist: songs(['오늘 헤어졌어요', '권진아'], ['헤어지자 말해요', '박재정']),
   },
   {
-    teamId: 15,
-    teamName: '진영밴드',
-    description: '클래식 록 커버 5인조. 90년대 한국 록 헌정 무대.',
+    id: 15,
+    performanceName: '진영밴드',
+    performanceDescription: '클래식 록 커버 5인조. 90년대 한국 록 헌정 무대.',
     instagramUrl: '',
     youtubeUrl: '',
-    date: '2026-05-27',
-    stage: 'songdo',
+    performanceDate: D_SONGDO,
+    loc: LOC.songdo,
     startTime: '21:00',
     endTime: '21:30',
+    category: 'ARTIST',
+    status: 'SCHEDULED',
     images: [],
-    setlist: setlist(['이등병의 편지', '김광석'], ['그날들', '김광석']),
+    setlist: songs(['이등병의 편지', '김광석'], ['그날들', '김광석']),
   },
 
-  // ==== 5/28 백양로 ==========================================================
-  // teamId=1 은 performer1 로그인 매칭 — 위치는 그 팀의 실제 공연 날짜/스테이지(5/28 백양로 14:00).
+  // ==== 5/28 신촌 동문광장 ====================================================
+  // id=1 은 performer1 로그인 매칭. 라이브/current 데모용 ONGOING.
   {
-    teamId: 1,
-    teamName: '멋쟁이사자처럼 연세대',
-    description: '연세대학교 IT 창업 동아리. 2026년 대동제에서 열정적인 무대를 선보입니다!',
+    id: 1,
+    performanceName: '멋쟁이사자처럼 연세대',
+    performanceDescription:
+      '연세대학교 IT 창업 동아리. 2026년 대동제에서 열정적인 무대를 선보입니다!',
     instagramUrl: 'https://instagram.com/likelion_yonsei',
     youtubeUrl: 'https://youtube.com/likelion',
-    date: '2026-05-28',
-    stage: 'dongmoon',
+    performanceDate: D_SINCHON_1,
+    loc: LOC.dongmoon,
     startTime: '14:00',
     endTime: '14:30',
-    images: PHOTO('photo-1501386761578-eac5c94b800a'),
-    setlist: setlist(['Spring Day', 'BTS'], ['Next Level', 'aespa'], ['Dynamite', 'BTS']),
+    category: 'CLUB',
+    status: 'ONGOING',
+    images: photo('photo-1501386761578-eac5c94b800a'),
+    setlist: songs(['Spring Day', 'BTS'], ['Next Level', 'aespa'], ['Dynamite', 'BTS']),
   },
   {
-    teamId: 6,
-    teamName: '아침향기',
-    description: '매일 아침을 여는 어쿠스틱 밴드. 깨끗한 화성과 잔잔한 멜로디.',
+    id: 6,
+    performanceName: '아침향기',
+    performanceDescription: '매일 아침을 여는 어쿠스틱 밴드. 깨끗한 화성과 잔잔한 멜로디.',
     instagramUrl: 'https://instagram.com/morning_scent',
     youtubeUrl: '',
-    date: '2026-05-28',
-    stage: 'dongmoon',
+    performanceDate: D_SINCHON_1,
+    loc: LOC.dongmoon,
     startTime: '17:00',
     endTime: '17:15',
+    category: 'ARTIST',
+    status: 'SCHEDULED',
     images: [],
-    setlist: setlist(['그대로 있어주면 돼', '폴킴']),
+    setlist: songs(['그대로 있어주면 돼', '폴킴']),
   },
   {
-    teamId: 7,
-    teamName: '청불',
-    description: '청춘의 불꽃을 태우는 무대를 지향. 사이드 프로젝트 밴드.',
+    id: 7,
+    performanceName: '청불',
+    performanceDescription: '청춘의 불꽃을 태우는 무대를 지향. 사이드 프로젝트 밴드.',
     instagramUrl: '',
     youtubeUrl: '',
-    date: '2026-05-28',
-    stage: 'dongmoon',
+    performanceDate: D_SINCHON_1,
+    loc: LOC.dongmoon,
     startTime: '17:30',
     endTime: '17:45',
-    images: PHOTO('photo-1501612780327-45045538702b'),
-    setlist: setlist(['청춘', '김창완'], ['벚꽃 엔딩', '버스커버스커']),
+    category: 'ARTIST',
+    status: 'SCHEDULED',
+    images: photo('photo-1501612780327-45045538702b'),
+    setlist: songs(['청춘', '김창완'], ['벚꽃 엔딩', '버스커버스커']),
   },
   {
-    teamId: 16,
-    teamName: 'BTL',
-    description: '대형 메인 무대 헤드라이너. K-Pop 댄스 메들리.',
+    id: 16,
+    performanceName: 'BTL',
+    performanceDescription: '대형 메인 무대 헤드라이너. K-Pop 댄스 메들리.',
     instagramUrl: 'https://instagram.com/btl_yonsei',
     youtubeUrl: 'https://youtube.com/btl_yonsei',
-    date: '2026-05-28',
-    stage: 'dongmoon',
+    performanceDate: D_SINCHON_1,
+    loc: LOC.dongmoon,
     startTime: '18:00',
     endTime: '18:30',
-    images: PHOTO('photo-1493225457124-a3eb161ffa5f'),
-    setlist: setlist(
+    category: 'CLUB',
+    status: 'SCHEDULED',
+    images: photo('photo-1493225457124-a3eb161ffa5f'),
+    setlist: songs(
       ['Hype Boy', 'NewJeans'],
       ['LOVE DIVE', 'IVE'],
       ['ANTIFRAGILE', 'LE SSERAFIM'],
@@ -194,189 +262,401 @@ export const mockPerformanceDetails: PerformanceDetail[] = [
     ),
   },
   {
-    teamId: 17,
-    teamName: '우주산책',
-    description: '드림팝 4인조. 몽환적이고 따뜻한 무대.',
+    id: 17,
+    performanceName: '우주산책',
+    performanceDescription: '드림팝 4인조. 몽환적이고 따뜻한 무대.',
     instagramUrl: '',
     youtubeUrl: '',
-    date: '2026-05-28',
-    stage: 'dongmoon',
+    performanceDate: D_SINCHON_1,
+    loc: LOC.dongmoon,
     startTime: '19:00',
     endTime: '19:30',
+    category: 'ARTIST',
+    status: 'SCHEDULED',
     images: [],
-    setlist: setlist(['Galaxy', 'Bolbbalgan4'], ['우주를 줄게', '볼빨간사춘기']),
+    setlist: songs(['Galaxy', 'Bolbbalgan4'], ['우주를 줄게', '볼빨간사춘기']),
   },
   {
-    teamId: 18,
-    teamName: 'PURPLE',
-    description: '댄스 퍼포먼스 8인조. 화려한 군무.',
+    id: 18,
+    performanceName: 'PURPLE',
+    performanceDescription: '댄스 퍼포먼스 8인조. 화려한 군무.',
     instagramUrl: '',
     youtubeUrl: '',
-    date: '2026-05-28',
-    stage: 'dongmoon',
+    performanceDate: D_SINCHON_1,
+    loc: LOC.dongmoon,
     startTime: '20:00',
     endTime: '20:30',
+    category: 'CLUB',
+    status: 'SCHEDULED',
     images: [],
-    setlist: setlist(['Get a Guitar', 'RIIZE'], ['I AM', 'IVE'], ['Smart', 'LE SSERAFIM']),
+    setlist: songs(['Get a Guitar', 'RIIZE'], ['I AM', 'IVE'], ['Smart', 'LE SSERAFIM']),
   },
 
-  // ==== 5/28 노천극장 ========================================================
+  // ==== 5/28 신촌 노천극장 ====================================================
   {
-    teamId: 5,
-    teamName: '재즈필',
-    description: '연세대 중앙 재즈 동아리. 정통 빅밴드 사운드.',
+    id: 5,
+    performanceName: '재즈필',
+    performanceDescription: '연세대 중앙 재즈 동아리. 정통 빅밴드 사운드.',
     instagramUrl: 'https://instagram.com/jazzfeel_yonsei',
     youtubeUrl: '',
-    date: '2026-05-28',
-    stage: 'nocheon',
+    performanceDate: D_SINCHON_1,
+    loc: LOC.nocheon,
     startTime: '16:30',
     endTime: '16:45',
-    images: PHOTO('photo-1511671782779-c97d3d27a1d4'),
-    setlist: setlist(['Take Five', 'Dave Brubeck'], ['So What', 'Miles Davis']),
+    category: 'CLUB',
+    status: 'SCHEDULED',
+    images: photo('photo-1511671782779-c97d3d27a1d4'),
+    setlist: songs(['Take Five', 'Dave Brubeck'], ['So What', 'Miles Davis']),
   },
   {
-    teamId: 19,
-    teamName: '한울림',
-    description: '국악 + 사물놀이 융합 팀. 전통과 현대의 조화.',
+    id: 19,
+    performanceName: '한울림',
+    performanceDescription: '국악 + 사물놀이 융합 팀. 전통과 현대의 조화.',
     instagramUrl: '',
     youtubeUrl: '',
-    date: '2026-05-28',
-    stage: 'nocheon',
+    performanceDate: D_SINCHON_1,
+    loc: LOC.nocheon,
     startTime: '17:00',
     endTime: '17:15',
+    category: 'CLUB',
+    status: 'SCHEDULED',
     images: [],
-    setlist: setlist(['아리랑 변주', '국악원'], ['신모듬', '김대환']),
+    setlist: songs(['아리랑 변주', '국악원'], ['신모듬', '김대환']),
   },
   {
-    teamId: 20,
-    teamName: '마음소리',
-    description: 'A cappella 6인조. 사람 목소리만으로 만드는 풍성한 화성.',
+    id: 20,
+    performanceName: '마음소리',
+    performanceDescription: 'A cappella 6인조. 사람 목소리만으로 만드는 풍성한 화성.',
     instagramUrl: '',
     youtubeUrl: '',
-    date: '2026-05-28',
-    stage: 'nocheon',
+    performanceDate: D_SINCHON_1,
+    loc: LOC.nocheon,
     startTime: '17:30',
     endTime: '17:45',
+    category: 'ARTIST',
+    status: 'SCHEDULED',
     images: [],
-    setlist: setlist(['Lemon Tree', 'Fools Garden'], ['하루', 'BIBI']),
+    setlist: songs(['Lemon Tree', 'Fools Garden'], ['하루', 'BIBI']),
   },
   {
-    teamId: 21,
-    teamName: 'Lyrical',
-    description: '발라드 위주 보컬 트리오.',
+    id: 21,
+    performanceName: 'Lyrical',
+    performanceDescription: '발라드 위주 보컬 트리오.',
     instagramUrl: '',
     youtubeUrl: '',
-    date: '2026-05-28',
-    stage: 'nocheon',
+    performanceDate: D_SINCHON_1,
+    loc: LOC.nocheon,
     startTime: '18:00',
     endTime: '18:15',
+    category: 'ARTIST',
+    status: 'SCHEDULED',
     images: [],
-    setlist: setlist(['눈사람', '솔지'], ['이젠 안녕', '박효신']),
+    setlist: songs(['눈사람', '솔지'], ['이젠 안녕', '박효신']),
   },
 
-  // ==== 5/29 백양로 ==========================================================
+  // ==== 5/29 신촌 동문광장 ====================================================
   {
-    teamId: 10,
-    teamName: '페르세우스',
-    description: '정통 록 밴드 6인조. 창립 25년 연세대 락밴드 동아리.',
+    id: 10,
+    performanceName: '페르세우스',
+    performanceDescription: '정통 록 밴드 6인조. 창립 25년 연세대 락밴드 동아리.',
     instagramUrl: 'https://instagram.com/perseus_yonsei',
     youtubeUrl: '',
-    date: '2026-05-29',
-    stage: 'dongmoon',
+    performanceDate: D_SINCHON_2,
+    loc: LOC.dongmoon,
     startTime: '15:15',
     endTime: '15:30',
-    images: PHOTO('photo-1471478331149-c72f17e33c73'),
-    setlist: setlist(['일어나', '김광석'], ['벼랑 끝에 서서', '머쉬베놈']),
+    category: 'CLUB',
+    status: 'SCHEDULED',
+    images: photo('photo-1471478331149-c72f17e33c73'),
+    setlist: songs(['일어나', '김광석'], ['벼랑 끝에 서서', '머쉬베놈']),
   },
   {
-    teamId: 22,
-    teamName: 'Echo',
-    description: '신예 4인조 밴드. 시티팝 + 인디록.',
+    id: 22,
+    performanceName: 'Echo',
+    performanceDescription: '신예 4인조 밴드. 시티팝 + 인디록.',
     instagramUrl: '',
     youtubeUrl: '',
-    date: '2026-05-29',
-    stage: 'dongmoon',
+    performanceDate: D_SINCHON_2,
+    loc: LOC.dongmoon,
     startTime: '16:00',
     endTime: '16:30',
+    category: 'ARTIST',
+    status: 'SCHEDULED',
     images: [],
-    setlist: setlist(['시티팝', 'Yukika'], ['Plastic Love', 'Mariya Takeuchi']),
+    setlist: songs(['시티팝', 'Yukika'], ['Plastic Love', 'Mariya Takeuchi']),
   },
   {
-    teamId: 23,
-    teamName: 'KOMI Squad',
-    description: 'K-Pop 댄스 동아리. 9인조 군무.',
+    id: 23,
+    performanceName: 'KOMI Squad',
+    performanceDescription: 'K-Pop 댄스 동아리. 9인조 군무.',
     instagramUrl: 'https://instagram.com/komi_squad',
     youtubeUrl: '',
-    date: '2026-05-29',
-    stage: 'dongmoon',
+    performanceDate: D_SINCHON_2,
+    loc: LOC.dongmoon,
     startTime: '18:00',
     endTime: '18:30',
-    images: PHOTO('photo-1485178575877-1a13bf489dfe'),
-    setlist: setlist(['DRAMA', 'aespa'], ['UNFORGIVEN', 'LE SSERAFIM'], ['Magnetic', 'ILLIT']),
+    category: 'CLUB',
+    status: 'SCHEDULED',
+    images: photo('photo-1485178575877-1a13bf489dfe'),
+    setlist: songs(['DRAMA', 'aespa'], ['UNFORGIVEN', 'LE SSERAFIM'], ['Magnetic', 'ILLIT']),
   },
   {
-    teamId: 24,
-    teamName: '연세 인디 콜라보',
-    description: '연세대 출신 인디뮤지션 다수가 모여 만든 일회성 무대.',
+    id: 24,
+    performanceName: '연세 인디 콜라보',
+    performanceDescription: '연세대 출신 인디뮤지션 다수가 모여 만든 일회성 무대.',
     instagramUrl: '',
     youtubeUrl: '',
-    date: '2026-05-29',
-    stage: 'dongmoon',
+    performanceDate: D_SINCHON_2,
+    loc: LOC.dongmoon,
     startTime: '19:30',
     endTime: '20:30',
+    category: 'ARTIST',
+    status: 'SCHEDULED',
     images: [],
-    setlist: setlist(
+    setlist: songs(
       ['Antifreeze', '검정치마'],
       ['이게 사랑일까', '브로콜리너마저'],
       ['뜨거운 안녕', '쟈 니브로'],
     ),
   },
 
-  // ==== 5/29 노천극장 ========================================================
+  // ==== 5/29 신촌 노천극장 ====================================================
   {
-    teamId: 8,
-    teamName: 'SoWhat',
-    description: '실용음악과 학생 연합 프로젝트 팀.',
+    id: 8,
+    performanceName: 'SoWhat',
+    performanceDescription: '실용음악과 학생 연합 프로젝트 팀.',
     instagramUrl: '',
     youtubeUrl: '',
-    date: '2026-05-29',
-    stage: 'nocheon',
+    performanceDate: D_SINCHON_2,
+    loc: LOC.nocheon,
     startTime: '16:00',
     endTime: '16:15',
+    category: 'ARTIST',
+    status: 'SCHEDULED',
     images: [],
-    setlist: setlist(['So What', '루카스 그라함']),
+    setlist: songs(['So What', '루카스 그라함']),
   },
   {
-    teamId: 9,
-    teamName: 'FEVER',
-    description: '댄스 팀. 90년대 K-Pop 헌정.',
+    id: 9,
+    performanceName: 'FEVER',
+    performanceDescription: '댄스 팀. 90년대 K-Pop 헌정.',
     instagramUrl: '',
     youtubeUrl: '',
-    date: '2026-05-29',
-    stage: 'nocheon',
+    performanceDate: D_SINCHON_2,
+    loc: LOC.nocheon,
     startTime: '16:30',
     endTime: '16:45',
-    images: PHOTO('photo-1485178575877-1a13bf489dfe'),
-    setlist: setlist(['CANDY', 'H.O.T'], ['Spotlight', 'JJ Lin']),
+    category: 'CLUB',
+    status: 'SCHEDULED',
+    images: photo('photo-1485178575877-1a13bf489dfe'),
+    setlist: songs(['CANDY', 'H.O.T'], ['Spotlight', 'JJ Lin']),
   },
   {
-    teamId: 25,
-    teamName: '오즈',
-    description: '연세 윈드 앙상블 일부 멤버. 가벼운 클래식 연주.',
+    id: 25,
+    performanceName: '오즈',
+    performanceDescription: '연세 윈드 앙상블 일부 멤버. 가벼운 클래식 연주.',
     instagramUrl: '',
     youtubeUrl: '',
-    date: '2026-05-29',
-    stage: 'nocheon',
+    performanceDate: D_SINCHON_2,
+    loc: LOC.nocheon,
     startTime: '17:00',
     endTime: '17:15',
+    category: 'CLUB',
+    status: 'SCHEDULED',
     images: [],
-    setlist: setlist(
+    setlist: songs(
       ['Pirates of the Caribbean', 'Hans Zimmer'],
       ["How Far I'll Go", "Auli'i Cravalho"],
     ),
   },
 ];
 
-export const mockPerformanceDetailsById: Record<number, PerformanceDetail> = Object.fromEntries(
-  mockPerformanceDetails.map((p) => [p.teamId, p]),
+// ---- in-memory 스토어 ----
+// RAW 를 펼쳐 공연 본문 / 이미지 / 셋리스트 세 테이블로 분리해 보관.
+
+const performances: Performance[] = RAW.map((r) => ({
+  id: r.id,
+  performanceName: r.performanceName,
+  lineupName: r.performanceName,
+  performanceDescription: r.performanceDescription,
+  performanceDate: r.performanceDate,
+  startTime: r.startTime,
+  endTime: r.endTime,
+  performanceCategory: r.category,
+  performanceStatus: r.status,
+  locationId: r.loc.id,
+  locationName: r.loc.name,
+  instagramUrl: r.instagramUrl,
+  youtubeUrl: r.youtubeUrl,
+}));
+
+// 이미지/셋리스트 id 시퀀스 — 시드 전부 펼친 뒤 다음 값에서 이어 발급.
+let nextImageId = 1;
+let nextSetlistId = 1;
+
+const images: PerformanceImage[] = RAW.flatMap((r) =>
+  r.images.map((img, i) => ({
+    id: nextImageId++,
+    performanceId: r.id,
+    imageUrl: img.imageUrl,
+    imageOrder: i + 1,
+    imageType: img.imageType,
+  })),
 );
+
+const setlists: SetlistItem[] = RAW.flatMap((r) =>
+  r.setlist.map((s, i) => ({
+    id: nextSetlistId++,
+    performanceId: r.id,
+    songTitle: s.songTitle,
+    singerName: s.singerName,
+    songOrder: i + 1,
+    note: '',
+  })),
+);
+
+/** 로그인 유저의 본인 공연 id. Performer 가 아니면 null. */
+function myPerformanceId(): number | null {
+  const user = useAuthStore.getState().user;
+  if (!user || user.role !== 'Performer' || user.performanceTeamId == null) return null;
+  return user.performanceTeamId;
+}
+
+const toListItem = (p: Performance): PerformanceListItem => ({
+  id: p.id,
+  performanceName: p.performanceName,
+  lineupName: p.lineupName,
+  performanceDate: p.performanceDate,
+  startTime: p.startTime,
+  endTime: p.endTime,
+  performanceCategory: p.performanceCategory,
+  performanceStatus: p.performanceStatus,
+  locationId: p.locationId,
+  locationName: p.locationName,
+});
+
+// ---- 공연 본문 mock ----
+
+export async function listPerformancesMock(): Promise<PerformanceListItem[]> {
+  await delay(200);
+  return performances.map(toListItem);
+}
+
+export async function getPerformanceMock(id: number): Promise<Performance | null> {
+  await delay(150);
+  return performances.find((p) => p.id === id) ?? null;
+}
+
+export async function getMyPerformanceMock(): Promise<Performance | null> {
+  await delay(150);
+  const id = myPerformanceId();
+  if (id == null) return null;
+  return performances.find((p) => p.id === id) ?? null;
+}
+
+export async function updateMyPerformanceMock(patch: Partial<Performance>): Promise<Performance> {
+  await delay(200);
+  const id = myPerformanceId();
+  if (id == null) throw new Error('mock: 본인 공연이 없습니다');
+  const idx = performances.findIndex((p) => p.id === id);
+  if (idx < 0) throw new Error(`mock: performance ${id} not found`);
+  const next = { ...performances[idx], ...patch, id };
+  performances[idx] = next;
+  return next;
+}
+
+// ---- 이미지 mock ----
+
+export async function getPerformanceImagesMock(performanceId: number): Promise<PerformanceImage[]> {
+  await delay(120);
+  return images
+    .filter((img) => img.performanceId === performanceId)
+    .sort((a, b) => a.imageOrder - b.imageOrder);
+}
+
+export async function addPerformanceImageMock(
+  input: PerformanceImageCreateDTO,
+): Promise<PerformanceImage> {
+  await delay(150);
+  const id = myPerformanceId();
+  if (id == null) throw new Error('mock: 본인 공연이 없습니다');
+  const created: PerformanceImage = {
+    id: nextImageId++,
+    performanceId: id,
+    imageUrl: input.imageUrl,
+    imageOrder: input.imageOrder,
+    imageType: input.imageType,
+  };
+  images.push(created);
+  return created;
+}
+
+export async function deletePerformanceImageMock(imageId: number): Promise<void> {
+  await delay(120);
+  const idx = images.findIndex((img) => img.id === imageId);
+  if (idx >= 0) images.splice(idx, 1);
+}
+
+// ---- 셋리스트 mock ----
+
+export async function getSetlistMock(performanceId: number): Promise<SetlistItem[]> {
+  await delay(120);
+  return setlists
+    .filter((s) => s.performanceId === performanceId)
+    .sort((a, b) => a.songOrder - b.songOrder);
+}
+
+export async function addSetlistItemMock(input: SetlistCreateDTO): Promise<SetlistItem> {
+  await delay(150);
+  const id = myPerformanceId();
+  if (id == null) throw new Error('mock: 본인 공연이 없습니다');
+  const created: SetlistItem = {
+    id: nextSetlistId++,
+    performanceId: id,
+    songTitle: input.songTitle,
+    singerName: input.singerName,
+    songOrder: input.songOrder,
+    note: input.note ?? '',
+  };
+  setlists.push(created);
+  return created;
+}
+
+export async function updateSetlistItemMock(
+  setlistId: number,
+  input: SetlistUpdateDTO,
+): Promise<SetlistItem> {
+  await delay(150);
+  const idx = setlists.findIndex((s) => s.id === setlistId);
+  if (idx < 0) throw new Error(`mock: setlist ${setlistId} not found`);
+  const next: SetlistItem = {
+    ...setlists[idx],
+    songTitle: input.songTitle,
+    singerName: input.singerName,
+    songOrder: input.songOrder,
+    note: input.note ?? '',
+  };
+  setlists[idx] = next;
+  return next;
+}
+
+export async function deleteSetlistItemMock(setlistId: number): Promise<void> {
+  await delay(120);
+  const idx = setlists.findIndex((s) => s.id === setlistId);
+  if (idx >= 0) setlists.splice(idx, 1);
+}
+
+// ---- 라이브 공연 (수동 지정) mock ----
+// 단일 상태: 한 번에 한 공연만 라이브. 모듈 변수로 세션 동안 유지.
+let mockLivePerformanceId: number | null = null;
+
+export async function getLivePerformanceMock(): Promise<number | null> {
+  await delay(100);
+  return mockLivePerformanceId;
+}
+
+export async function setLivePerformanceMock(id: number | null): Promise<number | null> {
+  await delay(120);
+  mockLivePerformanceId = id;
+  return mockLivePerformanceId;
+}

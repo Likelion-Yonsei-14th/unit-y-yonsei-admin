@@ -9,7 +9,27 @@ import { createUserSchema, type CreateUserFormValues } from '@/features/users/sc
 import type { Role } from '@/types/role';
 import { FESTIVAL_DATES, MAP_SECTIONS } from '@/features/booth-layout/sections';
 import type { MapSectionId } from '@/features/booth-layout/types';
-import { PERFORMANCE_STAGES, type PerformanceStage } from '@/features/performances/types';
+
+/**
+ * 신규 Performer 계정 발급 시 초기 배정용 스테이지 메타.
+ * `users/schema.ts` 의 `performanceStage` enum(`songdo|dongmoon|nocheon`)과 1:1.
+ * 공연 도메인 모델은 백엔드 정합 후 `locationId`/`locationName` 으로 장소를 다루므로
+ * 이 상수는 어드민 계정 발급 폼 전용이다.
+ */
+type PerformerStageId = 'songdo' | 'dongmoon' | 'nocheon';
+
+interface PerformerStageMeta {
+  id: PerformerStageId;
+  label: string;
+  /** 해당 스테이지가 운영되는 날짜 (YYYY-MM-DD). */
+  dates: string[];
+}
+
+const PERFORMER_STAGES: Record<PerformerStageId, PerformerStageMeta> = {
+  songdo: { id: 'songdo', label: '언기도 앞', dates: ['2026-05-27'] },
+  dongmoon: { id: 'dongmoon', label: '동문광장', dates: ['2026-05-28', '2026-05-29'] },
+  nocheon: { id: 'nocheon', label: '노천극장', dates: ['2026-05-28', '2026-05-29'] },
+};
 
 const PERMISSION_OPTIONS: Array<{
   value: Role;
@@ -81,9 +101,9 @@ export function CreateAdmin() {
   // 권한이 Booth↔Performer 로 바뀌면 다른 권한의 운영 정보가 남아 있어도 보내지 않으니
   // (mapper 가 권한별로 가지치기) UI 만 정리. 펼침 상태도 권한 변경 시 reset.
   const performanceDate = watch('performanceDate');
-  const availablePerformanceStages = (
-    Object.values(PERFORMANCE_STAGES) as (typeof PERFORMANCE_STAGES)[PerformanceStage][]
-  ).filter((s) => !performanceDate || s.dates.includes(performanceDate));
+  const availablePerformanceStages = Object.values(PERFORMER_STAGES).filter(
+    (s) => !performanceDate || s.dates.includes(performanceDate),
+  );
 
   const onSubmit = (values: CreateUserFormValues) => {
     createMutation.mutate(values, {
@@ -494,10 +514,7 @@ export function CreateAdmin() {
                                   setValue('performanceDate', d);
                                   // 날짜 변경 시 기존 stage 가 그 날짜에 운영되지 않으면 reset.
                                   const cur = watch('performanceStage');
-                                  if (
-                                    cur &&
-                                    !PERFORMANCE_STAGES[cur as PerformanceStage].dates.includes(d)
-                                  ) {
+                                  if (cur && !PERFORMER_STAGES[cur].dates.includes(d)) {
                                     setValue('performanceStage', undefined);
                                   }
                                 }

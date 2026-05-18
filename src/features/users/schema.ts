@@ -53,7 +53,7 @@ export const createUserSchema = z
     boothLocationNote: z.string().optional(),
     /** Performer 공연 일자(YYYY-MM-DD). FESTIVAL_DATES 단일 소스 사용. */
     performanceDate: z.enum(FESTIVAL_DATE_ENUM).optional(),
-    /** Performer 스테이지 — PerformanceStage 와 일치. */
+    /** Performer 초기 배정 스테이지 — create-admin 의 PERFORMER_STAGES 와 일치. */
     performanceStage: z.enum(['songdo', 'dongmoon', 'nocheon']).optional(),
     /** Performer 시작 시각 (HH:MM, 24h). */
     performanceStartTime: z.string().optional(),
