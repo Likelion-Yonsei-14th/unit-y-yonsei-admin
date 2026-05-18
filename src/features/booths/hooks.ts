@@ -35,3 +35,17 @@ export function useUpdateMyBooth() {
     },
   });
 }
+
+/**
+ * 임의 부스 전체 저장 (PUT). 편집기에서 다른 부스의 locationId 를 바꿀 때 사용.
+ * api 의 updateMyBooth 는 booth.id 로 PUT 하므로 본인/타인 구분이 없다.
+ */
+export function useUpdateBooth() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (booth: Booth) => updateMyBooth(booth),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['booths'] });
+    },
+  });
+}
