@@ -11,42 +11,47 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import {
-  usePlacements,
-  useCreatePlacement,
-  useUpdatePlacement,
-  useDeletePlacement,
-  useCopyPlacements,
-  useResetSection,
+  useMapLocations,
+  useCreateMapLocation,
+  useUpdateMapLocation,
+  useDeleteMapLocation,
 } from '@/features/booth-layout/hooks';
+import { useUpdateBooth } from '@/features/booths/hooks';
 import {
   FESTIVAL_DATES,
   MAP_SECTIONS,
   sectionsValidFor,
+  sectionForSector,
+  dayForDate,
   type FestivalDate,
 } from '@/features/booth-layout/sections';
-import type { BoothPlacement, MapSectionId } from '@/features/booth-layout/types';
+import {
+  DEFAULT_BOX_SIZE,
+  type MapLocation,
+  type MapSectionId,
+  type PlacementBox,
+} from '@/features/booth-layout/types';
 import type { Booth } from '@/features/booths/types';
 import { PlacementToolbar } from './placement-toolbar';
 import { PlacementList } from './placement-list';
 import { PlacementEditorCanvas } from './placement-editor-canvas';
 import { usePlacementUndo } from '@/features/booth-layout/hooks/use-placement-undo';
-import { placementStorage } from '@/features/booth-layout/storage';
-import { exportPlacementsAsJson } from '@/features/booth-layout/utils/export-placements';
 import { clamp } from '@/features/booth-layout/utils/clamp';
 
-const DEFAULT_SIZE = { width: 5, height: 3 };
+const DEFAULT_SIZE = DEFAULT_BOX_SIZE;
 
-function previousDateOf(date: FestivalDate): FestivalDate | null {
-  const idx = FESTIVAL_DATES.indexOf(date);
-  return idx > 0 ? FESTIVAL_DATES[idx - 1] : null;
-}
-
-function nextAvailableBoothNumber(existing: BoothPlacement[]): string {
-  const used = new Set(existing.map((p) => p.boothNumber));
-  for (let n = 1; n <= 1000; n++) {
-    if (!used.has(String(n))) return String(n);
-  }
-  return `${Date.now()}`;
+/** MapLocation + Booth → PlacementBox 뷰모델. */
+function toBox(loc: MapLocation, booth: Booth): PlacementBox {
+  return {
+    locationId: loc.id,
+    boothId: booth.id,
+    boothNumber: String(booth.location ?? '?'),
+    section: sectionForSector[loc.sector],
+    x: loc.mapX,
+    y: loc.mapY,
+    width: loc.width ?? DEFAULT_SIZE.width,
+    height: loc.height ?? DEFAULT_SIZE.height,
+  };
 }
 
 export interface PlacementEditorProps {
@@ -58,64 +63,86 @@ export function PlacementEditor({ booths }: PlacementEditorProps) {
   const [selectedDate, setSelectedDate] = useState<FestivalDate>(FESTIVAL_DATES[0]);
   const validSections = useMemo(() => sectionsValidFor(selectedDate), [selectedDate]);
   const [selectedSection, setSelectedSection] = useState<MapSectionId>(validSections[0]);
-  // selectedBoothId 는 의도적으로 날짜/섹션 전환에서 유지된다 — 사용자가 한 운영자의
-  // 자리들을 여러 (date, section) 에 걸쳐 연속으로 배치하는 흐름을 지원. 반면
-  // selectedPlacementId 는 특정 row 를 가리키므로 컨텍스트 전환 시 해제된다.
   const [selectedBoothId, setSelectedBoothId] = useState<number | null>(null);
-  const [selectedPlacementId, setSelectedPlacementId] = useState<number | null>(null);
-  /** 좌측 리스트 hover → 캔버스 핀 ghost highlight 동기화. select 와 별도 채널. */
+  const [selectedLocationId, setSelectedLocationId] = useState<number | null>(null);
   const [hoveredBoothId, setHoveredBoothId] = useState<number | null>(null);
   const [stickySize, setStickySize] = useState<{ width: number; height: number }>(DEFAULT_SIZE);
-  // 추가 모드 — 기본 OFF. 빈 곳 클릭이 의도치 않게 자리를 만드는 오작동 방지.
   const [isAddMode, setIsAddMode] = useState<boolean>(false);
-  // 파괴적 액션 확인 다이얼로그 pending 상태 — 코드베이스 다른 페이지의 패턴과 동일.
-  const [pendingDelete, setPendingDelete] = useState<BoothPlacement | null>(null);
-  const [pendingCopy, setPendingCopy] = useState<boolean>(false);
-  const [pendingReset, setPendingReset] = useState<boolean>(false);
+  const [pendingDelete, setPendingDelete] = useState<PlacementBox | null>(null);
 
-  // 날짜 바뀌면 섹션도 첫 유효 섹션으로 리셋, 선택도 해제.
   const onDateChange = (d: FestivalDate) => {
     setSelectedDate(d);
-    const first = sectionsValidFor(d)[0];
-    setSelectedSection(first);
-    setSelectedPlacementId(null);
+    setSelectedSection(sectionsValidFor(d)[0]);
+    setSelectedLocationId(null);
   };
 
-  // 만일 섹션이 유효하지 않게 된 경우 (예: 5/27 → 5/28 전환) 보정.
   useEffect(() => {
-    if (!validSections.includes(selectedSection)) {
-      setSelectedSection(validSections[0]);
-    }
+    if (!validSections.includes(selectedSection)) setSelectedSection(validSections[0]);
   }, [selectedDate, selectedSection, validSections]);
 
-  const placementsQuery = usePlacements(selectedDate);
-  const placementsInSection = useMemo(
-    () => (placementsQuery.data ?? []).filter((p) => p.section === selectedSection),
-    [placementsQuery.data, selectedSection],
-  );
+  const locationsQuery = useMapLocations();
 
-  /** 캔버스 핀 hover tooltip 용 booth id → Booth lookup. */
   const boothById = useMemo(() => {
     const m = new Map<number, Booth>();
     for (const b of booths) m.set(b.id, b);
     return m;
   }, [booths]);
 
+  /** locationId → Booth 역참조 (1:1). 첫 부스만 채택, 둘 이상이면 경고. */
+  const boothByLocationId = useMemo(() => {
+    const m = new Map<number, Booth>();
+    for (const b of booths) {
+      if (b.locationId == null) continue;
+      if (m.has(b.locationId)) {
+        console.warn(
+          `MapLocation ${b.locationId} 를 부스 ${m.get(b.locationId)!.id}, ${b.id} 가 공유 — 1:1 위반. 첫 부스만 표시.`,
+        );
+        continue;
+      }
+      m.set(b.locationId, b);
+    }
+    return m;
+  }, [booths]);
+
+  /** 모든 (배치된) PlacementBox. */
+  const allBoxes = useMemo<PlacementBox[]>(() => {
+    const locs = locationsQuery.data ?? [];
+    const boxes: PlacementBox[] = [];
+    for (const loc of locs) {
+      const booth = boothByLocationId.get(loc.id);
+      if (booth) boxes.push(toBox(loc, booth));
+    }
+    return boxes;
+  }, [locationsQuery.data, boothByLocationId]);
+
+  /** 현재 (날짜, 섹션) 박스. */
+  const selectedDay = dayForDate(selectedDate);
+  const boxesInSection = useMemo(
+    () =>
+      allBoxes.filter(
+        (b) => b.section === selectedSection && boothById.get(b.boothId)?.date === selectedDay,
+      ),
+    [allBoxes, selectedSection, selectedDay, boothById],
+  );
+
+  /** 이 섹션에 배치된 부스 id 집합 — PlacementList 검증 패널용. */
+  const placedBoothIds = useMemo(
+    () => new Set(boxesInSection.map((b) => b.boothId)),
+    [boxesInSection],
+  );
+
   const section = MAP_SECTIONS[selectedSection];
 
-  const createMut = useCreatePlacement();
-  const updateMut = useUpdatePlacement();
-  const deleteMut = useDeletePlacement();
-  const copyMut = useCopyPlacements();
-  const resetMut = useResetSection();
+  const createMut = useCreateMapLocation();
+  const updateMut = useUpdateMapLocation();
+  const deleteMut = useDeleteMapLocation();
+  const updateBoothMut = useUpdateBooth();
   const { recordUndo } = usePlacementUndo();
 
-  // 핀 select 시 그 핀 크기를 stickySize 로 채택 — "클릭=복사, 빈 곳 클릭=붙여넣기"
-  // 멘탈 모델 지원. null(해제) 일 땐 stickySize 손대지 않는다.
-  const handleSelectPlacement = (id: number | null) => {
-    setSelectedPlacementId(id);
+  const handleSelectLocation = (id: number | null) => {
+    setSelectedLocationId(id);
     if (id != null) {
-      const target = placementsInSection.find((p) => p.id === id);
+      const target = boxesInSection.find((b) => b.locationId === id);
       if (target) setStickySize({ width: target.width, height: target.height });
     }
   };
@@ -125,42 +152,38 @@ export function PlacementEditor({ booths }: PlacementEditorProps) {
       toast.warning('좌측에서 운영자를 먼저 선택해 주세요.');
       return;
     }
-    const number = nextAvailableBoothNumber(placementsInSection);
+    const booth = boothById.get(selectedBoothId);
+    if (!booth) return;
+    if (booth.locationId != null) {
+      toast.warning('이미 배치된 부스입니다. 기존 자리를 옮기거나 삭제 후 다시 배치하세요.');
+      return;
+    }
     setStickySize({ width: input.width, height: input.height });
     try {
-      const created = await createMut.mutateAsync({
-        boothId: selectedBoothId,
-        date: selectedDate,
-        section: selectedSection,
-        boothNumber: number,
-        x: input.x,
-        y: input.y,
+      const loc = await createMut.mutateAsync({
+        locationName: booth.name || `${booth.sector ?? selectedSection} 부스 슬롯`,
+        sector: booth.sector ?? '백양로',
+        mapX: input.x,
+        mapY: input.y,
         width: input.width,
         height: input.height,
       });
-      setSelectedPlacementId(created.id);
-      recordUndo(() =>
-        deleteMut
-          .mutateAsync({ id: created.id, date: created.date, boothId: created.boothId })
-          .then(() => undefined),
-      );
+      await updateBoothMut.mutateAsync({ ...booth, locationId: loc.id });
+      setSelectedLocationId(loc.id);
     } catch (err) {
       toast.error((err as Error).message);
     }
   };
 
   const handleMove = async (id: number, delta: { dxPct: number; dyPct: number }) => {
-    const target = placementsInSection.find((p) => p.id === id);
+    const target = boxesInSection.find((b) => b.locationId === id);
     if (!target) return;
-    const next: BoothPlacement = {
-      ...target,
-      x: clamp(target.x + delta.dxPct, target.width / 2, 100 - target.width / 2),
-      y: clamp(target.y + delta.dyPct, target.height / 2, 100 - target.height / 2),
-    };
-    const before = target;
+    const nextX = clamp(target.x + delta.dxPct, target.width / 2, 100 - target.width / 2);
+    const nextY = clamp(target.y + delta.dyPct, target.height / 2, 100 - target.height / 2);
+    const before = { mapX: target.x, mapY: target.y };
     try {
-      await updateMut.mutateAsync(next);
-      recordUndo(() => updateMut.mutateAsync(before).then(() => undefined));
+      await updateMut.mutateAsync({ id, patch: { mapX: nextX, mapY: nextY } });
+      recordUndo(() => updateMut.mutateAsync({ id, patch: before }).then(() => undefined));
     } catch (err) {
       toast.error((err as Error).message);
     }
@@ -170,104 +193,45 @@ export function PlacementEditor({ booths }: PlacementEditorProps) {
     id: number,
     box: { x: number; y: number; width: number; height: number },
   ) => {
-    const target = placementsInSection.find((p) => p.id === id);
+    const target = boxesInSection.find((b) => b.locationId === id);
     if (!target) return;
-    const next: BoothPlacement = { ...target, ...box };
     setStickySize({ width: box.width, height: box.height });
-    const before = target;
+    const before = {
+      mapX: target.x,
+      mapY: target.y,
+      width: target.width,
+      height: target.height,
+    };
     try {
-      await updateMut.mutateAsync(next);
-      recordUndo(() => updateMut.mutateAsync(before).then(() => undefined));
+      await updateMut.mutateAsync({
+        id,
+        patch: { mapX: box.x, mapY: box.y, width: box.width, height: box.height },
+      });
+      recordUndo(() => updateMut.mutateAsync({ id, patch: before }).then(() => undefined));
     } catch (err) {
       toast.error((err as Error).message);
     }
   };
 
-  const handleNudge = (id: number, delta: { dxPct: number; dyPct: number }) =>
-    handleMove(id, delta);
-
   const handleDeleteRequest = (id: number) => {
-    const target = placementsInSection.find((p) => p.id === id);
-    if (!target) return;
-    setPendingDelete(target);
+    const target = boxesInSection.find((b) => b.locationId === id);
+    if (target) setPendingDelete(target);
   };
 
   const confirmDelete = async () => {
     const target = pendingDelete;
     if (!target) return;
     setPendingDelete(null);
+    const booth = boothById.get(target.boothId);
     try {
-      await deleteMut.mutateAsync({
-        id: target.id,
-        date: target.date,
-        boothId: target.boothId,
-      });
-      setSelectedPlacementId(null);
-      // Edge case: 삭제 직후 같은 booth_number 를 새로 만들면 undo 시 UNIQUE 충돌이 나
-      // toast.error 로 surfaced 됨. 1회 admin 시딩 도구라 명시적 안내로 충분 — 더
-      // 나은 처리(충돌 시 자동 재할당 등) 는 운영 어드민 승격 시 follow-up.
-      recordUndo(() =>
-        createMut
-          .mutateAsync({
-            boothId: target.boothId,
-            date: target.date,
-            section: target.section,
-            boothNumber: target.boothNumber,
-            x: target.x,
-            y: target.y,
-            width: target.width,
-            height: target.height,
-          })
-          .then(() => undefined),
-      );
+      // 순서 필수: 부스 참조를 먼저 끊어야 location 삭제 시 409 가 안 난다.
+      if (booth) await updateBoothMut.mutateAsync({ ...booth, locationId: null });
+      await deleteMut.mutateAsync(target.locationId);
+      setSelectedLocationId(null);
     } catch (err) {
       toast.error((err as Error).message);
     }
   };
-
-  const handleCopyFromPrevious = () => {
-    const prev = previousDateOf(selectedDate);
-    if (!prev) return;
-    setPendingCopy(true);
-  };
-
-  const confirmCopy = async () => {
-    const prev = previousDateOf(selectedDate);
-    setPendingCopy(false);
-    if (!prev) return;
-    try {
-      await copyMut.mutateAsync({ fromDate: prev, toDate: selectedDate, section: selectedSection });
-      toast.success('전날 좌표를 복제했습니다.');
-    } catch (err) {
-      toast.error((err as Error).message);
-    }
-  };
-
-  const handleReset = () => {
-    setPendingReset(true);
-  };
-
-  const confirmReset = async () => {
-    setPendingReset(false);
-    try {
-      await resetMut.mutateAsync({ date: selectedDate, section: selectedSection });
-      setSelectedPlacementId(null);
-      toast.success('전체 리셋 완료.');
-    } catch (err) {
-      toast.error((err as Error).message);
-    }
-  };
-
-  const handleExport = () => {
-    const rows = placementStorage.loadAll();
-    if (rows.length === 0) {
-      toast.warning('저장된 좌표가 없습니다.');
-      return;
-    }
-    exportPlacementsAsJson(rows);
-  };
-
-  const copyFromPreviousAvailable = previousDateOf(selectedDate) != null;
 
   return (
     <div className="flex h-full flex-col">
@@ -278,20 +242,16 @@ export function PlacementEditor({ booths }: PlacementEditorProps) {
         onDateChange={onDateChange}
         onSectionChange={(s) => {
           setSelectedSection(s);
-          setSelectedPlacementId(null);
+          setSelectedLocationId(null);
         }}
         isAddMode={isAddMode}
         onToggleAddMode={() => setIsAddMode((v) => !v)}
-        copyFromPreviousAvailable={copyFromPreviousAvailable}
-        onCopyFromPrevious={handleCopyFromPrevious}
-        onResetSection={handleReset}
-        onExportJson={handleExport}
       />
       <div className="flex flex-1 overflow-hidden">
         <PlacementList
           booths={booths}
-          placementsAtDate={placementsQuery.data ?? []}
-          placementsInSection={placementsInSection}
+          placedBoothIds={placedBoothIds}
+          selectedDay={selectedDay}
           selectedBoothId={selectedBoothId}
           onSelectBooth={setSelectedBoothId}
           onHoverBooth={setHoveredBoothId}
@@ -299,33 +259,32 @@ export function PlacementEditor({ booths }: PlacementEditorProps) {
         <div className="relative flex-1">
           <PlacementEditorCanvas
             section={section}
-            placements={placementsInSection}
-            selectedPlacementId={selectedPlacementId}
+            placements={boxesInSection}
+            selectedPlacementId={selectedLocationId}
             selectedBoothId={selectedBoothId}
             hoveredBoothId={hoveredBoothId}
             boothById={boothById}
-            onSelectPlacement={handleSelectPlacement}
+            onSelectPlacement={handleSelectLocation}
             onCreatePlacement={handleCreate}
             onMovePlacement={handleMove}
             onResizePlacement={handleResize}
-            onNudgePlacement={handleNudge}
+            onNudgePlacement={handleMove}
             onRequestDelete={handleDeleteRequest}
             defaultSize={stickySize}
             isAddMode={isAddMode}
           />
-          {placementsInSection.length === 0 && (
+          {boxesInSection.length === 0 && (
             <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
               <div className="rounded-lg bg-background/85 px-4 py-2 text-sm text-muted-foreground shadow-sm backdrop-blur">
                 {isAddMode
-                  ? '운영자를 선택하고 지도를 클릭해 첫 자리를 만드세요.'
-                  : '우상단 "추가 모드 OFF" 를 켠 뒤 운영자를 선택하고 지도를 클릭하면 자리를 만들 수 있습니다.'}
+                  ? '운영자를 선택하고 지도를 클릭해 자리를 만드세요.'
+                  : '우상단 "추가 모드" 를 켠 뒤 운영자를 선택하고 지도를 클릭하면 자리를 만들 수 있습니다.'}
               </div>
             </div>
           )}
         </div>
       </div>
 
-      {/* 자리 1개 삭제 확인 */}
       <AlertDialog
         open={!!pendingDelete}
         onOpenChange={(o) => {
@@ -336,8 +295,8 @@ export function PlacementEditor({ booths }: PlacementEditorProps) {
           <AlertDialogHeader>
             <AlertDialogTitle>자리 삭제</AlertDialogTitle>
             <AlertDialogDescription>
-              자리 &ldquo;{pendingDelete?.boothNumber}&rdquo; 를 삭제합니다. Cmd/Ctrl+Z 로 되돌릴 수
-              있지만 직후 같은 booth_number 가 재사용되면 충돌할 수 있습니다.
+              자리 &ldquo;{pendingDelete?.boothNumber}&rdquo; 를 삭제하고 해당 부스의 배치를
+              해제합니다. 되돌릴 수 없습니다.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -347,54 +306,6 @@ export function PlacementEditor({ booths }: PlacementEditorProps) {
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               삭제
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* 전날 복제 확인 — 현재 (date, section) 좌표는 모두 덮어써짐 */}
-      <AlertDialog
-        open={pendingCopy}
-        onOpenChange={(o) => {
-          if (!o) setPendingCopy(false);
-        }}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>전날 좌표 복제</AlertDialogTitle>
-            <AlertDialogDescription>
-              {previousDateOf(selectedDate)} {section.label} 좌표를 {selectedDate} {section.label}{' '}
-              로 덮어씁니다. 현재 ({selectedDate}, {section.label}) 에 있는 좌표는 모두 사라집니다.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>취소</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmCopy}>복제</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* 전체 리셋 확인 */}
-      <AlertDialog
-        open={pendingReset}
-        onOpenChange={(o) => {
-          if (!o) setPendingReset(false);
-        }}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>전체 리셋</AlertDialogTitle>
-            <AlertDialogDescription>
-              {selectedDate} {section.label} 의 모든 자리를 삭제합니다. 되돌릴 수 없습니다.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>취소</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={confirmReset}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              전체 삭제
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

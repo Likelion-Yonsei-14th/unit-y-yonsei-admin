@@ -1,6 +1,7 @@
 import globalImg from '@/assets/map/global-section.jpg';
 import baekyangImg from '@/assets/map/baekyang-section.jpg';
 import hangeulImg from '@/assets/map/hangeul-section.jpg';
+import type { BoothSector } from '@/features/booths/types';
 import type { MapSection, MapSectionId } from './types';
 
 export const MAP_SECTIONS: Record<MapSectionId, MapSection> = {
@@ -46,4 +47,32 @@ export function sectionsValidFor(date: string): MapSectionId[] {
   return (Object.values(MAP_SECTIONS) as Array<(typeof MAP_SECTIONS)[MapSectionId]>)
     .filter((s) => s.validDates.includes(date))
     .map((s) => s.id);
+}
+
+/** MapLocation.sector(한글탑/백양로/송도) → 지도 이미지 섹션 키. */
+export const sectionForSector: Record<BoothSector, MapSectionId> = {
+  송도: 'global',
+  백양로: 'baekyang',
+  한글탑: 'hangeul',
+};
+
+/**
+ * 축제 일차(Booth.date) ↔ 캘린더 날짜.
+ * day 1 = 5/26(블루런, 부스 없음)이라 layout UI 는 day 2~4 만 쓴다.
+ */
+const DATE_BY_DAY: Record<number, string> = {
+  2: '2026-05-27',
+  3: '2026-05-28',
+  4: '2026-05-29',
+};
+
+/** ISO 날짜 → 축제 일차. 매칭 없으면 null. */
+export function dayForDate(date: string): number | null {
+  const found = Object.entries(DATE_BY_DAY).find(([, iso]) => iso === date);
+  return found ? Number(found[0]) : null;
+}
+
+/** 축제 일차 → ISO 날짜. 매칭 없으면 null. */
+export function dateForDay(day: number | null): string | null {
+  return day != null ? (DATE_BY_DAY[day] ?? null) : null;
 }

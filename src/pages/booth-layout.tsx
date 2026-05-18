@@ -13,8 +13,7 @@ export function BoothLayoutPage() {
         <div>
           <h1 className="text-2xl font-bold text-foreground">부스 배치도 편집</h1>
           <p className="text-xs text-muted-foreground">
-            지도 위에 자리를 찍어 좌표 데이터를 만듭니다. JSON Export 로 백엔드 시드용 파일을 받을
-            수 있습니다.
+            부스를 지도 위 자리에 배치합니다. 좌측에서 운영자를 고른 뒤 지도를 클릭하세요.
           </p>
         </div>
       </header>

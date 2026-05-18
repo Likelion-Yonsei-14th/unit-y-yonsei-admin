@@ -2,15 +2,28 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { Calendar } from 'lucide-react';
 import { BoothMapPicker } from '@/features/booth-layout/components/booth-map-picker';
-import { useMyBoothPlacements, usePlacements } from '@/features/booth-layout/hooks';
-import { FESTIVAL_DATES, sectionsValidFor } from '@/features/booth-layout/sections';
-import type { MapSectionId, PickerBooth } from '@/features/booth-layout/types';
+import { useMapLocations } from '@/features/booth-layout/hooks';
+import {
+  FESTIVAL_DATES,
+  sectionsValidFor,
+  sectionForSector,
+  dayForDate,
+  dateForDay,
+} from '@/features/booth-layout/sections';
+import {
+  DEFAULT_BOX_SIZE,
+  type MapLocation,
+  type MapSectionId,
+  type PickerBooth,
+  type PlacementBox,
+} from '@/features/booth-layout/types';
 import { useAuth } from '@/features/auth/hooks';
-import { useBooths } from '@/features/booths/hooks';
+import { useBooths, useMyBooth } from '@/features/booths/hooks';
 import { useReservations } from '@/features/reservations/hooks';
+import type { Booth } from '@/features/booths/types';
 import type { Reservation, ReservationState } from '@/features/reservations/types';
 
-/** boothId → 상태별 카운트 집계 (예약 풀 순회 1회). */
+/** boothId → 상태별 카운트 집계. */
 function buildReservationCountsByBooth(
   reservations: Reservation[],
 ): Map<number, Record<ReservationState, number>> {
@@ -23,9 +36,23 @@ function buildReservationCountsByBooth(
   return m;
 }
 
+/** MapLocation + Booth → PlacementBox. */
+function toBox(loc: MapLocation, booth: Booth): PlacementBox {
+  return {
+    locationId: loc.id,
+    boothId: booth.id,
+    boothNumber: String(booth.location ?? '?'),
+    section: sectionForSector[loc.sector],
+    x: loc.mapX,
+    y: loc.mapY,
+    width: loc.width ?? DEFAULT_BOX_SIZE.width,
+    height: loc.height ?? DEFAULT_BOX_SIZE.height,
+  };
+}
+
 /**
  * 지도+슬라이더 기반 예약 관리 진입점.
- * Super/Master/Booth 모두 같은 화면을 본다. canEnter 로 진입 권한만 분기.
+ * Super/Master/Booth 모두 같은 화면. canEnter 로 진입 권한만 분기.
  */
 export function ReservationBoothPicker() {
   const { user } = useAuth();
@@ -34,81 +61,89 @@ export function ReservationBoothPicker() {
   const isBooth = user?.role === 'Booth';
   const myBoothId = isBooth ? (user?.boothId ?? undefined) : undefined;
 
-  // Booth 계정의 본인 배치 (초기 날짜·포커스 resolve 용).
-  // 자리가 여러 개일 수 있으나 다중 자리 UX 는 follow-up — 일단 첫 자리만 사용.
-  const myPlacementsQuery = useMyBoothPlacements(isBooth ? (myBoothId ?? null) : null);
-  const myFirstPlacement = myPlacementsQuery.data?.[0] ?? null;
-
-  // 역할별 available dates — Booth 계정은 본인 자리들이 위치한 날짜 모두를 표시
-  // (한 운영자가 여러 날 여러 자리를 가질 수 있음).
-  const availableDates = useMemo<readonly string[]>(() => {
-    if (isBooth) {
-      const dates = Array.from(new Set((myPlacementsQuery.data ?? []).map((p) => p.date)));
-      return dates.sort();
-    }
-    return FESTIVAL_DATES;
-  }, [isBooth, myPlacementsQuery.data]);
-
-  // 초기 날짜 resolve
-  const [selectedDate, setSelectedDate] = useState<string | null>(null);
-  useEffect(() => {
-    if (selectedDate != null) return;
-    if (isBooth && myFirstPlacement) {
-      setSelectedDate(myFirstPlacement.date);
-    } else if (!isBooth && user) {
-      setSelectedDate(FESTIVAL_DATES[0]);
-    }
-  }, [isBooth, myFirstPlacement, user, selectedDate]);
-
-  // 선택 가능한 섹션 (선택 날짜 기반).
-  const availableSections = useMemo<MapSectionId[]>(
-    () => (selectedDate ? sectionsValidFor(selectedDate) : []),
-    [selectedDate],
-  );
-
-  // 선택 섹션 — Booth 계정은 본인 부스 섹션 default, 그 외엔 첫 유효 섹션.
-  const [selectedSection, setSelectedSection] = useState<MapSectionId | null>(null);
-  useEffect(() => {
-    if (availableSections.length === 0) return;
-    if (selectedSection != null && availableSections.includes(selectedSection)) return;
-    if (isBooth && myFirstPlacement && availableSections.includes(myFirstPlacement.section)) {
-      setSelectedSection(myFirstPlacement.section);
-    } else {
-      setSelectedSection(availableSections[0]);
-    }
-  }, [availableSections, isBooth, myFirstPlacement, selectedSection]);
-
-  const placementsQuery = usePlacements(selectedDate ?? '');
+  const locationsQuery = useMapLocations();
   const allBoothsQuery = useBooths();
   const reservationsQuery = useReservations();
-  const boothById = useMemo(() => {
-    const m = new Map<number, { name: string; organization: string }>();
-    for (const b of allBoothsQuery.data ?? []) {
-      m.set(b.id, { name: b.name, organization: b.organization });
-    }
-    return m;
-  }, [allBoothsQuery.data]);
+  const myBoothQuery = useMyBooth();
 
-  // boothId → 상태별 카운트. 예약 풀이 바뀔 때만 재계산.
+  // locationId → MapLocation 조회.
+  const locationById = useMemo(() => {
+    const m = new Map<number, MapLocation>();
+    for (const l of locationsQuery.data ?? []) m.set(l.id, l);
+    return m;
+  }, [locationsQuery.data]);
+
   const countsByBooth = useMemo(
     () => buildReservationCountsByBooth(reservationsQuery.data ?? []),
     [reservationsQuery.data],
   );
 
-  const booths = useMemo<PickerBooth[]>(() => {
-    if (!placementsQuery.data) return [];
-    return placementsQuery.data.map((p) => {
-      const profile = boothById.get(p.boothId);
-      return {
-        placement: p,
+  /** 일차 → PickerBooth[] (배치된 부스만). */
+  const pickerBoothByDay = useMemo(() => {
+    const byDay = new Map<number, PickerBooth[]>();
+    for (const booth of allBoothsQuery.data ?? []) {
+      if (booth.locationId == null || booth.date == null) continue;
+      const loc = locationById.get(booth.locationId);
+      if (!loc) continue;
+      const pb: PickerBooth = {
+        placement: toBox(loc, booth),
         profile: {
-          name: profile?.name || '이름 미입력 부스',
-          organization: profile?.organization || '-',
+          name: booth.name || '이름 미입력 부스',
+          organization: booth.organization || '-',
         },
-        counts: countsByBooth.get(p.boothId) ?? { waiting: 0, completed: 0, cancelled: 0 },
+        counts: countsByBooth.get(booth.id) ?? { waiting: 0, completed: 0, cancelled: 0 },
       };
-    });
-  }, [placementsQuery.data, boothById, countsByBooth]);
+      const list = byDay.get(booth.date) ?? [];
+      list.push(pb);
+      byDay.set(booth.date, list);
+    }
+    return byDay;
+  }, [allBoothsQuery.data, locationById, countsByBooth]);
+
+  // 역할별 available dates — Booth 계정은 본인 부스 날짜 1개, 그 외 전체.
+  const availableDates = useMemo<readonly string[]>(() => {
+    if (isBooth) {
+      const d = dateForDay(myBoothQuery.data?.date ?? null);
+      return d ? [d] : [];
+    }
+    return FESTIVAL_DATES;
+  }, [isBooth, myBoothQuery.data]);
+
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  useEffect(() => {
+    if (selectedDate != null) return;
+    if (isBooth) {
+      const d = dateForDay(myBoothQuery.data?.date ?? null);
+      if (d) setSelectedDate(d);
+    } else if (user) {
+      setSelectedDate(FESTIVAL_DATES[0]);
+    }
+  }, [isBooth, myBoothQuery.data, user, selectedDate]);
+
+  const availableSections = useMemo<MapSectionId[]>(
+    () => (selectedDate ? sectionsValidFor(selectedDate) : []),
+    [selectedDate],
+  );
+
+  const [selectedSection, setSelectedSection] = useState<MapSectionId | null>(null);
+  useEffect(() => {
+    if (availableSections.length === 0) return;
+    if (selectedSection != null && availableSections.includes(selectedSection)) return;
+    // Booth 계정은 본인 부스 섹션을 default 로.
+    const mySector = myBoothQuery.data?.sector;
+    const mySection = mySector ? sectionForSector[mySector] : null;
+    if (isBooth && mySection && availableSections.includes(mySection)) {
+      setSelectedSection(mySection);
+    } else {
+      setSelectedSection(availableSections[0]);
+    }
+  }, [availableSections, isBooth, myBoothQuery.data, selectedSection]);
+
+  // 선택 일차의 PickerBooth 목록.
+  const booths = useMemo<PickerBooth[]>(() => {
+    const day = selectedDate ? dayForDate(selectedDate) : null;
+    return day != null ? (pickerBoothByDay.get(day) ?? []) : [];
+  }, [pickerBoothByDay, selectedDate]);
 
   const canEnter = useCallback(
     (boothId: number) => {
@@ -126,14 +161,14 @@ export function ReservationBoothPicker() {
     [navigate],
   );
 
-  // Booth 계정 본인 배치 조회 실패 — 영구 로딩 방지 + 재시도 안내
-  if (isBooth && myPlacementsQuery.isError) {
+  // Booth 계정 본인 부스 조회 실패.
+  if (isBooth && myBoothQuery.isError) {
     return (
       <div className="flex flex-col items-start gap-3 p-8 text-sm">
-        <div className="text-destructive">본인 부스 배치 정보를 불러오지 못했습니다.</div>
+        <div className="text-destructive">본인 부스 정보를 불러오지 못했습니다.</div>
         <button
           type="button"
-          onClick={() => myPlacementsQuery.refetch()}
+          onClick={() => myBoothQuery.refetch()}
           className="rounded-md border border-border px-3 py-1.5 text-foreground hover:border-ds-border-strong"
         >
           다시 시도
@@ -142,11 +177,30 @@ export function ReservationBoothPicker() {
     );
   }
 
-  // Booth 계정인데 본인 배치가 없는 경우 (fetch 완료 + null)
-  if (isBooth && myPlacementsQuery.isFetched && (myPlacementsQuery.data?.length ?? 0) === 0) {
+  // Booth 계정인데 본인 부스가 미배치.
+  if (
+    isBooth &&
+    myBoothQuery.isFetched &&
+    (myBoothQuery.data == null || myBoothQuery.data.locationId == null)
+  ) {
     return (
       <div className="p-8 text-sm text-muted-foreground">
-        소속 부스 정보가 아직 설정되지 않았습니다. 관리자에게 문의해 주세요.
+        소속 부스의 지도 배치가 아직 설정되지 않았습니다. 관리자에게 문의해 주세요.
+      </div>
+    );
+  }
+
+  if (locationsQuery.isError) {
+    return (
+      <div className="flex flex-col items-start gap-3 p-8 text-sm">
+        <div className="text-destructive">배치 정보를 불러오지 못했습니다.</div>
+        <button
+          type="button"
+          onClick={() => locationsQuery.refetch()}
+          className="rounded-md border border-border px-3 py-1.5 text-foreground hover:border-ds-border-strong"
+        >
+          다시 시도
+        </button>
       </div>
     );
   }
@@ -155,26 +209,8 @@ export function ReservationBoothPicker() {
     return <div className="p-8 text-sm text-muted-foreground">불러오는 중...</div>;
   }
 
-  // 해당 날짜 배치 목록 조회 실패 — 빈 상태("배치된 부스 없음") 와 구분해 재시도 제공
-  if (placementsQuery.isError) {
-    return (
-      <div className="flex flex-col items-start gap-3 p-8 text-sm">
-        <div className="text-destructive">배치 정보를 불러오지 못했습니다.</div>
-        <button
-          type="button"
-          onClick={() => placementsQuery.refetch()}
-          className="rounded-md border border-border px-3 py-1.5 text-foreground hover:border-ds-border-strong"
-        >
-          다시 시도
-        </button>
-      </div>
-    );
-  }
-
   return (
     <div className="flex h-full w-full flex-col">
-      {/* 페이지 헤더 — 지도가 viewport 를 채우므로 다른 페이지의 p-8 헤더 대신
-          고정 높이 바로 둔다. 아래 BoothMapPicker 가 남은 높이를 채운다. */}
       <div className="border-b border-border bg-background px-4 py-4 md:px-8">
         <h1 className="flex items-center gap-2.5 text-2xl font-bold text-foreground">
           <Calendar size={26} aria-hidden="true" />
