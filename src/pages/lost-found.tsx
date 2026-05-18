@@ -118,7 +118,7 @@ export function LostFoundPage() {
     if (selectedFile) {
       setIsUploading(true);
       try {
-        imageUrl = await uploadImage(selectedFile, 'LOST_ITEM');
+        imageUrl = await uploadImage(selectedFile, 'lost-item');
       } catch {
         toast.error('사진 업로드에 실패했습니다. 잠시 후 다시 시도해주세요.');
         return;
