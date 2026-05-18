@@ -4,7 +4,7 @@ import { toast } from 'sonner';
 import type { UseMutationResult } from '@tanstack/react-query';
 import type { BoothImage, BoothProfile } from '@/features/booths/types';
 import { ThumbnailCropOverlay } from '@/features/booths/components/thumbnail-crop-overlay';
-import { BoothTagInput } from '@/features/booths/components/booth-tag-input';
+import { TagInput } from '@/components/common/tag-input';
 
 /** 업로드 파일당 용량 상한. 원본 비율은 제한하지 않는다 — 등록 표시만 3:2/5:6 으로 크롭. */
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
@@ -261,7 +261,12 @@ export function BoothInfoForm({
         <div>
           <span className="block text-sm font-semibold text-foreground mb-2">부스 태그</span>
           {isEditing ? (
-            <BoothTagInput value={tags} onChange={setTags} />
+            <TagInput
+              value={tags}
+              onChange={setTags}
+              inputLabel="부스 태그 입력"
+              placeholderExample="먹거리"
+            />
           ) : tags.length > 0 ? (
             <div className="flex flex-wrap gap-2">
               {tags.map((tag) => (
