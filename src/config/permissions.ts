@@ -44,8 +44,10 @@ export const PERMISSIONS = {
   'notice.read': ['Super', 'Master', 'Booth', 'Performer'],
   'notice.manage': ['Super', 'Master'],
 
-  // 분실물
+  // 분실물 — 등록은 부스 운영진도 가능(자기 부스에서 주운 물건 제보).
+  // 목록 열람·수정·삭제는 운영진(Super/Master)만.
   'lostfound.read': ['Super', 'Master'],
+  'lostfound.create': ['Super', 'Master', 'Booth'],
   'lostfound.manage': ['Super', 'Master'],
 
   // 부스 배치도

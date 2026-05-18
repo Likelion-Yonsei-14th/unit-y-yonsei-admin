@@ -8,6 +8,7 @@ import {
   useUpdateLostItem,
 } from '@/features/lost-found/hooks';
 import type { LostItem } from '@/features/lost-found/types';
+import { useAuth } from '@/features/auth/hooks';
 import { PageHeaderAction } from '@/components/common/page-header-action';
 import { TableSkeleton } from '@/components/common/table-skeleton';
 import {
@@ -22,13 +23,18 @@ import {
 } from '@/components/ui/alert-dialog';
 
 export function LostFoundPage() {
-  const lostItemsQuery = useLostItems();
+  const { can } = useAuth();
+  // 목록 열람 권한이 있으면 관리 화면, 없으면(Booth) 등록 폼 전용 화면.
+  const canManage = can('lostfound.read');
+
+  const lostItemsQuery = useLostItems(canManage);
   const lostItems = lostItemsQuery.data ?? [];
   const createMutation = useCreateLostItem();
   const updateMutation = useUpdateLostItem();
   const deleteMutation = useDeleteLostItem();
 
-  const [showForm, setShowForm] = useState(false);
+  // Booth 는 등록 폼만 쓰므로 진입 즉시 폼을 연다.
+  const [showForm, setShowForm] = useState(!canManage);
   const [editingItem, setEditingItem] = useState<LostItem | null>(null);
   const [pendingDelete, setPendingDelete] = useState<LostItem | null>(null);
 
@@ -100,8 +106,17 @@ export function LostFoundPage() {
     const description = descriptionDraft.trim() || undefined;
     const hasImage = !!imagePreviewUrl || hasExistingImage;
     const onAfter = () => {
-      setShowForm(false);
-      setEditingItem(null);
+      if (canManage) {
+        setShowForm(false);
+        setEditingItem(null);
+      } else {
+        // Booth: 돌아갈 목록이 없으므로 폼을 유지하고 필드만 비워 연속 등록을 허용.
+        setNameDraft('');
+        setLocationDraft('');
+        setDescriptionDraft('');
+        setImagePreviewUrl(null);
+        setHasExistingImage(false);
+      }
     };
     if (editingItem) {
       updateMutation.mutate(
@@ -144,11 +159,18 @@ export function LostFoundPage() {
   return (
     <div className="p-4 md:p-8">
       <div className="flex flex-wrap items-center justify-between gap-3 mb-6 md:mb-8">
-        <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
-          <Package size={32} />
-          분실물 관리
-        </h1>
-        {!showForm && (
+        <div>
+          <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
+            <Package size={32} />
+            {canManage ? '분실물 관리' : '분실물 등록'}
+          </h1>
+          {!canManage && (
+            <p className="mt-2 text-sm text-muted-foreground">
+              부스 운영 중 발견한 분실물을 등록해주세요. 등록된 분실물은 운영진이 확인해 관리합니다.
+            </p>
+          )}
+        </div>
+        {!showForm && canManage && (
           <PageHeaderAction tone="blue" onClick={handleCreateNew} icon={<Plus size={16} />}>
             분실물 등록
           </PageHeaderAction>
@@ -263,12 +285,14 @@ export function LostFoundPage() {
             <h2 className="text-xl font-bold text-foreground">
               {editingItem ? '분실물 수정' : '분실물 등록'}
             </h2>
-            <button
-              onClick={handleCancel}
-              className="px-4 py-2 text-muted-foreground hover:bg-muted rounded-lg transition-colors text-sm"
-            >
-              목록으로
-            </button>
+            {canManage && (
+              <button
+                onClick={handleCancel}
+                className="px-4 py-2 text-muted-foreground hover:bg-muted rounded-lg transition-colors text-sm"
+              >
+                목록으로
+              </button>
+            )}
           </div>
 
           <div className="space-y-6">
@@ -378,13 +402,15 @@ export function LostFoundPage() {
             </div>
 
             <div className="flex justify-end gap-3 pt-4">
-              <button
-                onClick={handleCancel}
-                disabled={isSaving}
-                className="px-6 py-3 border border-border text-foreground rounded-lg hover:bg-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                취소
-              </button>
+              {canManage && (
+                <button
+                  onClick={handleCancel}
+                  disabled={isSaving}
+                  className="px-6 py-3 border border-border text-foreground rounded-lg hover:bg-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  취소
+                </button>
+              )}
               <button
                 onClick={handleSave}
                 disabled={isSaving}

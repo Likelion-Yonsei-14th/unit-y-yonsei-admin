@@ -200,7 +200,7 @@ export const router = createBrowserRouter([
       {
         path: 'general/lost-found',
         element: (
-          <RequirePermission permission="lostfound.read">
+          <RequirePermission permission="lostfound.create">
             <LostFoundPage />
           </RequirePermission>
         ),
