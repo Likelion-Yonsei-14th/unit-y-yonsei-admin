@@ -69,7 +69,7 @@ export const MAIN_NAV: NavItem[] = [
         path: '/general/lost-found',
         label: '분실물 관리',
         icon: Package,
-        requires: 'lostfound.read',
+        requires: 'lostfound.create',
       },
       {
         path: '/general/booth-layout',
