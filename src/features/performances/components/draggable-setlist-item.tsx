@@ -42,7 +42,7 @@ export function DraggableSetlistItem({
         <GripVertical size={20} />
       </button>
 
-      <div className="flex items-center justify-center w-10 h-10 bg-primary text-primary-foreground font-bold rounded-lg flex-shrink-0">
+      <div className="flex items-center justify-center w-10 h-10 bg-primary text-primary-foreground font-bold rounded-lg shrink-0">
         {index + 1}
       </div>
 

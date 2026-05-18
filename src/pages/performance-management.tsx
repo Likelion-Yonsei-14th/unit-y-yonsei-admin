@@ -745,7 +745,7 @@ export function PerformanceManagement() {
                 key={item.id}
                 className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 p-4 border border-border rounded-lg"
               >
-                <div className="flex items-center justify-center w-10 h-10 bg-primary text-primary-foreground font-bold rounded-lg flex-shrink-0">
+                <div className="flex items-center justify-center w-10 h-10 bg-primary text-primary-foreground font-bold rounded-lg shrink-0">
                   {index + 1}
                 </div>
                 <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-4">

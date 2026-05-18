@@ -123,7 +123,7 @@ export function CreateAdmin() {
         <div className="bg-background rounded-2xl p-4 md:p-8 shadow-sm space-y-6">
           {/* Warning Notice */}
           <div className="flex items-start gap-3 p-4 bg-ds-primary-subtle border border-ds-primary rounded-lg">
-            <Shield size={20} className="text-primary flex-shrink-0 mt-0.5" />
+            <Shield size={20} className="text-primary shrink-0 mt-0.5" />
             <div className="text-sm text-ds-primary-pressed">
               <p className="font-semibold mb-1">관리자 안내사항</p>
               <ul className="list-disc list-inside space-y-1 text-ds-primary-pressed">

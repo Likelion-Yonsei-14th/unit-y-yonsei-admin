@@ -194,7 +194,7 @@ export function PerformanceListPage() {
                 }`}
               >
                 <Link to={`/performance/${p.teamId}`} className="flex gap-4 p-5">
-                  <div className="w-20 h-20 rounded-lg bg-muted flex-shrink-0 overflow-hidden flex items-center justify-center">
+                  <div className="w-20 h-20 rounded-lg bg-muted shrink-0 overflow-hidden flex items-center justify-center">
                     {p.mainPhotoUrl ? (
                       <img src={p.mainPhotoUrl} alt="" className="w-full h-full object-cover" />
                     ) : (
@@ -205,7 +205,7 @@ export function PerformanceListPage() {
                     <div className="flex items-center gap-2">
                       <span className="font-semibold text-foreground truncate">{p.teamName}</span>
                       {isLive && (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-destructive text-destructive-foreground text-xs font-semibold flex-shrink-0">
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-destructive text-destructive-foreground text-xs font-semibold shrink-0">
                           ● LIVE
                         </span>
                       )}
