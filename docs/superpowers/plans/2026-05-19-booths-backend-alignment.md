@@ -12,13 +12,16 @@
 
 ## 배경 — 백엔드 ground truth (2026-05-19, `~/Desktop/unit-y-yonsei-server` 소스 기준)
 
-`BoothResponse` (camelCase JSON, `{success,data,error}` 봉투 안):
-`id, adminId, name, organization, description, date(Integer 1~4), openTime(LocalTime), closeTime(LocalTime), sector(BoothSector), location(Integer), status(BoothStatus), isFood(Boolean), instagram(String), isReservable(Boolean), account(String), locationId(Long), profileComplete(boolean)`
+`BoothResponse` (camelCase JSON, `{success,data,error}` 봉투 안) — 20필드:
+`id, adminId, name, organization, description, date(Integer 1~4), openTime(LocalTime), closeTime(LocalTime), sector(BoothSector), location(Integer), status(BoothStatus), isFood(Boolean), instagram(String), isReservable(Boolean), account(String), locationId(Long), profileComplete(boolean), representativeMenus(List<String>), waitingCount(long), thumbnailUrl(String)`
 
 - `BoothSector` enum: `한글탑 | 백양로 | 송도` (JSON 값도 한글 그대로)
 - `BoothStatus` enum: `OPEN | CLOSED | PREPARING`
 - `LocalTime` 직렬화: `"HH:mm"` 또는 `"HH:mm:ss"` — 매퍼에서 앞 5자(`HH:mm`)로 정규화한다.
-- **`tags` 필드는 아직 없음** (백엔드 구현 중) → 매퍼는 `dto.tags ?? []`.
+- `representativeMenus`: 대표 메뉴 카테고리 목록. 응답·수정요청 모두 `List<String>`. 쓰기 가능.
+- `waitingCount`: 현재 대기 팀 수. 런타임 계산값 — 수정 요청에 없음(읽기 전용).
+- `thumbnailUrl`: display_order=1 부스 이미지 URL. 수정 요청에 없음(읽기 전용). 부스 이미지 업로드/CRUD 는 `bac-61` 브랜치(미머지)라 이번 범위 외 — 표시만.
+- **`tags` 필드는 origin/dev 에 아직 없음** (백엔드 구현 중) → 매퍼는 `dto.tags ?? []`.
 
 엔드포인트:
 - `GET /booths/{id}` → `BoothResponse` (공개)
@@ -27,16 +30,19 @@
 - `PATCH /admin/booths/{id}/status` body `{status}` → `BoothResponse`
 - `PATCH /admin/booths/{id}/reservable` body `{isReservable}` → `BoothResponse`
 
-`BoothUpdateRequest` 필드: `name, organization, description, date, openTime, closeTime, sector, location, status, isFood, instagram, isReservable, account, locationId`.
+`BoothUpdateRequest` 필드(15): `name, organization, description, date, openTime, closeTime, sector, location, status, isFood, instagram, isReservable, account, locationId, representativeMenus`. (`waitingCount`/`thumbnailUrl` 은 읽기 전용이라 요청에 없음.)
 
 auth `CurrentAdminUserResponse` / `AdminLoginResponse` 현재 필드: `adminUserId, loginId, organization, role, status, representativeName`. **`boothId` 없음 — 백엔드가 추가 중.** 이 plan 의 Task 5 는 백엔드가 `boothId`(또는 `performanceTeamId`)를 추가했다는 전제로 작성. 추가 전이라면 Task 5 까지는 진행하되 Booth 역할 mock 모드로만 검증.
 
-## 결정 사항 (확정)
+## 결정 사항 (origin/dev 재감사 후 확정 — 2026-05-19)
 
-- `signatureMenu`, `orderNotice`, `thumbnails`(부스 이미지) → **드롭**. 백엔드에 필드 없음.
-- `menuItems` + 임베디드 메뉴 UI → **드롭**. 메뉴는 백엔드 별도 리소스(`/booths/{id}/menus`)이며 이번 범위 제외.
-- `tags` → **유지** (백엔드 추가 중).
-- booth-layout(배치 좌표) → **이번 범위 제외**. 백엔드가 별도 구현 중.
+- `signatureMenu`(단일 문자열) → 백엔드 `representativeMenus`(`string[]`)로 **리맵**. 폼은 리스트 입력.
+- `thumbnails`(`BoothImage[]`) → 백엔드 `thumbnailUrl`(단일, 읽기 전용)로 **대체**. 모델은 `thumbnailUrl` 보유(표시 전용), 업로드 UI 제거(이미지 CRUD `bac-61` 미머지).
+- `orderNotice` → **드롭**. origin/dev BoothResponse 에 필드 없음(부스 공지 `bac-84` 미머지).
+- `menuItems` + 임베디드 메뉴 UI(`MenuListForm`) → **드롭**. 메뉴는 백엔드 별도 리소스(`/booths/{id}/menus`)이며 이번 범위 제외.
+- `waitingCount` → 모델 보유(읽기 전용, 표시용).
+- `tags` → **유지** (백엔드 추가 중, 매퍼 `?? []` 방어).
+- booth-layout(배치 좌표) → **이번 범위 제외**. 백엔드 별도 구현 중.
 - `operatingHours`(문자열) → `openTime`/`closeTime` 2필드로 분리.
 - `organizationName`→`organization`, `reservationEnabled`→`isReservable` 리네임.
 
@@ -109,6 +115,12 @@ export interface Booth {
   locationId: number | null;
   /** 백엔드 계산값. organization·date·openTime·closeTime·sector·location 모두 입력 시 true. */
   profileComplete: boolean;
+  /** 대표 메뉴 카테고리 목록. 백엔드 representativeMenus. 쓰기 가능. */
+  representativeMenus: string[];
+  /** 현재 대기 팀 수. 읽기 전용(서버 계산). */
+  waitingCount: number;
+  /** display_order=1 부스 이미지 URL. 읽기 전용. 업로드는 이번 범위 외. */
+  thumbnailUrl: string | null;
   /** 부스 분류 태그. '#' 접두사 포함, 최대 3개. 백엔드 tags 필드 도입 전까지는 항상 []. */
   tags: string[];
 }
@@ -132,6 +144,9 @@ export interface BoothDTO {
   account: string;
   locationId: number | null;
   profileComplete: boolean;
+  representativeMenus: string[];
+  waitingCount: number;
+  thumbnailUrl: string | null;
   tags?: string[];
 }
 
@@ -151,6 +166,7 @@ export interface BoothUpdateDTO {
   isReservable: boolean;
   account: string;
   locationId: number | null;
+  representativeMenus: string[];
   /** 백엔드 tags 도입 후 활성. 도입 전엔 백엔드가 무시. */
   tags?: string[];
 }
@@ -190,6 +206,9 @@ export const toBooth = (d: BoothDTO): Booth => ({
   account: d.account,
   locationId: d.locationId,
   profileComplete: d.profileComplete,
+  representativeMenus: d.representativeMenus ?? [],
+  waitingCount: d.waitingCount ?? 0,
+  thumbnailUrl: d.thumbnailUrl ?? null,
   // 백엔드 tags 도입 전: 응답에 tags 없음 → 빈 배열로 방어.
   tags: d.tags ?? [],
 });
@@ -210,6 +229,7 @@ export const fromBooth = (b: Booth): BoothUpdateDTO => ({
   isReservable: b.isReservable,
   account: b.account,
   locationId: b.locationId,
+  representativeMenus: b.representativeMenus,
   tags: b.tags,
 });
 ```
@@ -459,6 +479,9 @@ const booth = (
   account: '',
   locationId: null,
   profileComplete: false,
+  representativeMenus: [],
+  waitingCount: 0,
+  thumbnailUrl: null,
   tags: [],
   ...over,
 });
@@ -480,6 +503,9 @@ const seeds: Booth[] = [
     account: '카카오뱅크 1234-5678',
     locationId: 5,
     profileComplete: true,
+    representativeMenus: ['치킨', '맥주'],
+    thumbnailUrl: 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=400&q=80',
+    waitingCount: 3,
     tags: ['#먹거리', '#치킨'],
   }),
   booth(2, { name: '미입력 부스' }), // 빈 부스 — 작성 전 플로우
@@ -497,6 +523,7 @@ const seeds: Booth[] = [
     isReservable: true,
     locationId: 12,
     profileComplete: true,
+    representativeMenus: ['체험존'],
     tags: ['#체험'],
   }),
 ];
@@ -509,6 +536,7 @@ const seeds: Booth[] = [
   - `tags` 유지
   - `signatureMenu`/`orderNotice`/`thumbnails`/`menuItems` 폐기(옮기지 않음)
   - 신규: `date`(부스가 운영되는 일차, 알 수 없으면 `3`), `sector`(`'한글탑'|'백양로'|'송도'` 중 운영 위치), `location`(배치 번호, 임의 정수), `status`(`isReservable` 참이면 `'OPEN'` 아니면 `'PREPARING'`), `isFood`(음식 부스면 true), `instagram`/`account`(있으면 채우고 없으면 `''`), `adminId`=id, `locationId`=`location` 값과 동일, `profileComplete`=필수 필드 모두 채웠으면 true
+  - 신규: `representativeMenus`(기존 `signatureMenu` 단일 문자열을 `[그 값]` 1원소 배열로, 없으면 `[]`), `waitingCount`(`0`), `thumbnailUrl`(기존 `thumbnails` 중 `isMain` 이미지 url, 없으면 `null`)
   - 비활성 부스(기존 booth30) 는 `status: 'CLOSED'`, `isReservable: false`
 
 - [ ] **Step 3: export 작성** — 파일 끝:
@@ -539,8 +567,11 @@ Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
 폼 필드를 새 `Booth` 모델로 재구성한다. `TagInput`(`@/components/common/tag-input`)은 이미 분리돼 있어 그대로 재사용.
 
 - [ ] **Step 1: 폼이 다루는 필드 교체**
-  - 제거: `signatureMenu`, `operatingHours`(문자열 단일), `orderNotice`, `thumbnails`(이미지 업로드 블록)
+  - 제거: `operatingHours`(문자열 단일), `orderNotice`, 이미지 업로드 블록
   - 유지: `name`, `description`, `tags`(TagInput), `organization`(←organizationName)
+  - `signatureMenu`(단일) → `representativeMenus`(`string[]`) 리스트 입력으로 교체. '#' 접두사가 없어 `TagInput` 은 부적합 → 쉼표 구분 텍스트 입력(`split(',')`/`join(', ')` 로 `string[]` 매핑) 또는 경량 칩 입력. 라벨 "대표 메뉴".
+  - `thumbnailUrl` → 읽기 전용. 값이 있으면 이미지 미리보기만, 업로드 UI 없음(이미지 CRUD 범위 외).
+  - `waitingCount` → 폼 편집 안 함. 필요 시 읽기 전용 표기.
   - 신규 입력 UI:
     - `date` — 1~4 일차 선택 (셀렉트 또는 칩). 라벨 "축제 일차"
     - `openTime` / `closeTime` — `<input type="time">` 2개. 라벨 "운영 시작/종료"
@@ -629,6 +660,6 @@ EOF
 
 ## Self-Review 결과
 
-- 스펙 커버리지: BoothResponse 17필드 전부 `Booth`/`BoothDTO` 에 반영, `BoothUpdateRequest` 14필드 전부 `BoothUpdateDTO`·`fromBooth` 에 반영. ✓
+- 스펙 커버리지: BoothResponse 20필드 전부 `Booth`/`BoothDTO` 에 반영, `BoothUpdateRequest` 15필드 전부 `BoothUpdateDTO`·`fromBooth` 에 반영. ✓
 - 타입 일관성: `Booth`/`BoothDTO`/`BoothUpdateDTO`/`BoothSector`/`BoothStatus` 명칭이 Task 1~10 에서 일관. `toBooth`/`fromBooth`/`getMyBooth`/`useMyBooth` 명칭 일관. ✓
 - 플레이스홀더: Task 6 Step 2(시드 4~30)와 Task 7/8/10 의 UI 변경은 기존 파일을 열고 작업하는 항목이라 매핑 규칙으로 명시. 결정형 레이어(types/mapper/api/hooks/auth)는 전체 코드 포함. ✓
