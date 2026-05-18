@@ -1,96 +1,96 @@
 /**
- * 부스(Booth) 도메인 모델.
- *
- * "내 부스" 화면은 Booth 역할 사용자 한 명당 하나의 BoothProfile을 가진다.
- * 이 파일의 타입이 백엔드 DB 스키마 초안 역할을 한다 — 필드 추가/변경 시
- * mapper.ts의 DTO 매핑만 손대면 화면은 그대로.
+ * 부스(Booth) 도메인 모델 — 백엔드 BoothResponse 미러.
+ * 필드/케이싱은 백엔드(`~/Desktop/unit-y-yonsei-server` BoothResponse)와 1:1.
  */
 
-export interface BoothImage {
-  id: number;
-  url: string;
-  /** 부스 대표 이미지 여부. 하나의 프로필에 정확히 0~1장. */
-  isMain: boolean;
-}
+/** 백엔드 BoothSector enum. JSON 값도 한글 그대로. */
+export type BoothSector = '한글탑' | '백양로' | '송도';
 
-export interface BoothMenuItem {
-  id: number;
-  /** 노출 순서 (1부터). 드래그로 재정렬 가능. */
-  order: number;
-  name: string;
-  description: string;
-  /** 가격 표기 문자열. "5,000원" 같은 포맷 유지. */
-  price: string;
-  image: string | null;
-  soldOut: boolean;
-}
+/** 백엔드 BoothStatus enum. */
+export type BoothStatus = 'OPEN' | 'CLOSED' | 'PREPARING';
 
-export interface BoothProfile {
+export const BOOTH_STATUS_LABEL: Record<BoothStatus, string> = {
+  OPEN: '운영 중',
+  CLOSED: '운영 종료',
+  PREPARING: '준비 중',
+};
+
+/** 프론트 모델 (camelCase). */
+export interface Booth {
   id: number;
+  adminId: number;
   name: string;
-  organizationName: string;
+  organization: string;
   description: string;
-  /** 부스 분류 태그. 각 원소는 '#' 접두사 포함(예: '#먹거리'). 최대 3개. */
+  /** 축제 일차 1~4. 미입력 null. */
+  date: number | null;
+  /** 'HH:mm'. 미입력 null. */
+  openTime: string | null;
+  closeTime: string | null;
+  sector: BoothSector | null;
+  /** 섹터 내 배치 번호. */
+  location: number | null;
+  status: BoothStatus;
+  isFood: boolean;
+  instagram: string;
+  isReservable: boolean;
+  account: string;
+  /** 지도 위치 엔티티 ID. booth-layout 연동용 — 이번 범위에선 읽기만. */
+  locationId: number | null;
+  /** 백엔드 계산값. organization·date·openTime·closeTime·sector·location 모두 입력 시 true. */
+  profileComplete: boolean;
+  /** 대표 메뉴 카테고리 목록. 백엔드 representativeMenus. 쓰기 가능. */
+  representativeMenus: string[];
+  /** 현재 대기 팀 수. 읽기 전용(서버 계산). */
+  waitingCount: number;
+  /** display_order=1 부스 이미지 URL. 읽기 전용. 업로드는 이번 범위 외. */
+  thumbnailUrl: string | null;
+  /** 부스 분류 태그. '#' 접두사 포함, 최대 3개. 백엔드 tags 필드 도입 전까지는 항상 []. */
   tags: string[];
-  signatureMenu: string;
-  operatingHours: string;
-  /** 부스 운영 ON/OFF. 예약/주문 받을지 여부. */
-  reservationEnabled: boolean;
-  orderNotice: string;
-  thumbnails: BoothImage[];
-  menuItems: BoothMenuItem[];
 }
 
-// ---- 백엔드 응답 DTO (snake_case). 스키마 확정되면 보정. ----
-
-export interface BoothImageDTO {
+/** 백엔드 응답 DTO (BoothResponse). tags 는 백엔드 도입 전까지 optional. */
+export interface BoothDTO {
   id: number;
-  url: string;
-  is_main: boolean;
-}
-
-export interface BoothMenuItemDTO {
-  id: number;
-  order: number;
+  adminId: number;
   name: string;
+  organization: string;
   description: string;
-  price: string;
-  image: string | null;
-  sold_out: boolean;
+  date: number | null;
+  openTime: string | null;
+  closeTime: string | null;
+  sector: BoothSector | null;
+  location: number | null;
+  status: BoothStatus;
+  isFood: boolean;
+  instagram: string;
+  isReservable: boolean;
+  account: string;
+  locationId: number | null;
+  profileComplete: boolean;
+  representativeMenus: string[];
+  waitingCount: number;
+  thumbnailUrl: string | null;
+  tags?: string[];
 }
 
-export interface BoothProfileDTO {
-  id: number;
+/** PUT /admin/booths/{id} 요청 바디 (BoothUpdateRequest). */
+export interface BoothUpdateDTO {
   name: string;
-  organization_name: string;
+  organization: string | null;
   description: string;
-  tags: string[];
-  signature_menu: string;
-  operating_hours: string;
-  reservation_enabled: boolean;
-  order_notice: string;
-  thumbnails: BoothImageDTO[];
-  menu_items: BoothMenuItemDTO[];
-}
-
-// ---- 완료 판정 헬퍼 ----
-// 기획 합의: 부스 상세는 필수 필드 + 대표 이미지 1장, 메뉴 리스트는
-// 저장된 메뉴가 1개 이상이고 모든 아이템에 이름/가격이 채워져 있을 때 "작성 완료".
-// (저장된 데이터는 항상 정상 상태여야 한다는 전제 — 빈 필드 메뉴는 저장 단계에서 차단.)
-
-export function isBoothInfoCompleted(b: BoothProfile | null | undefined): boolean {
-  if (!b) return false;
-  return Boolean(
-    b.name &&
-    b.organizationName &&
-    b.description &&
-    b.signatureMenu &&
-    b.operatingHours &&
-    b.thumbnails.some((t) => t.isMain),
-  );
-}
-
-export function isMenuListCompleted(b: BoothProfile | null | undefined): boolean {
-  if (!b) return false;
-  return b.menuItems.length > 0 && b.menuItems.every((m) => m.name && m.price);
+  date: number | null;
+  openTime: string | null;
+  closeTime: string | null;
+  sector: BoothSector | null;
+  location: number | null;
+  status: BoothStatus;
+  isFood: boolean;
+  instagram: string;
+  isReservable: boolean;
+  account: string;
+  locationId: number | null;
+  representativeMenus: string[];
+  /** 백엔드 tags 도입 후 활성. 도입 전엔 백엔드가 무시. */
+  tags?: string[];
 }

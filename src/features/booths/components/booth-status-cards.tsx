@@ -1,4 +1,4 @@
-import { Check, Store, UtensilsCrossed, X } from 'lucide-react';
+import { Check, Store, X } from 'lucide-react';
 
 interface StatusCardProps {
   title: React.ReactNode;
@@ -49,24 +49,18 @@ function StatusCard({ title, completed, decoration, onClick }: StatusCardProps) 
 }
 
 interface Props {
+  /** 백엔드 계산값(Booth.profileComplete). */
   boothInfoCompleted: boolean;
-  menuListCompleted: boolean;
   onOpenBoothInfo: () => void;
-  onOpenMenuList: () => void;
 }
 
 /**
- * 부스 관리 페이지의 입구 — 두 작성 영역(부스 상세 / 메뉴 리스트) 의 완료
- * 상태를 한눈에 보여주고 클릭으로 폼 진입.
+ * 부스 관리 페이지의 입구 — 부스 상세 정보 작성 완료 상태를 보여주고
+ * 클릭으로 폼 진입.
  */
-export function BoothStatusCards({
-  boothInfoCompleted,
-  menuListCompleted,
-  onOpenBoothInfo,
-  onOpenMenuList,
-}: Props) {
+export function BoothStatusCards({ boothInfoCompleted, onOpenBoothInfo }: Props) {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-8">
+    <div className="mb-8">
       <StatusCard
         title={
           <>
@@ -78,18 +72,6 @@ export function BoothStatusCards({
         completed={boothInfoCompleted}
         decoration={<Store size={56} aria-hidden="true" />}
         onClick={onOpenBoothInfo}
-      />
-      <StatusCard
-        title={
-          <>
-            메뉴 리스트
-            <br />
-            작성
-          </>
-        }
-        completed={menuListCompleted}
-        decoration={<UtensilsCrossed size={56} aria-hidden="true" />}
-        onClick={onOpenMenuList}
       />
     </div>
   );

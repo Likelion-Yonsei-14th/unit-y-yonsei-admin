@@ -10,6 +10,16 @@ import {
 import { PERFORMANCE_STAGES, type PerformanceStage } from '@/features/performances/types';
 import { FESTIVAL_DATES } from '@/features/booth-layout/sections';
 import { useAuth } from '@/features/auth/hooks';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 /**
  * 라이브 표시용 펄스 점 — 방송 ON AIR 사인처럼 빨간 점에서 halo 가 퍼져나간다.
@@ -50,6 +60,9 @@ export function PerformanceListPage() {
     () => (liveTeamId != null ? (data?.find((p) => p.teamId === liveTeamId) ?? null) : null),
     [data, liveTeamId],
   );
+
+  // 라이브 지정은 오작동 방지를 위해 확인 다이얼로그를 거친다. 해제는 확인 없이 즉시.
+  const [pendingLiveTeamId, setPendingLiveTeamId] = useState<number | null>(null);
 
   const handleSetLive = (teamId: number | null) => {
     setLive.mutate(teamId, {
@@ -260,7 +273,9 @@ export function PerformanceListPage() {
                   <div className="px-5 pb-4">
                     <button
                       type="button"
-                      onClick={() => handleSetLive(isLive ? null : p.teamId)}
+                      onClick={() =>
+                        isLive ? handleSetLive(null) : setPendingLiveTeamId(p.teamId)
+                      }
                       disabled={setLive.isPending || (!isLive && !liveDesignatable)}
                       className={`w-full px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                         isLive
@@ -283,6 +298,35 @@ export function PerformanceListPage() {
           })}
         </div>
       )}
+
+      {/* 라이브 지정 확인 — 오작동 방지. 해제는 확인 없이 즉시 동작. */}
+      <AlertDialog
+        open={pendingLiveTeamId != null}
+        onOpenChange={(o) => {
+          if (!o) setPendingLiveTeamId(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>라이브 공연 지정</AlertDialogTitle>
+            <AlertDialogDescription>
+              &ldquo;{data?.find((p) => p.teamId === pendingLiveTeamId)?.teamName}&rdquo; 공연을
+              현재 라이브로 지정합니다. 기존 라이브 공연이 있으면 교체됩니다.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>취소</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (pendingLiveTeamId != null) handleSetLive(pendingLiveTeamId);
+                setPendingLiveTeamId(null);
+              }}
+            >
+              라이브로 지정
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

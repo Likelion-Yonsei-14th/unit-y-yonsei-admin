@@ -18,7 +18,7 @@ export interface Reservation {
  *  - 중간 분포 (3-7건): booth 3, 4, 6, 8, 9, 10, 11, 12, 15
  *  - 체험·소량 운영 (2-3건): booth 17(연포토), 18(VR), 22(떡 만들기), 23(미니어처 워크샵)
  *  - 0건: booth 2(빈 부스 — 작성 전 플로우 QA), booth 14·16·19·20·21·24-30
- *    (reservationEnabled=false 이거나 자유 체험형)
+ *    (isReservable=false 이거나 자유 체험형)
  *
  * Reservation id prefix 는 RES + (boothId * 100) 자리수로 묶어 grep 친화.
  */

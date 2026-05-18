@@ -1,149 +1,111 @@
-import { useEffect, useRef, useState } from 'react';
-import { Check, Edit, Star, Trash2, Upload } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Check, Edit } from 'lucide-react';
 import { toast } from 'sonner';
 import type { UseMutationResult } from '@tanstack/react-query';
-import type { BoothImage, BoothProfile } from '@/features/booths/types';
-import { ThumbnailCropOverlay } from '@/features/booths/components/thumbnail-crop-overlay';
-import { BoothTagInput } from '@/features/booths/components/booth-tag-input';
+import type { Booth, BoothSector, BoothStatus } from '@/features/booths/types';
+import { BOOTH_STATUS_LABEL } from '@/features/booths/types';
+import { TagInput } from '@/components/common/tag-input';
 
-/** 업로드 파일당 용량 상한. 원본 비율은 제한하지 않는다 — 등록 표시만 3:2/5:6 으로 크롭. */
-const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
+const SECTORS: BoothSector[] = ['한글탑', '백양로', '송도'];
+const STATUSES: BoothStatus[] = ['OPEN', 'PREPARING', 'CLOSED'];
+/** 축제 일차 1~4 (5/26~5/29). */
+const DATES = [1, 2, 3, 4];
 
 interface Props {
-  booth: BoothProfile;
+  booth: Booth;
   /** 부스 운영 ON/OFF 토글 — 페이지 헤더와 폼이 같은 값을 가리키므로 controlled. */
-  reservationEnabled: boolean;
-  onReservationEnabledChange: (next: boolean) => void;
+  isReservable: boolean;
+  onIsReservableChange: (next: boolean) => void;
   initiallyEditing: boolean;
-  /** 부스 프로필 mutation 인스턴스. 페이지(MenuListForm 과 공유) 와 같은 객체. */
-  updateMutation: UseMutationResult<BoothProfile, Error, Partial<BoothProfile>>;
+  /** 부스 mutation 인스턴스. 페이지에서 useUpdateMyBooth() 로 생성해 내려준다. */
+  updateMutation: UseMutationResult<Booth, Error, Booth>;
 }
+
+const inputClass =
+  'w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all';
+const readonlyClass = 'w-full px-4 py-3 border border-border rounded-lg bg-muted text-foreground';
 
 /**
  * 부스 상세 정보 편집 폼.
- * 자체 state 로 텍스트 필드 / 썸네일을 들고 있고, blob URL 도 자체 추적해 누수 방지.
- * 외부 booth refetch 시 form state 를 다시 hydrate.
+ * 자체 state 로 편집 중 Booth 전체를 들고 있고, 외부 booth refetch 시 다시 hydrate.
+ * 저장은 편집 중 Booth 전체를 PUT(전체 교체)으로 전송한다.
  */
 export function BoothInfoForm({
   booth,
-  reservationEnabled,
-  onReservationEnabledChange,
+  isReservable,
+  onIsReservableChange,
   initiallyEditing,
   updateMutation,
 }: Props) {
   const [isEditing, setIsEditing] = useState(initiallyEditing);
-  const [boothName, setBoothName] = useState(booth.name);
-  const [organizationName, setOrganizationName] = useState(booth.organizationName);
-  const [boothDescription, setBoothDescription] = useState(booth.description);
-  const [signatureMenu, setSignatureMenu] = useState(booth.signatureMenu);
-  const [operatingHours, setOperatingHours] = useState(booth.operatingHours);
-  const [boothImages, setBoothImages] = useState<BoothImage[]>(booth.thumbnails);
+  const [name, setName] = useState(booth.name);
+  const [organization, setOrganization] = useState(booth.organization);
+  const [description, setDescription] = useState(booth.description);
+  const [date, setDate] = useState<number | null>(booth.date);
+  const [openTime, setOpenTime] = useState(booth.openTime ?? '');
+  const [closeTime, setCloseTime] = useState(booth.closeTime ?? '');
+  const [sector, setSector] = useState<BoothSector | null>(booth.sector);
+  const [location, setLocation] = useState(booth.location);
+  const [status, setStatus] = useState<BoothStatus>(booth.status);
+  const [isFood, setIsFood] = useState(booth.isFood);
+  const [instagram, setInstagram] = useState(booth.instagram);
+  const [account, setAccount] = useState(booth.account);
+  // 대표 메뉴는 쉼표 구분 텍스트 입력. 편집 중 자유로운 쉼표/공백 입력을 위해
+  // raw 문자열을 그대로 들고 있다가 저장 시점에만 string[] 로 파싱한다.
+  const [representativeMenusRaw, setRepresentativeMenusRaw] = useState(
+    booth.representativeMenus.join(', '),
+  );
   const [tags, setTags] = useState<string[]>(booth.tags);
 
-  // 직접 createObjectURL 로 만든 blob URL 만 추적 — 서버 URL 은 revoke 대상 아님.
-  const blobUrlsRef = useRef<Set<string>>(new Set());
-  useEffect(
-    () => () => {
-      blobUrlsRef.current.forEach((u) => URL.revokeObjectURL(u));
-      blobUrlsRef.current.clear();
-    },
-    [],
-  );
-
-  // 서버 데이터로 다시 채워질 때 — 화면에서 사라진 blob URL 즉시 revoke + form state hydrate.
+  // 서버 데이터로 다시 채워질 때 form state 를 다시 hydrate.
   useEffect(() => {
-    setBoothName(booth.name);
-    setOrganizationName(booth.organizationName);
-    setBoothDescription(booth.description);
-    setSignatureMenu(booth.signatureMenu);
-    setOperatingHours(booth.operatingHours);
-    setBoothImages(booth.thumbnails);
+    setName(booth.name);
+    setOrganization(booth.organization);
+    setDescription(booth.description);
+    setDate(booth.date);
+    setOpenTime(booth.openTime ?? '');
+    setCloseTime(booth.closeTime ?? '');
+    setSector(booth.sector);
+    setLocation(booth.location);
+    setStatus(booth.status);
+    setIsFood(booth.isFood);
+    setInstagram(booth.instagram);
+    setAccount(booth.account);
+    setRepresentativeMenusRaw(booth.representativeMenus.join(', '));
     setTags(booth.tags);
-    const stillUsed = new Set(booth.thumbnails.map((img) => img.url));
-    for (const url of blobUrlsRef.current) {
-      if (!stillUsed.has(url)) {
-        URL.revokeObjectURL(url);
-        blobUrlsRef.current.delete(url);
-      }
-    }
   }, [booth]);
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const input = e.target;
-    const files = input.files;
-    if (!files) return;
-
-    // 1차 필터: 이미지 타입 + 용량 상한. 초과분은 제외하고 알림.
-    const accepted: File[] = [];
-    const oversized: string[] = [];
-    for (const file of Array.from(files)) {
-      if (!file.type.startsWith('image/')) continue;
-      if (file.size > MAX_IMAGE_SIZE) {
-        oversized.push(file.name);
-        continue;
-      }
-      accepted.push(file);
-    }
-    if (oversized.length > 0) {
-      toast.error(`5MB를 초과한 이미지는 제외했습니다: ${oversized.join(', ')}`);
-    }
-    // 같은 파일 재선택이 onChange 를 다시 트리거하도록 input 초기화.
-    input.value = '';
-    if (accepted.length === 0) return;
-
-    const newImages: BoothImage[] = accepted.map((file, index) => {
-      const url = URL.createObjectURL(file);
-      blobUrlsRef.current.add(url);
-      return {
-        id: Date.now() + index,
-        url,
-        isMain: boothImages.length === 0 && index === 0,
-      };
-    });
-    setBoothImages([...boothImages, ...newImages]);
-  };
-
-  const setMainImage = (id: number) => {
-    setBoothImages(boothImages.map((img) => ({ ...img, isMain: img.id === id })));
-  };
-
-  const removeImage = (id: number) => {
-    const target = boothImages.find((img) => img.id === id);
-    if (target && blobUrlsRef.current.has(target.url)) {
-      URL.revokeObjectURL(target.url);
-      blobUrlsRef.current.delete(target.url);
-    }
-    const filtered = boothImages.filter((img) => img.id !== id);
-    // 불변 처리 — 기존 객체를 mutate 하지 않고 새 객체로 첫 항목 isMain 만 갱신.
-    const next =
-      filtered.length > 0 && !filtered.some((img) => img.isMain)
-        ? filtered.map((img, i) => (i === 0 ? { ...img, isMain: true } : img))
-        : filtered;
-    setBoothImages(next);
-  };
-
   const handleSave = () => {
-    updateMutation.mutate(
-      {
-        name: boothName,
-        organizationName,
-        description: boothDescription,
-        signatureMenu,
-        operatingHours,
-        reservationEnabled,
-        thumbnails: boothImages,
-        tags,
+    const next: Booth = {
+      ...booth,
+      name,
+      organization,
+      description,
+      date,
+      openTime: openTime || null,
+      closeTime: closeTime || null,
+      sector,
+      location,
+      status,
+      isFood,
+      instagram,
+      account,
+      isReservable,
+      representativeMenus: representativeMenusRaw
+        .split(',')
+        .map((m) => m.trim())
+        .filter(Boolean),
+      tags,
+    };
+    updateMutation.mutate(next, {
+      onSuccess: () => {
+        setIsEditing(false);
+        toast.success('부스 정보를 저장했습니다.');
       },
-      {
-        onSuccess: () => {
-          setIsEditing(false);
-          toast.success('부스 정보를 저장했습니다.');
-        },
-        onError: () => {
-          toast.error('저장에 실패했습니다. 잠시 후 다시 시도해주세요.');
-        },
+      onError: () => {
+        toast.error('저장에 실패했습니다. 잠시 후 다시 시도해주세요.');
       },
-    );
+    });
   };
 
   return (
@@ -184,16 +146,13 @@ export function BoothInfoForm({
                 id="booth-name"
                 type="text"
                 placeholder="부스 이름을 입력하세요"
-                value={boothName}
-                onChange={(e) => setBoothName(e.target.value)}
-                className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className={inputClass}
               />
             ) : (
-              <div
-                id="booth-name"
-                className="w-full px-4 py-3 border border-border rounded-lg bg-muted text-foreground"
-              >
-                {boothName}
+              <div id="booth-name" className={readonlyClass}>
+                {name}
               </div>
             )}
           </div>
@@ -209,16 +168,13 @@ export function BoothInfoForm({
                 id="booth-organization"
                 type="text"
                 placeholder="단체 이름을 입력하세요"
-                value={organizationName}
-                onChange={(e) => setOrganizationName(e.target.value)}
-                className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
+                value={organization}
+                onChange={(e) => setOrganization(e.target.value)}
+                className={inputClass}
               />
             ) : (
-              <div
-                id="booth-organization"
-                className="w-full px-4 py-3 border border-border rounded-lg bg-muted text-foreground"
-              >
-                {organizationName}
+              <div id="booth-organization" className={readonlyClass}>
+                {organization}
               </div>
             )}
           </div>
@@ -244,16 +200,13 @@ export function BoothInfoForm({
 현장 주문/웨이팅 방법
 결제 가능 수단 안내
 방문 시 유의사항 및 공지사항`}
-              value={boothDescription}
-              onChange={(e) => setBoothDescription(e.target.value)}
-              className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all resize-none"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              className={`${inputClass} resize-none`}
             />
           ) : (
-            <div
-              id="booth-description"
-              className="w-full px-4 py-3 border border-border rounded-lg bg-muted text-foreground min-h-[112px]"
-            >
-              {boothDescription}
+            <div id="booth-description" className={`${readonlyClass} min-h-[112px]`}>
+              {description}
             </div>
           )}
         </div>
@@ -261,7 +214,12 @@ export function BoothInfoForm({
         <div>
           <span className="block text-sm font-semibold text-foreground mb-2">부스 태그</span>
           {isEditing ? (
-            <BoothTagInput value={tags} onChange={setTags} />
+            <TagInput
+              value={tags}
+              onChange={setTags}
+              inputLabel="부스 태그 입력"
+              placeholderExample="먹거리"
+            />
           ) : tags.length > 0 ? (
             <div className="flex flex-wrap gap-2">
               {tags.map((tag) => (
@@ -277,158 +235,285 @@ export function BoothInfoForm({
           )}
         </div>
 
-        <div>
-          {/* 그룹 타이틀 — 편집 시 실제 file input 은 아래 wrapping label 안. 시맨틱은 span. */}
-          <span className="block text-sm font-semibold text-foreground mb-2">부스 이미지</span>
-
-          {isEditing && (
-            <label className="block border-2 border-dashed border-ds-border-strong rounded-lg p-8 text-center hover:border-primary transition-colors cursor-pointer">
-              <input
-                type="file"
-                multiple
-                accept="image/*"
-                onChange={handleImageUpload}
-                className="hidden"
-              />
-              <Upload className="mx-auto mb-3 text-ds-text-disabled" size={32} />
-              <p className="text-sm text-muted-foreground mb-1">
-                이미지를 드래그하거나 클릭하여 업로드
-              </p>
-              <p className="text-xs text-muted-foreground">
-                상세 배너는 3:2, 목록 썸네일은 5:6 비율로 표시됩니다 · 원본 크기는 제한 없음 ·
-                파일당 최대 5MB · 여러 장 선택 가능
-              </p>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+          <div>
+            <label
+              htmlFor="booth-date"
+              className="block text-sm font-semibold text-foreground mb-2"
+            >
+              축제 일차
             </label>
-          )}
-
-          {boothImages.length > 0 ? (
-            <>
-              <p className="mt-3 text-xs text-muted-foreground">
-                대표 이미지는 이용자 페이지 상세 배너로 쓰이며, 가운데 점선 영역만 목록 카드
-                썸네일에 보입니다. 핵심 피사체를 가운데에 두세요.
-              </p>
-              <div className="mt-3 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                {boothImages.map((image) => (
-                  <div
-                    key={image.id}
-                    className={`relative group aspect-[3/2] rounded-lg overflow-hidden border-2 transition-all ${
-                      image.isMain ? 'border-primary' : 'border-border'
-                    }`}
-                  >
-                    <img src={image.url} alt="부스 이미지" className="w-full h-full object-cover" />
-
-                    {/* 대표 이미지에만 5:6 썸네일 크롭 영역 미리보기 */}
-                    {image.isMain && <ThumbnailCropOverlay />}
-
-                    {image.isMain && (
-                      <div className="absolute top-2 left-2 px-2 py-1 bg-primary text-primary-foreground text-xs font-semibold rounded-full flex items-center gap-1 shadow-lg">
-                        <Star size={12} fill="white" />
-                        대표
-                      </div>
-                    )}
-
-                    {isEditing && (
-                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-all duration-200 flex items-center justify-center gap-2">
-                        {!image.isMain && (
-                          <button
-                            onClick={() => setMainImage(image.id)}
-                            className="opacity-0 group-hover:opacity-100 px-3 py-1.5 bg-background text-foreground rounded-lg text-xs font-medium hover:bg-primary hover:text-primary-foreground transition-all"
-                          >
-                            대표로 설정
-                          </button>
-                        )}
-                        <button
-                          onClick={() => removeImage(image.id)}
-                          className="opacity-0 group-hover:opacity-100 p-2 bg-destructive text-destructive-foreground rounded-lg hover:bg-ds-error-pressed transition-all"
-                        >
-                          <Trash2 size={14} />
-                        </button>
-                      </div>
-                    )}
-                  </div>
+            {isEditing ? (
+              <select
+                id="booth-date"
+                value={date ?? ''}
+                onChange={(e) => setDate(e.target.value ? Number(e.target.value) : null)}
+                className={inputClass}
+              >
+                <option value="">선택 안 함</option>
+                {DATES.map((d) => (
+                  <option key={d} value={d}>
+                    {d}일차
+                  </option>
                 ))}
+              </select>
+            ) : (
+              <div id="booth-date" className={readonlyClass}>
+                {date != null ? `${date}일차` : '-'}
               </div>
-            </>
-          ) : (
-            !isEditing && (
-              <div className="w-full px-4 py-8 border border-border rounded-lg bg-muted text-center text-sm text-muted-foreground">
-                등록된 이미지가 없습니다.
+            )}
+          </div>
+          <div>
+            <label
+              htmlFor="booth-open-time"
+              className="block text-sm font-semibold text-foreground mb-2"
+            >
+              운영 시작
+            </label>
+            {isEditing ? (
+              <input
+                id="booth-open-time"
+                type="time"
+                value={openTime}
+                onChange={(e) => setOpenTime(e.target.value)}
+                className={inputClass}
+              />
+            ) : (
+              <div id="booth-open-time" className={readonlyClass}>
+                {openTime || '-'}
               </div>
-            )
-          )}
+            )}
+          </div>
+          <div>
+            <label
+              htmlFor="booth-close-time"
+              className="block text-sm font-semibold text-foreground mb-2"
+            >
+              운영 종료
+            </label>
+            {isEditing ? (
+              <input
+                id="booth-close-time"
+                type="time"
+                value={closeTime}
+                onChange={(e) => setCloseTime(e.target.value)}
+                className={inputClass}
+              />
+            ) : (
+              <div id="booth-close-time" className={readonlyClass}>
+                {closeTime || '-'}
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+          <div>
+            <label
+              htmlFor="booth-sector"
+              className="block text-sm font-semibold text-foreground mb-2"
+            >
+              구역
+            </label>
+            {isEditing ? (
+              <select
+                id="booth-sector"
+                value={sector ?? ''}
+                onChange={(e) => setSector((e.target.value || null) as BoothSector | null)}
+                className={inputClass}
+              >
+                <option value="">선택 안 함</option>
+                {SECTORS.map((s) => (
+                  <option key={s} value={s}>
+                    {s}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <div id="booth-sector" className={readonlyClass}>
+                {sector ?? '-'}
+              </div>
+            )}
+          </div>
+          <div>
+            <label
+              htmlFor="booth-location"
+              className="block text-sm font-semibold text-foreground mb-2"
+            >
+              배치 번호
+            </label>
+            {isEditing ? (
+              <input
+                id="booth-location"
+                type="number"
+                placeholder="배치 번호"
+                value={location ?? ''}
+                onChange={(e) => setLocation(e.target.value ? Number(e.target.value) : null)}
+                className={inputClass}
+              />
+            ) : (
+              <div id="booth-location" className={readonlyClass}>
+                {location ?? '-'}
+              </div>
+            )}
+          </div>
+          <div>
+            <label
+              htmlFor="booth-status"
+              className="block text-sm font-semibold text-foreground mb-2"
+            >
+              운영 상태
+            </label>
+            {isEditing ? (
+              <select
+                id="booth-status"
+                value={status}
+                onChange={(e) => setStatus(e.target.value as BoothStatus)}
+                className={inputClass}
+              >
+                {STATUSES.map((s) => (
+                  <option key={s} value={s}>
+                    {BOOTH_STATUS_LABEL[s]}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <div id="booth-status" className={readonlyClass}>
+                {BOOTH_STATUS_LABEL[status]}
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
           <div>
             <label
-              htmlFor="booth-signature-menu"
+              htmlFor="booth-instagram"
               className="block text-sm font-semibold text-foreground mb-2"
             >
-              대표 메뉴
+              인스타그램 URL
             </label>
             {isEditing ? (
               <input
-                id="booth-signature-menu"
+                id="booth-instagram"
                 type="text"
-                placeholder="대표 메뉴명"
-                value={signatureMenu}
-                onChange={(e) => setSignatureMenu(e.target.value)}
-                className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
+                placeholder="https://instagram.com/..."
+                value={instagram}
+                onChange={(e) => setInstagram(e.target.value)}
+                className={inputClass}
               />
             ) : (
-              <div
-                id="booth-signature-menu"
-                className="w-full px-4 py-3 border border-border rounded-lg bg-muted text-foreground"
-              >
-                {signatureMenu}
+              <div id="booth-instagram" className={readonlyClass}>
+                {instagram || '-'}
               </div>
             )}
           </div>
           <div>
             <label
-              htmlFor="booth-operating-hours"
+              htmlFor="booth-account"
               className="block text-sm font-semibold text-foreground mb-2"
             >
-              운영 시간
+              정산 계좌
             </label>
             {isEditing ? (
               <input
-                id="booth-operating-hours"
+                id="booth-account"
                 type="text"
-                placeholder="예: 10:00 - 18:00"
-                value={operatingHours}
-                onChange={(e) => setOperatingHours(e.target.value)}
-                className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
+                placeholder="예: 카카오뱅크 1234-5678"
+                value={account}
+                onChange={(e) => setAccount(e.target.value)}
+                className={inputClass}
               />
             ) : (
-              <div
-                id="booth-operating-hours"
-                className="w-full px-4 py-3 border border-border rounded-lg bg-muted text-foreground"
-              >
-                {operatingHours}
+              <div id="booth-account" className={readonlyClass}>
+                {account || '-'}
               </div>
             )}
           </div>
         </div>
 
-        <div className="flex items-center gap-3 pt-4">
-          <span className="text-sm font-semibold text-foreground">부스 운영 여부</span>
-          <button
-            onClick={() => isEditing && onReservationEnabledChange(!reservationEnabled)}
-            disabled={!isEditing}
-            className={`
-              relative w-14 h-7 rounded-full transition-all duration-300
-              ${reservationEnabled ? 'bg-ds-success shadow-lg' : 'bg-ds-gray-400'}
-              ${!isEditing ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
-            `}
+        <div>
+          <label
+            htmlFor="booth-representative-menus"
+            className="block text-sm font-semibold text-foreground mb-2"
           >
-            <div
-              className={`
-              absolute top-1 w-5 h-5 bg-background rounded-full shadow-md transition-all duration-300
-              ${reservationEnabled ? 'left-8' : 'left-1'}
-            `}
+            대표 메뉴
+          </label>
+          {isEditing ? (
+            <input
+              id="booth-representative-menus"
+              type="text"
+              placeholder="쉼표로 구분해 입력 (예: 치킨, 맥주)"
+              value={representativeMenusRaw}
+              onChange={(e) => setRepresentativeMenusRaw(e.target.value)}
+              className={inputClass}
             />
-          </button>
+          ) : booth.representativeMenus.length > 0 ? (
+            <div id="booth-representative-menus" className={readonlyClass}>
+              {booth.representativeMenus.join(', ')}
+            </div>
+          ) : (
+            <div className="w-full px-4 py-3 border border-border rounded-lg bg-muted text-muted-foreground">
+              등록된 대표 메뉴가 없습니다.
+            </div>
+          )}
+        </div>
+
+        {booth.thumbnailUrl && (
+          <div>
+            <span className="block text-sm font-semibold text-foreground mb-2">부스 이미지</span>
+            <div className="aspect-[3/2] w-full max-w-sm rounded-lg overflow-hidden border border-border">
+              <img
+                src={booth.thumbnailUrl}
+                alt="부스 대표 이미지"
+                className="w-full h-full object-cover"
+              />
+            </div>
+          </div>
+        )}
+
+        <div className="flex flex-wrap items-center gap-6 pt-4">
+          <div className="flex items-center gap-3">
+            <span className="text-sm font-semibold text-foreground">음식 부스</span>
+            <button
+              type="button"
+              onClick={() => isEditing && setIsFood(!isFood)}
+              disabled={!isEditing}
+              aria-pressed={isFood}
+              className={`
+                relative w-14 h-7 rounded-full transition-all duration-300
+                ${isFood ? 'bg-primary shadow-lg' : 'bg-ds-gray-400'}
+                ${!isEditing ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
+              `}
+            >
+              <div
+                className={`absolute top-1 w-5 h-5 bg-background rounded-full shadow-md transition-all duration-300 ${
+                  isFood ? 'left-8' : 'left-1'
+                }`}
+              />
+            </button>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <span className="text-sm font-semibold text-foreground">부스 운영 여부</span>
+            <button
+              type="button"
+              onClick={() => isEditing && onIsReservableChange(!isReservable)}
+              disabled={!isEditing}
+              aria-pressed={isReservable}
+              className={`
+                relative w-14 h-7 rounded-full transition-all duration-300
+                ${isReservable ? 'bg-ds-success shadow-lg' : 'bg-ds-gray-400'}
+                ${!isEditing ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
+              `}
+            >
+              <div
+                className={`absolute top-1 w-5 h-5 bg-background rounded-full shadow-md transition-all duration-300 ${
+                  isReservable ? 'left-8' : 'left-1'
+                }`}
+              />
+            </button>
+          </div>
         </div>
       </div>
     </div>

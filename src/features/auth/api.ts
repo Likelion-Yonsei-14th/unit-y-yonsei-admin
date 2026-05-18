@@ -22,7 +22,8 @@ const toCurrentUserFromAuth = (d: AdminAuthDTO): CurrentUser => ({
   userId: d.loginId,
   role: roleFromBackend(d.role),
   name: d.representativeName,
-  // boothId / performanceTeamId 는 백엔드 인증 응답에 아직 없음 (백엔드 추가 요청 항목).
+  boothId: d.boothId ?? null,
+  performanceTeamId: d.performanceTeamId ?? null,
 });
 
 // ---- Mock 구현 (USE_MOCK=true일 때 사용) ----

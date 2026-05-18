@@ -2,10 +2,6 @@ import { useState } from 'react';
 import { X } from 'lucide-react';
 import { toast } from 'sonner';
 
-/** 부스당 태그 최대 개수. */
-const MAX_TAGS = 3;
-/** 태그 내용('#' 제외) 최대 글자수. */
-const MAX_TAG_CONTENT = 6;
 /** 쉼표·공백류를 토큰 구분자로 본다. /g 금지 — .test() 의 lastIndex 가 드리프트한다. */
 const SEPARATOR = /[,\s]+/;
 
@@ -13,15 +9,31 @@ interface Props {
   /** '#' 접두사 포함 태그 배열. */
   value: string[];
   onChange: (next: string[]) => void;
+  /** 태그 최대 개수. */
+  maxTags?: number;
+  /** 태그 내용('#' 제외) 최대 글자수. */
+  maxLen?: number;
+  /** input 의 aria-label. */
+  inputLabel?: string;
+  /** placeholder 의 "(예: OO)" 예시어. 없으면 예시 없이 표기. */
+  placeholderExample?: string;
 }
 
 /**
- * 부스 태그 입력 — Enter/쉼표/스페이스로 칩 확정.
- * 저장값은 항상 '#' 접두사 포함(예: '#먹거리'). 내용은 1~6자, 최대 3개.
+ * 태그 입력 — Enter/쉼표/스페이스로 칩 확정.
+ * 저장값은 항상 '#' 접두사 포함(예: '#먹거리'). 내용은 1~maxLen 자, 최대 maxTags 개.
+ * 부스·공연 등 도메인 공용 — 한도/라벨은 props 로 주입.
  */
-export function BoothTagInput({ value, onChange }: Props) {
+export function TagInput({
+  value,
+  onChange,
+  maxTags = 3,
+  maxLen = 6,
+  inputLabel = '태그 입력',
+  placeholderExample,
+}: Props) {
   const [draft, setDraft] = useState('');
-  const atMax = value.length >= MAX_TAGS;
+  const atMax = value.length >= maxTags;
 
   /** 토큰 문자열들을 정규화·검증해 value 에 누적 추가. 하나라도 추가됐으면 true. */
   const commitTokens = (raw: string): boolean => {
@@ -37,7 +49,7 @@ export function BoothTagInput({ value, onChange }: Props) {
       // 앞쪽 '#'·공백을 벗겨 내용만 추출 → 단일 '#' 재부착.
       const content = token.replace(/^#+/, '').trim();
       if (!content) continue;
-      if (content.length > MAX_TAG_CONTENT) {
+      if (content.length > maxLen) {
         rejectedLong = true;
         continue;
       }
@@ -46,16 +58,16 @@ export function BoothTagInput({ value, onChange }: Props) {
         rejectedDup = true;
         continue;
       }
-      if (next.length >= MAX_TAGS) {
+      if (next.length >= maxTags) {
         rejectedFull = true;
         continue;
       }
       next.push(tag);
     }
 
-    if (rejectedLong) toast.error(`태그는 ${MAX_TAG_CONTENT}자 이내로 입력해주세요.`);
+    if (rejectedLong) toast.error(`태그는 ${maxLen}자 이내로 입력해주세요.`);
     if (rejectedDup) toast('이미 추가된 태그입니다.');
-    if (rejectedFull) toast(`태그는 최대 ${MAX_TAGS}개까지 추가할 수 있습니다.`);
+    if (rejectedFull) toast(`태그는 최대 ${maxTags}개까지 추가할 수 있습니다.`);
 
     if (next.length !== value.length) {
       onChange(next);
@@ -91,6 +103,11 @@ export function BoothTagInput({ value, onChange }: Props) {
     onChange(value.filter((t) => t !== tag));
   };
 
+  const placeholder =
+    value.length === 0
+      ? `태그 입력 후 Enter${placeholderExample ? ` (예: ${placeholderExample})` : ''}`
+      : '태그 추가';
+
   return (
     <div>
       <div className="flex flex-wrap items-center gap-2 px-3 py-2 border border-border rounded-lg focus-within:ring-2 focus-within:ring-ring focus-within:border-transparent transition-all">
@@ -114,9 +131,9 @@ export function BoothTagInput({ value, onChange }: Props) {
           <input
             type="text"
             value={draft}
-            aria-label="부스 태그 입력"
-            maxLength={MAX_TAG_CONTENT + 1}
-            placeholder={value.length === 0 ? '태그 입력 후 Enter (예: 먹거리)' : '태그 추가'}
+            aria-label={inputLabel}
+            maxLength={maxLen + 1}
+            placeholder={placeholder}
             onChange={(e) => setDraft(e.target.value)}
             onKeyDown={handleKeyDown}
             onPaste={handlePaste}
@@ -126,8 +143,8 @@ export function BoothTagInput({ value, onChange }: Props) {
       </div>
       <p className="mt-1 text-xs text-muted-foreground">
         {atMax
-          ? `태그는 최대 ${MAX_TAGS}개입니다. (${value.length}/${MAX_TAGS})`
-          : `Enter·쉼표·스페이스로 추가 · ${MAX_TAG_CONTENT}자 이내 · ${value.length}/${MAX_TAGS}`}
+          ? `태그는 최대 ${maxTags}개입니다. (${value.length}/${maxTags})`
+          : `Enter·쉼표·스페이스로 추가 · ${maxLen}자 이내 · ${value.length}/${maxTags}`}
       </p>
     </div>
   );

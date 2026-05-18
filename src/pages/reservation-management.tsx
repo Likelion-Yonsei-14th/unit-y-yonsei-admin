@@ -54,11 +54,11 @@ export function ReservationManagement() {
   // booth 가 비동기로 도착(useBooths) 하므로 초기값은 booth 가 없을 때의 안전한 기본값(true).
   // 도착 후/실 동기화 필드 변경 시에만 setState — booth 객체 레퍼런스만 바뀌는 단순 refetch
   // 에서는 로컬 토글이 서버 값으로 덮이지 않도록 deps 를 실제 트리거가 되는 필드로 좁힌다.
-  const [reservationEnabled, setReservationEnabled] = useState(booth?.reservationEnabled ?? true);
+  const [reservationEnabled, setReservationEnabled] = useState(booth?.isReservable ?? true);
   useEffect(() => {
-    if (booth) setReservationEnabled(booth.reservationEnabled);
+    if (booth) setReservationEnabled(booth.isReservable);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- 의도적으로 좁힌 deps. booth 통째로 deps 에 두면 refetch 마다 로컬 토글이 덮임.
-  }, [booth?.id, booth?.reservationEnabled]);
+  }, [booth?.id, booth?.isReservable]);
   const [selectedReservation, setSelectedReservation] = useState<Reservation | null>(null);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [showStatusChangeModal, setShowStatusChangeModal] = useState(false);

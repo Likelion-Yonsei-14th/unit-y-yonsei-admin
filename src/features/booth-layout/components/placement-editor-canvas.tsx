@@ -9,7 +9,7 @@ import { useImagePaintedRect } from '@/features/booth-layout/hooks/use-image-pai
 import { clamp } from '@/features/booth-layout/utils/clamp';
 import { computePinRadius } from '@/features/booth-layout/utils/pin-radius';
 import type { BoothPlacement, MapSection, MapSectionId } from '@/features/booth-layout/types';
-import type { BoothProfile } from '@/features/booths/types';
+import type { Booth } from '@/features/booths/types';
 
 const MIN_SCALE = 1;
 const MAX_SCALE = 4;
@@ -27,7 +27,7 @@ export interface PlacementEditorCanvasProps {
   /** 좌측 리스트 hover 동기화 — 핀 ghost 강조. select 와 다른 채널. */
   hoveredBoothId?: number | null;
   /** 핀 hover tooltip 에 부스명/단체명 노출하기 위한 lookup. */
-  boothById?: Map<number, BoothProfile>;
+  boothById?: Map<number, Booth>;
   onSelectPlacement: (id: number | null) => void;
   /** 새 placement 생성 콜백. 좌표/크기는 이미지 기준 0–100 %. */
   onCreatePlacement: (input: { x: number; y: number; width: number; height: number }) => void;
@@ -362,7 +362,7 @@ export function PlacementEditorCanvas({
                     // 부스명 / 단체명 / 자리 번호 — 운영진이 핀에 hover 만 해도 누구 자리인지 즉시 식별.
                     const tooltipText = profile?.name
                       ? `${profile.name}${
-                          profile.organizationName ? ` / ${profile.organizationName}` : ''
+                          profile.organization ? ` / ${profile.organization}` : ''
                         } · 자리 ${p.boothNumber}`
                       : `자리 ${p.boothNumber}`;
                     const isDragging = dragState?.placementId === p.id;

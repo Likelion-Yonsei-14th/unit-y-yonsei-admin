@@ -1,12 +1,12 @@
 // src/features/booth-layout/components/placement-list.tsx
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Search, X, AlertTriangle } from 'lucide-react';
-import type { BoothProfile } from '@/features/booths/types';
+import type { Booth } from '@/features/booths/types';
 import type { BoothPlacement } from '@/features/booth-layout/types';
 
 export interface PlacementListProps {
   /** 운영자(부스 계정) 풀. */
-  booths: BoothProfile[];
+  booths: Booth[];
   /** 현재 선택된 날짜의 placements (모든 섹션). 'N자리' 카운트 + 날짜 필터에 사용. */
   placementsAtDate: BoothPlacement[];
   /** 현재 (date, section) 의 placements. 섹션 카운트 + 정렬 우선순위에 사용. */
@@ -103,14 +103,14 @@ export function PlacementList({
     }
     if (normalizedQuery) {
       pool = pool.filter((b) => {
-        const haystack = `${b.name} ${b.organizationName}`.toLowerCase();
+        const haystack = `${b.name} ${b.organization}`.toLowerCase();
         return haystack.includes(normalizedQuery);
       });
     }
     // 정렬 우선순위: 현 섹션 자리 > 같은 날 다른 섹션 자리 > 그 외.
     // 안정 정렬을 위해 원본 인덱스를 보조 키로 사용.
     const order = new Map(booths.map((b, i) => [b.id, i] as const));
-    const rank = (b: BoothProfile) => {
+    const rank = (b: Booth) => {
       if ((inSectionByBooth.get(b.id) ?? 0) > 0) return 0;
       if ((inDateByBooth.get(b.id) ?? 0) > 0) return 1;
       return 2;
@@ -292,10 +292,8 @@ export function PlacementList({
               >
                 <div className="min-w-0 flex-1">
                   <div className="truncate text-sm font-medium text-foreground">{displayName}</div>
-                  {b.organizationName && (
-                    <div className="truncate text-xs text-muted-foreground">
-                      {b.organizationName}
-                    </div>
+                  {b.organization && (
+                    <div className="truncate text-xs text-muted-foreground">{b.organization}</div>
                   )}
                 </div>
                 <span

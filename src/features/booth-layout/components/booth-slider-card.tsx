@@ -18,7 +18,7 @@ export function BoothSliderCard({
 }: BoothSliderCardProps) {
   const { placement, profile, counts } = booth;
   const displayName = profile.name || '이름 미입력 부스';
-  const displayOrg = profile.organizationName || '-';
+  const displayOrg = profile.organization || '-';
   const total = counts.waiting + counts.completed + counts.cancelled;
 
   return (
