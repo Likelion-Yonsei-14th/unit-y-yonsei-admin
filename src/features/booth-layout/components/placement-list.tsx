@@ -2,15 +2,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Search, X, AlertTriangle } from 'lucide-react';
 import type { Booth } from '@/features/booths/types';
-import type { BoothPlacement } from '@/features/booth-layout/types';
 
 export interface PlacementListProps {
   /** 운영자(부스 계정) 풀. */
   booths: Booth[];
-  /** 현재 선택된 날짜의 placements (모든 섹션). 'N자리' 카운트 + 날짜 필터에 사용. */
-  placementsAtDate: BoothPlacement[];
-  /** 현재 (date, section) 의 placements. 섹션 카운트 + 정렬 우선순위에 사용. */
-  placementsInSection: BoothPlacement[];
+  /** 현재 (날짜, 섹션) 에 배치된 부스 id 집합. */
+  placedBoothIds: Set<number>;
+  /** 선택 일차(Booth.date 비교용). null 이면 날짜 필터 비활성. */
+  selectedDay: number | null;
   selectedBoothId: number | null;
   onSelectBooth: (boothId: number | null) => void;
   /** 캔버스 상에서 ghost highlight 동기화용. 리스트 hover → 캔버스 핀 살짝 강조. */
@@ -20,30 +19,26 @@ export interface PlacementListProps {
 /**
  * 편집기 좌측의 운영자 리스트.
  *
- * 기본 동작: 현재 (날짜, 섹션) 에 자리가 잡혀 있는 부스만 보여 컨텍스트와 무관한 부스들이
- * 시야를 가리지 않게 한다. 새 부스를 배치하려면 '전체 보기' 토글 또는 검색창 사용.
+ * 기본 동작: 현재 일차에 운영하는 부스만 보여 컨텍스트와 무관한 부스가 시야를 가리지
+ * 않게 한다. 1:1 모델이라 한 부스는 배치(슬롯 있음) 또는 미배치 둘 중 하나다.
  *
- * 정렬: 현 섹션 자리 있음 → 같은 날 다른 섹션 자리 있음 → 그 외(다른 날만 또는 무배치).
- * 같은 그룹 내에서는 원본 booth 풀 순서를 유지해 화면이 갑자기 흔들리는 걸 막는다.
+ * 정렬: 이 섹션 배치 → 같은 날 미배치 → 그 외(다른 날).
  */
 export function PlacementList({
   booths,
-  placementsAtDate,
-  placementsInSection,
+  placedBoothIds,
+  selectedDay,
   selectedBoothId,
   onSelectBooth,
   onHoverBooth,
 }: PlacementListProps) {
   const [showAll, setShowAll] = useState(false);
   const [query, setQuery] = useState('');
-  /** 미배치(이 (date, section) 에 자리 없음) 만 보기 — 누락 검증용 P0 워크플로. */
+  /** 미배치(이 섹션에 자리 없음) 만 보기 — 누락 검증용 P0 워크플로. */
   const [missingOnly, setMissingOnly] = useState(false);
 
   // 캔버스에서 핀 클릭 → selectedBoothId 변경 → 리스트의 해당 항목으로 자동 스크롤.
-  // li ref Map 으로 추적. 항목 unmount 시 cleanup.
   const liRefs = useRef<Map<number, HTMLLIElement>>(new Map());
-  // boothId 별 ref 콜백을 캐시 — inline 콜백 매 렌더 새로 생성되어 ref churn 발생하던
-  // 문제 방지(같은 boothId 면 같은 함수 instance 재사용).
   const liRefCallbacks = useRef<Map<number, (el: HTMLLIElement | null) => void>>(new Map());
   const getLiRef = useCallback((boothId: number) => {
     let cb = liRefCallbacks.current.get(boothId);
@@ -60,45 +55,33 @@ export function PlacementList({
     if (selectedBoothId == null) return;
     const el = liRefs.current.get(selectedBoothId);
     if (!el) return;
-    // prefers-reduced-motion 사용자에게는 smooth 가 부적절 — 즉각 점프로.
     const reduced =
       typeof window !== 'undefined' &&
       window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
     el.scrollIntoView({ block: 'nearest', behavior: reduced ? 'auto' : 'smooth' });
   }, [selectedBoothId]);
 
-  // hover 중인 부스가 필터/검색 변경으로 unmount 되면 onMouseLeave 가 발생하지 않아
-  // hoveredBoothId 가 stale 로 남고 캔버스 ghost 가 계속 켜지는 문제. 컴포넌트 unmount
-  // 시 일괄 정리.
+  // hover 중인 부스가 필터 변경으로 unmount 되면 stale 강조가 남는 문제 — unmount 시 정리.
   useEffect(() => () => onHoverBooth?.(null), [onHoverBooth]);
 
-  const inSectionByBooth = useMemo(() => {
-    const m = new Map<number, number>();
-    for (const p of placementsInSection) m.set(p.boothId, (m.get(p.boothId) ?? 0) + 1);
-    return m;
-  }, [placementsInSection]);
-
-  const inDateByBooth = useMemo(() => {
-    const m = new Map<number, number>();
-    for (const p of placementsAtDate) m.set(p.boothId, (m.get(p.boothId) ?? 0) + 1);
-    return m;
-  }, [placementsAtDate]);
+  /** 부스가 현재 섹션에 배치됐는지. */
+  const isPlaced = useCallback((b: Booth) => placedBoothIds.has(b.id), [placedBoothIds]);
+  /** 부스가 선택 일차에 운영하는지. */
+  const inDate = useCallback(
+    (b: Booth) => selectedDay != null && b.date === selectedDay,
+    [selectedDay],
+  );
 
   const normalizedQuery = query.trim().toLowerCase();
 
-  // 검색어가 비어있을 때만 '이 날짜만' / '미배치만' 필터를 적용. 검색 중에는 전체 풀을 대상으로
-  // 매칭 — 새 부스 배치 시 빠른 lookup 을 위함.
+  // 검색어가 비어있을 때만 '이 날짜만' / '미배치만' 필터를 적용. 검색 중에는 전체 풀 매칭.
   const visibleBooths = useMemo(() => {
     let pool = booths;
     if (!normalizedQuery) {
       if (missingOnly) {
-        // 이 날짜에 운영하는 부스 중 이 섹션에 자리가 없는 것 — label 과 일치.
-        // 다른 날짜만 운영하는 부스는 노이즈라 제외.
-        pool = pool.filter(
-          (b) => inDateByBooth.has(b.id) && (inSectionByBooth.get(b.id) ?? 0) === 0,
-        );
+        pool = pool.filter((b) => inDate(b) && !isPlaced(b));
       } else if (!showAll) {
-        pool = pool.filter((b) => inDateByBooth.has(b.id));
+        pool = pool.filter((b) => inDate(b));
       }
     }
     if (normalizedQuery) {
@@ -107,12 +90,11 @@ export function PlacementList({
         return haystack.includes(normalizedQuery);
       });
     }
-    // 정렬 우선순위: 현 섹션 자리 > 같은 날 다른 섹션 자리 > 그 외.
-    // 안정 정렬을 위해 원본 인덱스를 보조 키로 사용.
+    // 정렬 우선순위: 이 섹션 배치 > 같은 날 미배치 > 그 외. 안정 정렬용 원본 인덱스 보조키.
     const order = new Map(booths.map((b, i) => [b.id, i] as const));
     const rank = (b: Booth) => {
-      if ((inSectionByBooth.get(b.id) ?? 0) > 0) return 0;
-      if ((inDateByBooth.get(b.id) ?? 0) > 0) return 1;
+      if (isPlaced(b)) return 0;
+      if (inDate(b)) return 1;
       return 2;
     };
     return [...pool].sort((a, b) => {
@@ -120,23 +102,11 @@ export function PlacementList({
       if (r !== 0) return r;
       return (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0);
     });
-  }, [booths, normalizedQuery, showAll, missingOnly, inSectionByBooth, inDateByBooth]);
+  }, [booths, normalizedQuery, showAll, missingOnly, isPlaced, inDate]);
 
-  const totalInDate = useMemo(
-    () => booths.filter((b) => inDateByBooth.has(b.id)).length,
-    [booths, inDateByBooth],
-  );
-
-  /**
-   * 검증 패널 카운트 — 운영진이 "이 (date, section) 에 빠진 부스 있나?" 즉시 확인.
-   * 의미: 이 날짜에 운영하는 부스(=어떤 placement 라도 있는) 중 이 섹션에 자리 없는 것.
-   * 다른 날짜에만 있는 부스는 분모에서 제외 (label "이 (날짜, 섹션) 미배치" 와 일치).
-   */
-  const totalInSection = useMemo(
-    () => booths.filter((b) => (inSectionByBooth.get(b.id) ?? 0) > 0).length,
-    [booths, inSectionByBooth],
-  );
-  const missingFromSection = totalInDate - totalInSection;
+  const totalInDate = useMemo(() => booths.filter((b) => inDate(b)).length, [booths, inDate]);
+  const totalPlaced = useMemo(() => booths.filter((b) => isPlaced(b)).length, [booths, isPlaced]);
+  const missingFromSection = totalInDate - totalPlaced;
 
   return (
     <aside className="flex h-full min-h-0 w-72 flex-col border-r border-border bg-background">
@@ -148,8 +118,7 @@ export function PlacementList({
           </p>
         </div>
 
-        {/* 검증 패널 — 이 (날짜, 섹션) 에 자리 있는 부스 / 없는 부스 카운트.
-            축제 시작 전 "빠진 부스 있나?" 1초 안에 확인하기 위함 (운영 사고 방지선). */}
+        {/* 검증 패널 — 이 (날짜, 섹션) 에 배치된 부스 / 미배치 카운트. */}
         <div className="rounded-md border border-border bg-muted/40 px-3 py-2 text-xs">
           <div className="flex items-center justify-between gap-2">
             <span className="text-muted-foreground">이 날짜 운영</span>
@@ -160,7 +129,7 @@ export function PlacementList({
           </div>
           <div className="mt-1 flex items-center justify-between gap-2">
             <span className="text-ds-success-pressed">이 섹션 배치</span>
-            <span className="font-semibold text-ds-success-pressed">{totalInSection}</span>
+            <span className="font-semibold text-ds-success-pressed">{totalPlaced}</span>
           </div>
           <div className="mt-1 flex items-center justify-between gap-2">
             <span
@@ -224,15 +193,15 @@ export function PlacementList({
           />
         </label>
 
-        {/* 미배치 only 토글 — 검증 패널의 'N 미배치' 와 짝. 누락 부스 빠르게 발견. */}
+        {/* 미배치 only 토글 — 검증 패널의 '미배치' 와 짝. 누락 부스 빠르게 발견. */}
         <label className="flex items-center justify-between text-xs text-muted-foreground">
-          <span>이 (날짜, 섹션) 미배치만</span>
+          <span>이 섹션 미배치만</span>
           <input
             type="checkbox"
             checked={missingOnly}
             onChange={(e) => setMissingOnly(e.target.checked)}
             disabled={!!normalizedQuery}
-            aria-label="이 (날짜, 섹션) 에 자리 없는 부스만 보기"
+            aria-label="이 섹션에 자리 없는 부스만 보기"
             className="h-4 w-4 accent-primary disabled:opacity-40"
           />
         </label>
@@ -260,26 +229,22 @@ export function PlacementList({
           </li>
         )}
         {visibleBooths.map((b) => {
-          const sectionCount = inSectionByBooth.get(b.id) ?? 0;
-          const dateCount = inDateByBooth.get(b.id) ?? 0;
+          const placed = isPlaced(b);
+          const operatesToday = inDate(b);
           const selected = selectedBoothId === b.id;
           const displayName = b.name || `(이름 미작성, id: ${b.id})`;
-          // 배지 톤 — 현 섹션에 자리 있으면 success, 같은 날 다른 섹션만 있으면 primary,
-          // 아예 없으면 muted (전체/검색 모드에서 등장).
-          const badgeClass =
-            sectionCount > 0
-              ? 'bg-ds-success-subtle text-ds-success-pressed'
-              : dateCount > 0
-                ? 'bg-ds-primary-subtle text-ds-primary-pressed'
-                : 'bg-muted text-muted-foreground';
-          const badgeLabel =
-            sectionCount > 0 ? `${sectionCount} 자리` : dateCount > 0 ? '다른 섹션' : '미배치';
-          const badgeTitle =
-            sectionCount > 0
-              ? `이 (날짜, 섹션) 에 ${sectionCount} 자리 배치됨`
-              : dateCount > 0
-                ? `이 날짜의 다른 섹션에 ${dateCount} 자리 배치됨`
-                : '아직 배치된 자리가 없는 부스';
+          // 배지 톤 — 이 섹션 배치 success, 같은 날 미배치 warning, 그 외 muted.
+          const badgeClass = placed
+            ? 'bg-ds-success-subtle text-ds-success-pressed'
+            : operatesToday
+              ? 'bg-ds-warning-subtle text-ds-warning-pressed'
+              : 'bg-muted text-muted-foreground';
+          const badgeLabel = placed ? '배치' : operatesToday ? '미배치' : '다른 날';
+          const badgeTitle = placed
+            ? '이 (날짜, 섹션) 에 배치된 부스'
+            : operatesToday
+              ? '이 날짜에 운영하나 아직 배치되지 않은 부스'
+              : '다른 날짜에 운영하는 부스';
           return (
             <li key={b.id} ref={getLiRef(b.id)} onMouseEnter={() => onHoverBooth?.(b.id)}>
               <button

@@ -8,7 +8,7 @@ import {
 import { useImagePaintedRect } from '@/features/booth-layout/hooks/use-image-painted-rect';
 import { clamp } from '@/features/booth-layout/utils/clamp';
 import { computePinRadius } from '@/features/booth-layout/utils/pin-radius';
-import type { BoothPlacement, MapSection, MapSectionId } from '@/features/booth-layout/types';
+import type { PlacementBox, MapSection, MapSectionId } from '@/features/booth-layout/types';
 import type { Booth } from '@/features/booths/types';
 
 const MIN_SCALE = 1;
@@ -21,7 +21,8 @@ const DEFAULT_SCALE_BY_SECTION: Record<MapSectionId, number> = {
 
 export interface PlacementEditorCanvasProps {
   section: MapSection;
-  placements: BoothPlacement[];
+  placements: PlacementBox[];
+  /** 선택된 MapLocation id. */
   selectedPlacementId: number | null;
   selectedBoothId: number | null;
   /** 좌측 리스트 hover 동기화 — 핀 ghost 강조. select 와 다른 채널. */
@@ -174,13 +175,13 @@ export function PlacementEditorCanvas({
   const dragStateRef = useRef(dragState);
   dragStateRef.current = dragState;
 
-  const onPinMouseDown = (e: React.MouseEvent, p: BoothPlacement) => {
+  const onPinMouseDown = (e: React.MouseEvent, p: PlacementBox) => {
     e.stopPropagation();
     // preventDefault 는 의도적으로 호출하지 않음 — click 이벤트가 정상적으로 발생해야
     // 무이동 탭의 onClick selection 경로가 살아 있다.
-    onSelectPlacement(p.id);
+    onSelectPlacement(p.locationId);
     setDragState({
-      placementId: p.id,
+      placementId: p.locationId,
       startClientX: e.clientX,
       startClientY: e.clientY,
       dxPct: 0,
@@ -216,13 +217,13 @@ export function PlacementEditorCanvas({
     };
   }, [isDragActive, rect, onMovePlacement]);
 
-  const onHandleMouseDown = (e: React.MouseEvent, p: BoothPlacement, handle: HandleId) => {
+  const onHandleMouseDown = (e: React.MouseEvent, p: PlacementBox, handle: HandleId) => {
     e.stopPropagation();
     // preventDefault: 핸들은 이미 선택된 핀에서만 보이므로 click 폴백 selection 경로가
     // 필요 없고, 텍스트 드래그 선택 등 native default 가 거추장스러워 일관되게 차단.
     e.preventDefault();
     setResizeState({
-      placementId: p.id,
+      placementId: p.locationId,
       handle,
       startClientX: e.clientX,
       startClientY: e.clientY,
@@ -355,7 +356,7 @@ export function PlacementEditorCanvas({
                   }}
                 >
                   {placements.map((p) => {
-                    const isSelected = p.id === selectedPlacementId;
+                    const isSelected = p.locationId === selectedPlacementId;
                     const isInGroup = !isSelected && p.boothId === selectedBoothId;
                     const isHovered = !isSelected && !isInGroup && p.boothId === hoveredBoothId;
                     const profile = boothById?.get(p.boothId);
@@ -365,8 +366,8 @@ export function PlacementEditorCanvas({
                           profile.organization ? ` / ${profile.organization}` : ''
                         } · 자리 ${p.boothNumber}`
                       : `자리 ${p.boothNumber}`;
-                    const isDragging = dragState?.placementId === p.id;
-                    const isResizing = resizeState?.placementId === p.id;
+                    const isDragging = dragState?.placementId === p.locationId;
+                    const isResizing = resizeState?.placementId === p.locationId;
                     const liveX = isDragging
                       ? p.x + dragState!.dxPct
                       : isResizing
@@ -392,12 +393,12 @@ export function PlacementEditorCanvas({
                     ];
                     return (
                       <button
-                        key={p.id}
+                        key={p.locationId}
                         type="button"
                         onMouseDown={(e) => onPinMouseDown(e, p)}
                         onClick={(e) => {
                           e.stopPropagation();
-                          onSelectPlacement(p.id);
+                          onSelectPlacement(p.locationId);
                         }}
                         style={{
                           left: `${liveX}%`,
