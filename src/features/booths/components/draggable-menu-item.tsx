@@ -41,12 +41,12 @@ export function DraggableMenuItem({ item, index, onUpdate, onDelete }: Draggable
         <GripVertical size={20} />
       </button>
 
-      <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-semibold text-sm flex-shrink-0">
+      <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-semibold text-sm shrink-0">
         {index + 1}
       </div>
 
       {/* 메뉴 사진 — 박스 클릭 시 파일 선택 → 업로드 후 imageUrl 저장. */}
-      <label className="w-20 h-20 bg-muted rounded-lg flex-shrink-0 flex items-center justify-center overflow-hidden cursor-pointer hover:opacity-80 transition-opacity">
+      <label className="w-20 h-20 bg-muted rounded-lg shrink-0 flex items-center justify-center overflow-hidden cursor-pointer hover:opacity-80 transition-opacity">
         <input
           type="file"
           accept="image/*"
