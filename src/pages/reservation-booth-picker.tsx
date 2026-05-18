@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router';
+import { Calendar } from 'lucide-react';
 import { BoothMapPicker } from '@/features/booth-layout/components/booth-map-picker';
 import { useMyBoothPlacements, usePlacements } from '@/features/booth-layout/hooks';
 import { FESTIVAL_DATES, sectionsValidFor } from '@/features/booth-layout/sections';
@@ -171,20 +172,30 @@ export function ReservationBoothPicker() {
   }
 
   return (
-    <div className="h-full w-full">
-      <BoothMapPicker
-        booths={booths}
-        selectedDate={selectedDate}
-        availableDates={availableDates}
-        onDateChange={setSelectedDate}
-        selectedSection={selectedSection}
-        availableSections={availableSections}
-        onSectionChange={setSelectedSection}
-        myBoothId={myBoothId}
-        canEnter={canEnter}
-        onEnter={onEnter}
-        initialFocusBoothId={myBoothId}
-      />
+    <div className="flex h-full w-full flex-col">
+      {/* 페이지 헤더 — 지도가 viewport 를 채우므로 다른 페이지의 p-8 헤더 대신
+          고정 높이 바로 둔다. 아래 BoothMapPicker 가 남은 높이를 채운다. */}
+      <div className="border-b border-border bg-background px-4 py-4 md:px-8">
+        <h1 className="flex items-center gap-2.5 text-2xl font-bold text-foreground">
+          <Calendar size={26} aria-hidden="true" />
+          예약 관리
+        </h1>
+      </div>
+      <div className="min-h-0 flex-1">
+        <BoothMapPicker
+          booths={booths}
+          selectedDate={selectedDate}
+          availableDates={availableDates}
+          onDateChange={setSelectedDate}
+          selectedSection={selectedSection}
+          availableSections={availableSections}
+          onSectionChange={setSelectedSection}
+          myBoothId={myBoothId}
+          canEnter={canEnter}
+          onEnter={onEnter}
+          initialFocusBoothId={myBoothId}
+        />
+      </div>
     </div>
   );
 }
