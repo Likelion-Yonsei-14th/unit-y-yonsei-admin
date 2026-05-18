@@ -8,6 +8,7 @@ import {
   useUpdateLostItem,
 } from '@/features/lost-found/hooks';
 import type { LostItem } from '@/features/lost-found/types';
+import { uploadImage } from '@/features/uploads/api';
 import { useAuth } from '@/features/auth/hooks';
 import { PageHeaderAction } from '@/components/common/page-header-action';
 import { TableSkeleton } from '@/components/common/table-skeleton';
@@ -41,8 +42,12 @@ export function LostFoundPage() {
   const [nameDraft, setNameDraft] = useState('');
   const [locationDraft, setLocationDraft] = useState('');
   const [descriptionDraft, setDescriptionDraft] = useState('');
+  // 새로 고른 파일 — 저장 시 업로드. 미리보기는 imagePreviewUrl(blob).
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
-  const [hasExistingImage, setHasExistingImage] = useState(false);
+  // 수정 진입 시 이미 저장돼 있던 사진 URL. 사용자가 제거하면 null.
+  const [existingImageUrl, setExistingImageUrl] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
 
   useEffect(() => {
     if (!showForm) return;
@@ -50,13 +55,14 @@ export function LostFoundPage() {
       setNameDraft(editingItem.name);
       setLocationDraft(editingItem.location);
       setDescriptionDraft(editingItem.description ?? '');
-      setHasExistingImage(editingItem.hasImage);
+      setExistingImageUrl(editingItem.imageUrl ?? null);
     } else {
       setNameDraft('');
       setLocationDraft('');
       setDescriptionDraft('');
-      setHasExistingImage(false);
+      setExistingImageUrl(null);
     }
+    setSelectedFile(null);
     setImagePreviewUrl(null);
   }, [editingItem, showForm]);
 
@@ -70,8 +76,9 @@ export function LostFoundPage() {
   }, [imagePreviewUrl]);
 
   const handleImageChange = (file: File | null) => {
+    setSelectedFile(file);
     setImagePreviewUrl(file ? URL.createObjectURL(file) : null);
-    if (file) setHasExistingImage(false);
+    if (file) setExistingImageUrl(null);
   };
 
   const handleCreateNew = () => {
@@ -98,13 +105,28 @@ export function LostFoundPage() {
     setEditingItem(null);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!nameDraft.trim() || !locationDraft.trim()) {
       toast.error('분실물명과 발견 위치를 모두 입력해주세요.');
       return;
     }
     const description = descriptionDraft.trim() || undefined;
-    const hasImage = !!imagePreviewUrl || hasExistingImage;
+
+    // 새 파일을 골랐으면 먼저 업로드해 공개 URL 을 얻는다.
+    // 안 골랐으면 기존 URL 을 유지(제거했다면 existingImageUrl 이 null).
+    let imageUrl = existingImageUrl ?? undefined;
+    if (selectedFile) {
+      setIsUploading(true);
+      try {
+        imageUrl = await uploadImage(selectedFile, 'lost-item');
+      } catch {
+        toast.error('사진 업로드에 실패했습니다. 잠시 후 다시 시도해주세요.');
+        return;
+      } finally {
+        setIsUploading(false);
+      }
+    }
+
     const onAfter = () => {
       if (canManage) {
         setShowForm(false);
@@ -114,8 +136,9 @@ export function LostFoundPage() {
         setNameDraft('');
         setLocationDraft('');
         setDescriptionDraft('');
+        setSelectedFile(null);
         setImagePreviewUrl(null);
-        setHasExistingImage(false);
+        setExistingImageUrl(null);
       }
     };
     if (editingItem) {
@@ -125,7 +148,7 @@ export function LostFoundPage() {
           name: nameDraft.trim(),
           location: locationDraft.trim(),
           description,
-          hasImage,
+          imageUrl,
         },
         {
           onSuccess: () => {
@@ -141,7 +164,7 @@ export function LostFoundPage() {
           name: nameDraft.trim(),
           location: locationDraft.trim(),
           description,
-          hasImage,
+          imageUrl,
         },
         {
           onSuccess: () => {
@@ -154,7 +177,7 @@ export function LostFoundPage() {
     }
   };
 
-  const isSaving = createMutation.isPending || updateMutation.isPending;
+  const isSaving = isUploading || createMutation.isPending || updateMutation.isPending;
 
   return (
     <div className="p-4 md:p-8">
@@ -239,10 +262,21 @@ export function LostFoundPage() {
                     <td className="px-6 py-4 text-sm text-muted-foreground">{item.location}</td>
                     <td className="px-6 py-4 text-sm text-muted-foreground">{item.date}</td>
                     <td className="px-6 py-4">
-                      {item.hasImage ? (
-                        <span className="inline-block px-3 py-1 bg-ds-success-subtle text-ds-success-pressed rounded-full text-xs font-medium">
-                          있음
-                        </span>
+                      {item.imageUrl ? (
+                        <a
+                          href={item.imageUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-block overflow-hidden rounded-lg border border-border"
+                          aria-label={`${item.name} 사진 원본 보기`}
+                        >
+                          <img
+                            src={item.imageUrl}
+                            alt={`${item.name} 분실물 사진`}
+                            loading="lazy"
+                            className="h-14 w-14 object-cover"
+                          />
+                        </a>
                       ) : (
                         <span className="inline-block px-3 py-1 bg-muted text-muted-foreground rounded-full text-xs font-medium">
                           없음
@@ -367,25 +401,33 @@ export function LostFoundPage() {
                     <X size={14} />
                   </button>
                 </div>
-              ) : hasExistingImage ? (
-                <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border bg-muted px-4 py-3 text-sm text-muted-foreground">
-                  <span>기존 사진이 첨부되어 있습니다.</span>
-                  <label className="cursor-pointer rounded-md border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground hover:border-ds-border-strong">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={(e) => handleImageChange(e.target.files?.[0] ?? null)}
+              ) : existingImageUrl ? (
+                <div className="space-y-3">
+                  <div className="inline-block max-w-full overflow-hidden rounded-lg border border-border bg-muted">
+                    <img
+                      src={existingImageUrl}
+                      alt="첨부된 분실물 사진"
+                      className="block max-h-80 w-auto max-w-full object-contain"
                     />
-                    사진 변경
-                  </label>
-                  <button
-                    type="button"
-                    onClick={() => setHasExistingImage(false)}
-                    className="text-xs font-medium text-destructive hover:underline"
-                  >
-                    사진 제거
-                  </button>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <label className="cursor-pointer rounded-md border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground hover:border-ds-border-strong">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => handleImageChange(e.target.files?.[0] ?? null)}
+                      />
+                      사진 변경
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => setExistingImageUrl(null)}
+                      className="text-xs font-medium text-destructive hover:underline"
+                    >
+                      사진 제거
+                    </button>
+                  </div>
                 </div>
               ) : (
                 <label className="block cursor-pointer rounded-lg border-2 border-dashed border-ds-border-strong p-8 text-center transition-colors hover:border-primary">

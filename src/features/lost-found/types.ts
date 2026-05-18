@@ -8,7 +8,8 @@ export interface LostItem {
   location: string;
   /** 등록 일자 — yyyy-mm-dd. */
   date: string;
-  hasImage: boolean;
+  /** 첨부 사진의 공개 URL. 없으면 undefined. */
+  imageUrl?: string;
   /** 보충 설명 (선택). */
   description?: string;
 }
@@ -18,7 +19,7 @@ export interface LostItemDTO {
   name: string;
   location: string;
   date: string;
-  has_image: boolean;
+  image_url?: string;
   description?: string;
 }
 
@@ -26,7 +27,7 @@ export interface CreateLostItemInput {
   name: string;
   location: string;
   description?: string;
-  hasImage: boolean;
+  imageUrl?: string;
 }
 
 export interface UpdateLostItemInput extends CreateLostItemInput {

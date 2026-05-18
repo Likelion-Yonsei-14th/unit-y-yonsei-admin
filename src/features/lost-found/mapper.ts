@@ -5,15 +5,15 @@ export const toLostItem = (d: LostItemDTO): LostItem => ({
   name: d.name,
   location: d.location,
   date: d.date,
-  hasImage: d.has_image,
+  imageUrl: d.image_url,
   description: d.description,
 });
 
 export const fromLostItem = (
-  n: Pick<LostItem, 'name' | 'location' | 'description' | 'hasImage'>,
-): Pick<LostItemDTO, 'name' | 'location' | 'has_image' | 'description'> => ({
+  n: Pick<LostItem, 'name' | 'location' | 'description' | 'imageUrl'>,
+): Pick<LostItemDTO, 'name' | 'location' | 'image_url' | 'description'> => ({
   name: n.name,
   location: n.location,
-  has_image: n.hasImage,
+  image_url: n.imageUrl,
   description: n.description,
 });

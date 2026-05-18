@@ -1,111 +1,158 @@
 /**
- * 공연(Performance) 도메인 모델.
- *
- * 한 공연팀(= team) 당 한 Performance 엔티티. 관객용 리스트에는 대표 이미지·팀명·시간·
- * 스테이지만 노출하고, 셋리스트·소개·SNS 같은 상세 정보는 상세 화면에서만 본다.
- * 어드민에서는 Super/Master 가 전체 목록을, Performer 는 본인 팀 상세만 본다.
+ * 공연(Performance) 도메인 모델 — 백엔드 performance 도메인 응답 미러.
+ * 필드/케이싱은 백엔드(`~/Desktop/unit-y-yonsei-server` origin/dev)와 1:1.
  */
 
-// ---- 공연 스테이지 ----
-// 축제 현장 운영을 기준으로 잡은 **임시** 스테이지 ID. 실제 무대 구성이 확정되면
-// 이 union + STAGES 레이블·기본 날짜만 맞추면 나머지는 따라 온다.
+export type PerformanceCategory = 'ARTIST' | 'CLUB';
+export type PerformanceStatus = 'SCHEDULED' | 'ONGOING' | 'ENDED' | 'CANCELED' | 'HIDDEN';
+export type PerformanceImageType = 'PROFILE' | 'DETAIL';
 
-export type PerformanceStage = 'songdo' | 'dongmoon' | 'nocheon';
-
-export interface PerformanceStageMeta {
-  id: PerformanceStage;
-  label: string;
-  /** 해당 스테이지가 운영되는 날짜 (YYYY-MM-DD). 필터 선택지 제한·유효성 판정에 사용. */
-  dates: string[];
-}
-
-export const PERFORMANCE_STAGES: Record<PerformanceStage, PerformanceStageMeta> = {
-  songdo: { id: 'songdo', label: '언기도 앞', dates: ['2026-05-27'] },
-  dongmoon: { id: 'dongmoon', label: '동문광장', dates: ['2026-05-28', '2026-05-29'] },
-  nocheon: { id: 'nocheon', label: '노천극장', dates: ['2026-05-28', '2026-05-29'] },
+export const PERFORMANCE_CATEGORY_LABEL: Record<PerformanceCategory, string> = {
+  ARTIST: '아티스트',
+  CLUB: '동아리',
 };
 
-// ---- 상세 서브 엔티티 ----
+export const PERFORMANCE_STATUS_LABEL: Record<PerformanceStatus, string> = {
+  SCHEDULED: '예정',
+  ONGOING: '진행 중',
+  ENDED: '종료',
+  CANCELED: '취소',
+  HIDDEN: '비공개',
+};
+
+// ---- 서브 엔티티 (별도 sub-resource) ----
 
 export interface SetlistItem {
   id: number;
-  order: number;
-  songName: string;
-  artist: string;
+  performanceId: number;
+  songTitle: string;
+  singerName: string;
+  /** 노출 순서 (1부터). */
+  songOrder: number;
+  note: string;
 }
 
 export interface PerformanceImage {
   id: number;
-  url: string;
-  /** 대표 이미지 여부. 한 팀당 0~1장. 관객 리스트 썸네일은 이 이미지만 사용. */
-  isMain: boolean;
+  performanceId: number;
+  imageUrl: string;
+  /** 노출 순서 (1부터). */
+  imageOrder: number;
+  imageType: PerformanceImageType;
 }
 
-// ---- 프론트 모델 (camelCase) ----
+// ---- 프론트 모델 ----
 
-/**
- * 리스트 카드에 필요한 경량 모델. 상세(PerformanceDetail)의 부분집합.
- * 무거운 필드(description/setlist/images 전체) 는 상세 쿼리에서만 로드.
- */
+/** 리스트 카드용 경량 모델. */
 export interface PerformanceListItem {
-  teamId: number;
-  teamName: string;
-  date: string; // 'YYYY-MM-DD'
-  stage: PerformanceStage;
-  startTime: string; // 'HH:mm'
-  endTime: string; // 'HH:mm'
-  mainPhotoUrl: string | null;
+  id: number;
+  performanceName: string;
+  lineupName: string;
+  performanceDate: number | null;
+  startTime: string | null; // 'HH:mm'
+  endTime: string | null;
+  performanceCategory: PerformanceCategory | null;
+  performanceStatus: PerformanceStatus;
+  locationId: number | null;
+  locationName: string | null;
 }
 
-export interface PerformanceDetail {
-  teamId: number;
-  teamName: string;
-  description: string;
+/** 공연 상세/내 공연. images·setlist 는 별도 쿼리로 로드 — 이 모델에 포함하지 않는다. */
+export interface Performance {
+  id: number;
+  performanceName: string;
+  lineupName: string;
+  performanceDescription: string;
+  performanceDate: number | null;
+  startTime: string | null;
+  endTime: string | null;
+  performanceCategory: PerformanceCategory | null;
+  performanceStatus: PerformanceStatus;
+  locationId: number | null;
+  locationName: string | null;
+  /** 백엔드 Performance 엔티티에 아직 없음(추가 예정) — 매퍼에서 ?? '' 방어. */
   instagramUrl: string;
   youtubeUrl: string;
-  date: string; // 'YYYY-MM-DD'
-  stage: PerformanceStage;
-  startTime: string; // 'HH:mm'
-  endTime: string; // 'HH:mm'
-  images: PerformanceImage[];
-  setlist: SetlistItem[];
 }
 
-// ---- 백엔드 응답 DTO (snake_case). 스키마 확정되면 보정. ----
+// ---- 백엔드 DTO (camelCase — 모델과 거의 동일) ----
 
-export interface SetlistItemDTO {
+export interface PerformanceListItemDTO {
   id: number;
-  order: number;
-  song_name: string;
-  artist: string;
+  performanceName: string;
+  lineupName: string;
+  performanceDate: number | null;
+  startTime: string | null;
+  endTime: string | null;
+  performanceCategory: PerformanceCategory | null;
+  performanceStatus: PerformanceStatus;
+  locationId: number | null;
+  locationName: string | null;
+}
+
+export interface PerformanceDTO {
+  id: number;
+  performanceName: string;
+  lineupName: string;
+  performanceDescription: string;
+  performanceDate: number | null;
+  startTime: string | null;
+  endTime: string | null;
+  performanceCategory: PerformanceCategory | null;
+  performanceStatus: PerformanceStatus;
+  locationId: number | null;
+  locationName: string | null;
+  /** 백엔드 SNS 필드 도입 전엔 응답에 없음. */
+  instagramUrl?: string;
+  youtubeUrl?: string;
 }
 
 export interface PerformanceImageDTO {
   id: number;
-  url: string;
-  is_main: boolean;
+  performanceId: number;
+  imageUrl: string;
+  imageOrder: number;
+  imageType: PerformanceImageType;
 }
 
-export interface PerformanceListItemDTO {
-  team_id: number;
-  team_name: string;
-  date: string;
-  stage: PerformanceStage;
-  start_time: string;
-  end_time: string;
-  main_photo_url: string | null;
+export interface SetlistItemDTO {
+  id: number;
+  performanceId: number;
+  songTitle: string;
+  singerName: string;
+  songOrder: number;
+  note: string | null;
 }
 
-export interface PerformanceDetailDTO {
-  team_id: number;
-  team_name: string;
-  description: string;
-  instagram_url: string;
-  youtube_url: string;
-  date: string;
-  stage: PerformanceStage;
-  start_time: string;
-  end_time: string;
-  images: PerformanceImageDTO[];
-  setlist: SetlistItemDTO[];
+// ---- 요청 DTO ----
+
+/** PATCH /api/admin/performances/me — 전 필드 optional. */
+export interface PerformanceUpdateDTO {
+  performanceName?: string;
+  performanceDescription?: string;
+  performanceDate?: number | null;
+  startTime?: string | null;
+  endTime?: string | null;
+  performanceCategory?: PerformanceCategory | null;
+  performanceStatus?: PerformanceStatus;
+  lineupName?: string;
+  locationId?: number | null;
+  /** 백엔드 SNS 도입 후 활성. 도입 전엔 백엔드가 무시. */
+  instagramUrl?: string;
+  youtubeUrl?: string;
 }
+
+export interface PerformanceImageCreateDTO {
+  imageUrl: string;
+  imageOrder: number;
+  imageType: PerformanceImageType;
+}
+
+export interface SetlistCreateDTO {
+  songTitle: string;
+  singerName: string;
+  songOrder: number;
+  note: string | null;
+}
+
+export type SetlistUpdateDTO = SetlistCreateDTO;

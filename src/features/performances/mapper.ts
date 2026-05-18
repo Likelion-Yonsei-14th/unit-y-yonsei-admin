@@ -1,85 +1,78 @@
 import type {
-  PerformanceDetail,
-  PerformanceDetailDTO,
-  PerformanceListItem,
-  PerformanceListItemDTO,
+  Performance,
+  PerformanceDTO,
   PerformanceImage,
   PerformanceImageDTO,
+  PerformanceListItem,
+  PerformanceListItemDTO,
+  PerformanceUpdateDTO,
   SetlistItem,
   SetlistItemDTO,
 } from './types';
 
+/** 'HH:mm:ss' / 'HH:mm' → 'HH:mm'. null 통과. */
+const toHm = (t: string | null): string | null => (t ? t.slice(0, 5) : null);
+
 export const toPerformanceListItem = (d: PerformanceListItemDTO): PerformanceListItem => ({
-  teamId: d.team_id,
-  teamName: d.team_name,
-  date: d.date,
-  stage: d.stage,
-  startTime: d.start_time,
-  endTime: d.end_time,
-  mainPhotoUrl: d.main_photo_url,
-});
-
-const toSetlistItem = (d: SetlistItemDTO): SetlistItem => ({
   id: d.id,
-  order: d.order,
-  songName: d.song_name,
-  artist: d.artist,
+  performanceName: d.performanceName,
+  lineupName: d.lineupName,
+  performanceDate: d.performanceDate,
+  startTime: toHm(d.startTime),
+  endTime: toHm(d.endTime),
+  performanceCategory: d.performanceCategory,
+  performanceStatus: d.performanceStatus,
+  locationId: d.locationId,
+  locationName: d.locationName,
 });
 
-const toPerformanceImage = (d: PerformanceImageDTO): PerformanceImage => ({
+export const toPerformance = (d: PerformanceDTO): Performance => ({
   id: d.id,
-  url: d.url,
-  isMain: d.is_main,
+  performanceName: d.performanceName,
+  lineupName: d.lineupName,
+  performanceDescription: d.performanceDescription,
+  performanceDate: d.performanceDate,
+  startTime: toHm(d.startTime),
+  endTime: toHm(d.endTime),
+  performanceCategory: d.performanceCategory,
+  performanceStatus: d.performanceStatus,
+  locationId: d.locationId,
+  locationName: d.locationName,
+  // 백엔드 SNS 도입 전: 응답에 없음 → 빈 문자열 방어.
+  instagramUrl: d.instagramUrl ?? '',
+  youtubeUrl: d.youtubeUrl ?? '',
 });
 
-export const toPerformanceDetail = (d: PerformanceDetailDTO): PerformanceDetail => ({
-  teamId: d.team_id,
-  teamName: d.team_name,
-  description: d.description,
-  instagramUrl: d.instagram_url,
-  youtubeUrl: d.youtube_url,
-  date: d.date,
-  stage: d.stage,
-  startTime: d.start_time,
-  endTime: d.end_time,
-  images: d.images.map(toPerformanceImage),
-  setlist: d.setlist.map(toSetlistItem),
+export const toPerformanceImage = (d: PerformanceImageDTO): PerformanceImage => ({
+  id: d.id,
+  performanceId: d.performanceId,
+  imageUrl: d.imageUrl,
+  imageOrder: d.imageOrder,
+  imageType: d.imageType,
 });
 
-const fromSetlistItem = (s: SetlistItem): SetlistItemDTO => ({
-  id: s.id,
-  order: s.order,
-  song_name: s.songName,
-  artist: s.artist,
+export const toSetlistItem = (d: SetlistItemDTO): SetlistItem => ({
+  id: d.id,
+  performanceId: d.performanceId,
+  songTitle: d.songTitle,
+  singerName: d.singerName,
+  songOrder: d.songOrder,
+  note: d.note ?? '',
 });
 
-const fromPerformanceImage = (i: PerformanceImage): PerformanceImageDTO => ({
-  id: i.id,
-  url: i.url,
-  is_main: i.isMain,
-});
-
-/**
- * 부분 업데이트 payload — 전송된 필드만 snake_case 로 매핑.
- * teamId 는 URL 파라미터로만 보내므로 의도적으로 누락한다.
- */
-export const fromPerformanceDetailPatch = (
-  patch: Partial<PerformanceDetail>,
-): Partial<PerformanceDetailDTO> => {
-  const dto: Partial<PerformanceDetailDTO> = {};
-  if ('teamName' in patch && patch.teamName !== undefined) dto.team_name = patch.teamName;
-  if ('description' in patch && patch.description !== undefined)
-    dto.description = patch.description;
-  if ('instagramUrl' in patch && patch.instagramUrl !== undefined)
-    dto.instagram_url = patch.instagramUrl;
-  if ('youtubeUrl' in patch && patch.youtubeUrl !== undefined) dto.youtube_url = patch.youtubeUrl;
-  if ('date' in patch && patch.date !== undefined) dto.date = patch.date;
-  if ('stage' in patch && patch.stage !== undefined) dto.stage = patch.stage;
-  if ('startTime' in patch && patch.startTime !== undefined) dto.start_time = patch.startTime;
-  if ('endTime' in patch && patch.endTime !== undefined) dto.end_time = patch.endTime;
-  if ('images' in patch && patch.images !== undefined)
-    dto.images = patch.images.map(fromPerformanceImage);
-  if ('setlist' in patch && patch.setlist !== undefined)
-    dto.setlist = patch.setlist.map(fromSetlistItem);
+/** Performance 부분 patch → PATCH 요청 바디. 전송된 필드만 매핑. */
+export const fromPerformancePatch = (patch: Partial<Performance>): PerformanceUpdateDTO => {
+  const dto: PerformanceUpdateDTO = {};
+  if ('performanceName' in patch) dto.performanceName = patch.performanceName;
+  if ('performanceDescription' in patch) dto.performanceDescription = patch.performanceDescription;
+  if ('performanceDate' in patch) dto.performanceDate = patch.performanceDate;
+  if ('startTime' in patch) dto.startTime = patch.startTime;
+  if ('endTime' in patch) dto.endTime = patch.endTime;
+  if ('performanceCategory' in patch) dto.performanceCategory = patch.performanceCategory;
+  if ('performanceStatus' in patch) dto.performanceStatus = patch.performanceStatus;
+  if ('lineupName' in patch) dto.lineupName = patch.lineupName;
+  if ('locationId' in patch) dto.locationId = patch.locationId;
+  if ('instagramUrl' in patch) dto.instagramUrl = patch.instagramUrl;
+  if ('youtubeUrl' in patch) dto.youtubeUrl = patch.youtubeUrl;
   return dto;
 };

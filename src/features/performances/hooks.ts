@@ -1,14 +1,26 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '@/features/auth/store';
 import {
+  addPerformanceImage,
+  addSetlistItem,
+  deletePerformanceImage,
+  deleteSetlistItem,
   getLivePerformance,
   getMyPerformance,
   getPerformance,
+  getPerformanceImages,
+  getSetlist,
   listPerformances,
   setLivePerformance,
-  updatePerformance,
+  updateMyPerformance,
+  updateSetlistItem,
 } from './api';
-import type { PerformanceDetail } from './types';
+import type {
+  Performance,
+  PerformanceImageCreateDTO,
+  SetlistCreateDTO,
+  SetlistUpdateDTO,
+} from './types';
 
 /**
  * Super/Master 전용 전체 공연 목록 조회.
@@ -22,18 +34,18 @@ export function usePerformances() {
   });
 }
 
-export function usePerformance(teamId: number | null | undefined) {
+export function usePerformance(id: number | null | undefined) {
   // NaN 이 흘러들어와 getPerformance(NaN) 이 호출되는 사고를 차단.
-  const valid = teamId != null && Number.isInteger(teamId) && teamId > 0;
+  const valid = id != null && Number.isInteger(id) && id > 0;
   return useQuery({
-    queryKey: ['performances', teamId],
-    queryFn: () => getPerformance(teamId as number),
+    queryKey: ['performances', id],
+    queryFn: () => getPerformance(id as number),
     enabled: valid,
   });
 }
 
 /**
- * 로그인한 Performer 의 자기 팀 프로필 조회.
+ * 로그인한 Performer 의 자기 공연 조회.
  * Super/Master/Booth 계정이면 enabled=false로 쿼리가 안 나감.
  */
 export function useMyPerformance() {
@@ -41,39 +53,109 @@ export function useMyPerformance() {
   const isPerformer = user?.role === 'Performer' && user.performanceTeamId != null;
 
   return useQuery({
-    queryKey: ['performances', 'me', user?.performanceTeamId],
+    // `/me` 는 단수형 엔드포인트라 id 가 필요 없다 — 정적 키.
+    // (performanceTeamId 는 enabled 게이트에만 쓰고 캐시 키엔 넣지 않는다.)
+    queryKey: ['performances', 'me'],
     queryFn: getMyPerformance,
     enabled: isPerformer,
   });
 }
 
 /**
- * 공연팀 상세(프로필 + 타임테이블 + 셋리스트 + 이미지) 부분 업데이트.
- * Performer 본인 폼과 Super/Master 운영진 편집 양쪽이 같은 mutation 을 공유한다.
- * 성공 시 관련된 query cache 를 직접 갱신해 즉시 화면 반영 + 다음 navigate 시
- * 잘못된 데이터를 보여주지 않게 한다.
+ * 본인 공연(`/me`) 본문 부분 업데이트.
+ * 성공 시 본인 공연 캐시를 직접 갱신하고 목록을 invalidate 한다.
  */
-export function useUpdatePerformance() {
-  const user = useAuthStore((s) => s.user);
+export function useUpdateMyPerformance() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ teamId, patch }: { teamId: number; patch: Partial<PerformanceDetail> }) =>
-      updatePerformance(teamId, patch),
+    mutationFn: (patch: Partial<Performance>) => updateMyPerformance(patch),
     onSuccess: (data) => {
-      queryClient.setQueryData(['performances', data.teamId], data);
-      // 본인 팀 상세 캐시도 같이 갱신 (Performer 가 본인 팀을 수정했을 때).
-      if (user?.role === 'Performer' && user.performanceTeamId === data.teamId) {
-        queryClient.setQueryData(['performances', 'me', data.teamId], data);
-      }
-      // 리스트 invalidation — 팀명/날짜/대표 사진 등 리스트 표시 필드가 바뀔 수 있어.
+      queryClient.setQueryData(['performances', 'me'], data);
+      queryClient.setQueryData(['performances', data.id], data);
+      // 리스트 invalidation — 공연명/날짜/상태 등 리스트 표시 필드가 바뀔 수 있어.
       queryClient.invalidateQueries({ queryKey: ['performances'], exact: true });
     },
   });
 }
 
+/** 공연 이미지 목록 — 별도 sub-resource. */
+export function usePerformanceImages(performanceId: number | null | undefined) {
+  const valid = performanceId != null && Number.isInteger(performanceId) && performanceId > 0;
+  return useQuery({
+    queryKey: ['performances', performanceId, 'images'],
+    queryFn: () => getPerformanceImages(performanceId as number),
+    enabled: valid,
+  });
+}
+
+/** 셋리스트 — 별도 sub-resource. */
+export function useSetlist(performanceId: number | null | undefined) {
+  const valid = performanceId != null && Number.isInteger(performanceId) && performanceId > 0;
+  return useQuery({
+    queryKey: ['performances', performanceId, 'setlists'],
+    queryFn: () => getSetlist(performanceId as number),
+    enabled: valid,
+  });
+}
+
 /**
- * 현재 라이브로 지정된 공연팀 id 조회 (없으면 null) + 15초 폴링.
+ * 이미지 추가. performanceId 는 쿼리키 invalidation 용으로만 받는다
+ * (서버는 `/me` 라 본인 공연에 귀속).
+ */
+export function useAddPerformanceImage(performanceId: number | null | undefined) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: PerformanceImageCreateDTO) => addPerformanceImage(input),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['performances', performanceId, 'images'] });
+    },
+  });
+}
+
+export function useDeletePerformanceImage(performanceId: number | null | undefined) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (imageId: number) => deletePerformanceImage(imageId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['performances', performanceId, 'images'] });
+    },
+  });
+}
+
+export function useAddSetlistItem(performanceId: number | null | undefined) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: SetlistCreateDTO) => addSetlistItem(input),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['performances', performanceId, 'setlists'] });
+    },
+  });
+}
+
+export function useUpdateSetlistItem(performanceId: number | null | undefined) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ setlistId, input }: { setlistId: number; input: SetlistUpdateDTO }) =>
+      updateSetlistItem(setlistId, input),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['performances', performanceId, 'setlists'] });
+    },
+  });
+}
+
+export function useDeleteSetlistItem(performanceId: number | null | undefined) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (setlistId: number) => deleteSetlistItem(setlistId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['performances', performanceId, 'setlists'] });
+    },
+  });
+}
+
+/**
+ * 현재 라이브로 지정된 공연 id 조회 (없으면 null) + 15초 폴링.
  * 운영 중 다른 Super 스태프의 변경을 따라잡기 위한 폴링.
  */
 export function useLivePerformance() {
@@ -85,15 +167,15 @@ export function useLivePerformance() {
 }
 
 /**
- * 라이브 공연 지정/해제. teamId=null 이면 해제.
+ * 라이브 공연 지정/해제. id=null 이면 해제.
  * 성공 시 라이브 쿼리 캐시를 즉시 갱신해 화면에 바로 반영.
  */
 export function useSetLivePerformance() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: setLivePerformance,
-    onSuccess: (teamId) => {
-      queryClient.setQueryData(['performances', 'live'], teamId);
+    onSuccess: (id) => {
+      queryClient.setQueryData(['performances', 'live'], id);
     },
   });
 }

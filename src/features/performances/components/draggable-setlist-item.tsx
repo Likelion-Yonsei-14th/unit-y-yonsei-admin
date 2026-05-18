@@ -3,10 +3,13 @@ import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import type { SetlistItem } from '@/features/performances/types';
 
+/** 인라인 편집 가능한 셋리스트 필드. */
+export type SetlistEditableField = 'songTitle' | 'singerName' | 'note';
+
 export interface DraggableSetlistItemProps {
   item: SetlistItem;
   index: number;
-  onUpdate: (id: number, field: 'songName' | 'artist', value: string) => void;
+  onUpdate: (id: number, field: SetlistEditableField, value: string) => void;
   onDelete: (id: number) => void;
 }
 
@@ -46,28 +49,36 @@ export function DraggableSetlistItem({
         {index + 1}
       </div>
 
-      <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div className="flex-1 grid grid-cols-1 sm:grid-cols-3 gap-4">
         <input
           type="text"
           placeholder="곡명"
           aria-label="곡명"
-          value={item.songName}
-          onChange={(e) => onUpdate(item.id, 'songName', e.target.value)}
+          value={item.songTitle}
+          onChange={(e) => onUpdate(item.id, 'songTitle', e.target.value)}
           className="px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
         />
         <input
           type="text"
           placeholder="원곡자"
           aria-label="원곡자"
-          value={item.artist}
-          onChange={(e) => onUpdate(item.id, 'artist', e.target.value)}
+          value={item.singerName}
+          onChange={(e) => onUpdate(item.id, 'singerName', e.target.value)}
+          className="px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
+        />
+        <input
+          type="text"
+          placeholder="비고 (선택)"
+          aria-label="비고"
+          value={item.note}
+          onChange={(e) => onUpdate(item.id, 'note', e.target.value)}
           className="px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
         />
       </div>
 
       <button
         type="button"
-        aria-label={item.songName ? `${item.songName} 곡 삭제` : '곡 삭제'}
+        aria-label={item.songTitle ? `${item.songTitle} 곡 삭제` : '곡 삭제'}
         onClick={() => onDelete(item.id)}
         className="p-2 text-destructive hover:bg-ds-error-subtle rounded-lg transition-colors"
       >

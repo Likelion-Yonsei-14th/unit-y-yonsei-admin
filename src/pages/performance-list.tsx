@@ -7,8 +7,6 @@ import {
   useLivePerformance,
   useSetLivePerformance,
 } from '@/features/performances/hooks';
-import { PERFORMANCE_STAGES, type PerformanceStage } from '@/features/performances/types';
-import { FESTIVAL_DATES } from '@/features/booth-layout/sections';
 import { useAuth } from '@/features/auth/hooks';
 import {
   AlertDialog,
@@ -20,6 +18,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+
+/** 공연 날짜 정수(2~4) ↔ 표시 라벨. 1=5/26 블루런 은 공연 없음. */
+const PERFORMANCE_DATE_OPTIONS: { value: number; label: string }[] = [
+  { value: 2, label: '5/27' },
+  { value: 3, label: '5/28' },
+  { value: 4, label: '5/29' },
+];
 
 /**
  * 라이브 표시용 펄스 점 — 방송 ON AIR 사인처럼 빨간 점에서 halo 가 퍼져나간다.
@@ -44,28 +49,29 @@ function LiveDot({
 
 /**
  * Super/Master 용 전체 공연 목록 페이지.
- * 날짜 탭(5/27·28·29) × 스테이지 드롭다운(전체/개별) 으로 필터링, 시간 오름차순 정렬.
- * 카드 클릭 시 `/performance/:teamId` 상세로 이동.
+ * 일차 탭(5/27·28·29) × 장소 드롭다운(전체/개별) 으로 필터링, 시간 오름차순 정렬.
+ * 카드 클릭 시 `/performance/:id` 상세로 이동.
  */
 export function PerformanceListPage() {
   const { data, isLoading, isError, refetch } = usePerformances();
 
   const { can } = useAuth();
   const canLive = can('performance.live');
-  const { data: liveTeamId } = useLivePerformance();
+  const { data: livePerformanceId } = useLivePerformance();
   const setLive = useSetLivePerformance();
 
-  // 라이브로 지정된 팀의 목록 아이템 — 현재 필터(날짜/스테이지)와 무관하게 전체에서 찾는다.
-  const liveTeam = useMemo(
-    () => (liveTeamId != null ? (data?.find((p) => p.teamId === liveTeamId) ?? null) : null),
-    [data, liveTeamId],
+  // 라이브로 지정된 공연의 목록 아이템 — 현재 필터와 무관하게 전체에서 찾는다.
+  const livePerformance = useMemo(
+    () =>
+      livePerformanceId != null ? (data?.find((p) => p.id === livePerformanceId) ?? null) : null,
+    [data, livePerformanceId],
   );
 
   // 라이브 지정은 오작동 방지를 위해 확인 다이얼로그를 거친다. 해제는 확인 없이 즉시.
-  const [pendingLiveTeamId, setPendingLiveTeamId] = useState<number | null>(null);
+  const [pendingLiveId, setPendingLiveId] = useState<number | null>(null);
 
-  const handleSetLive = (teamId: number | null) => {
-    setLive.mutate(teamId, {
+  const handleSetLive = (id: number | null) => {
+    setLive.mutate(id, {
       onSuccess: (next) => {
         toast(next == null ? '라이브 공연을 해제했습니다.' : '라이브 공연으로 지정했습니다.');
       },
@@ -73,31 +79,37 @@ export function PerformanceListPage() {
     });
   };
 
-  const [date, setDate] = useState<string>(FESTIVAL_DATES[0]);
-  const [stage, setStage] = useState<PerformanceStage | 'all'>('all');
+  const [date, setDate] = useState<number>(PERFORMANCE_DATE_OPTIONS[0].value);
+  const [location, setLocation] = useState<string>('all');
 
-  const stageOptions = useMemo<(PerformanceStage | 'all')[]>(() => {
-    const available = (
-      Object.values(PERFORMANCE_STAGES) as (typeof PERFORMANCE_STAGES)[PerformanceStage][]
-    )
-      .filter((s) => s.dates.includes(date))
-      .map((s) => s.id);
-    return ['all', ...available];
-  }, [date]);
+  // 선택한 일차에 등장하는 장소명만 필터 옵션으로 노출.
+  const locationOptions = useMemo<string[]>(() => {
+    if (!data) return ['all'];
+    const names = new Set<string>();
+    for (const p of data) {
+      if (p.performanceDate === date && p.locationName) names.add(p.locationName);
+    }
+    return ['all', ...[...names].sort()];
+  }, [data, date]);
 
-  // 날짜 전환 시 선택 중이던 스테이지가 해당 날짜에 없으면 '전체' 로 되돌림.
+  // 일차 전환 시 선택 중이던 장소가 해당 일차에 없으면 '전체' 로 되돌림.
   useEffect(() => {
-    if (stage !== 'all' && !stageOptions.includes(stage)) setStage('all');
-  }, [stage, stageOptions]);
+    if (location !== 'all' && !locationOptions.includes(location)) setLocation('all');
+  }, [location, locationOptions]);
 
   const filtered = useMemo(() => {
     if (!data) return [];
     return data
-      .filter((p) => p.date === date)
-      .filter((p) => stage === 'all' || p.stage === stage)
+      .filter((p) => p.performanceDate === date)
+      .filter((p) => location === 'all' || p.locationName === location)
       .slice()
-      .sort((a, b) => a.startTime.localeCompare(b.startTime));
-  }, [data, date, stage]);
+      .sort((a, b) => {
+        // null startTime 은 뒤로.
+        if (a.startTime == null) return b.startTime == null ? 0 : 1;
+        if (b.startTime == null) return -1;
+        return a.startTime.localeCompare(b.startTime);
+      });
+  }, [data, date, location]);
 
   return (
     <div className="p-4 md:p-8">
@@ -112,13 +124,13 @@ export function PerformanceListPage() {
       {canLive && (
         <div
           className={`rounded-2xl p-5 mb-6 shadow-sm border flex flex-wrap items-center justify-between gap-3 transition-colors ${
-            liveTeamId != null
+            livePerformanceId != null
               ? 'bg-ds-error-subtle border-destructive'
               : 'bg-background border-border'
           }`}
         >
           <div className="flex items-center gap-3">
-            {liveTeamId != null ? (
+            {livePerformanceId != null ? (
               <LiveDot />
             ) : (
               <Radio size={20} className="text-muted-foreground" aria-hidden="true" />
@@ -126,17 +138,17 @@ export function PerformanceListPage() {
             <div>
               <div
                 className={`text-sm font-semibold tracking-wide ${
-                  liveTeamId != null ? 'text-destructive' : 'text-muted-foreground'
+                  livePerformanceId != null ? 'text-destructive' : 'text-muted-foreground'
                 }`}
               >
-                {liveTeamId != null ? 'ON AIR' : '현재 라이브 공연'}
+                {livePerformanceId != null ? 'ON AIR' : '현재 라이브 공연'}
               </div>
               <div className="font-semibold text-foreground">
-                {liveTeam ? liveTeam.teamName : '지정된 라이브 공연 없음'}
+                {livePerformance ? livePerformance.performanceName : '지정된 라이브 공연 없음'}
               </div>
             </div>
           </div>
-          {liveTeamId != null && (
+          {livePerformanceId != null && (
             <button
               type="button"
               onClick={() => handleSetLive(null)}
@@ -154,23 +166,21 @@ export function PerformanceListPage() {
         <div className="flex items-center gap-3">
           <Calendar size={16} className="text-muted-foreground" aria-hidden="true" />
           <div className="flex gap-2">
-            {FESTIVAL_DATES.map((d) => {
-              const active = d === date;
-              const [, m, day] = d.split('-');
+            {PERFORMANCE_DATE_OPTIONS.map((o) => {
+              const active = o.value === date;
               return (
                 <button
-                  key={d}
+                  key={o.value}
                   type="button"
-                  onClick={() => setDate(d)}
+                  onClick={() => setDate(o.value)}
                   aria-pressed={active}
-                  aria-label={`${Number(m)}월 ${Number(day)}일`}
                   className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
                     active
                       ? 'bg-foreground text-primary-foreground'
                       : 'bg-background text-muted-foreground border border-border hover:border-ds-border-strong'
                   }`}
                 >
-                  {Number(m)}/{Number(day)}
+                  {o.label}
                 </button>
               );
             })}
@@ -180,14 +190,14 @@ export function PerformanceListPage() {
         <div className="flex items-center gap-3">
           <MapPin size={16} className="text-muted-foreground" aria-hidden="true" />
           <div className="flex flex-wrap gap-2">
-            {stageOptions.map((s) => {
-              const active = s === stage;
-              const label = s === 'all' ? '전체' : PERFORMANCE_STAGES[s].label;
+            {locationOptions.map((loc) => {
+              const active = loc === location;
+              const label = loc === 'all' ? '전체' : loc;
               return (
                 <button
-                  key={s}
+                  key={loc}
                   type="button"
-                  onClick={() => setStage(s)}
+                  onClick={() => setLocation(loc)}
                   aria-pressed={active}
                   className={`px-3 py-1.5 rounded-full text-sm transition-colors ${
                     active
@@ -224,36 +234,32 @@ export function PerformanceListPage() {
       {!isLoading && !isError && filtered.length === 0 && (
         <div className="bg-muted rounded-2xl p-12 text-center">
           <Music size={40} className="mx-auto mb-4 text-ds-text-disabled" />
-          <p className="text-muted-foreground">이 날짜·스테이지에 등록된 공연이 없습니다.</p>
+          <p className="text-muted-foreground">이 일차·장소에 등록된 공연이 없습니다.</p>
         </div>
       )}
 
       {!isLoading && !isError && filtered.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filtered.map((p) => {
-            const isLive = p.teamId === liveTeamId;
-            // 라이브 지정은 노천극장(nocheon) 공연만 허용.
-            const liveDesignatable = p.stage === 'nocheon';
+            const isLive = p.id === livePerformanceId;
             return (
               <div
-                key={p.teamId}
+                key={p.id}
                 className={`bg-background rounded-2xl border transition-all ${
                   isLive
                     ? 'border-destructive ring-2 ring-destructive/30 shadow-md'
                     : 'border-border shadow-sm hover:border-primary hover:shadow-md'
                 }`}
               >
-                <Link to={`/performance/${p.teamId}`} className="flex gap-4 p-5">
+                <Link to={`/performance/${p.id}`} className="flex gap-4 p-5">
                   <div className="w-20 h-20 rounded-lg bg-muted shrink-0 overflow-hidden flex items-center justify-center">
-                    {p.mainPhotoUrl ? (
-                      <img src={p.mainPhotoUrl} alt="" className="w-full h-full object-cover" />
-                    ) : (
-                      <Music size={24} className="text-ds-text-disabled" />
-                    )}
+                    <Music size={24} className="text-ds-text-disabled" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="font-semibold text-foreground truncate">{p.teamName}</span>
+                      <span className="font-semibold text-foreground truncate">
+                        {p.performanceName}
+                      </span>
                       {isLive && (
                         <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-destructive text-destructive-foreground text-xs font-semibold shrink-0">
                           <LiveDot size="h-1.5 w-1.5" tone="bg-destructive-foreground" />
@@ -262,10 +268,10 @@ export function PerformanceListPage() {
                       )}
                     </div>
                     <div className="text-sm text-muted-foreground mt-1">
-                      {PERFORMANCE_STAGES[p.stage].label}
+                      {p.locationName ?? '장소 미정'}
                     </div>
                     <div className="text-sm text-muted-foreground mt-1">
-                      {p.startTime} ~ {p.endTime}
+                      {p.startTime ?? '--:--'} ~ {p.endTime ?? '--:--'}
                     </div>
                   </div>
                 </Link>
@@ -273,23 +279,15 @@ export function PerformanceListPage() {
                   <div className="px-5 pb-4">
                     <button
                       type="button"
-                      onClick={() =>
-                        isLive ? handleSetLive(null) : setPendingLiveTeamId(p.teamId)
-                      }
-                      disabled={setLive.isPending || (!isLive && !liveDesignatable)}
+                      onClick={() => (isLive ? handleSetLive(null) : setPendingLiveId(p.id))}
+                      disabled={setLive.isPending}
                       className={`w-full px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                         isLive
                           ? 'border border-border bg-background text-foreground hover:bg-muted disabled:opacity-50'
-                          : liveDesignatable
-                            ? 'bg-primary text-primary-foreground hover:bg-ds-primary-pressed disabled:opacity-50'
-                            : 'cursor-not-allowed bg-muted text-ds-text-disabled'
+                          : 'bg-primary text-primary-foreground hover:bg-ds-primary-pressed disabled:opacity-50'
                       }`}
                     >
-                      {isLive
-                        ? '라이브 해제'
-                        : liveDesignatable
-                          ? '라이브로 지정'
-                          : '노천극장 공연만 지정 가능'}
+                      {isLive ? '라이브 해제' : '라이브로 지정'}
                     </button>
                   </div>
                 )}
@@ -301,25 +299,25 @@ export function PerformanceListPage() {
 
       {/* 라이브 지정 확인 — 오작동 방지. 해제는 확인 없이 즉시 동작. */}
       <AlertDialog
-        open={pendingLiveTeamId != null}
+        open={pendingLiveId != null}
         onOpenChange={(o) => {
-          if (!o) setPendingLiveTeamId(null);
+          if (!o) setPendingLiveId(null);
         }}
       >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>라이브 공연 지정</AlertDialogTitle>
             <AlertDialogDescription>
-              &ldquo;{data?.find((p) => p.teamId === pendingLiveTeamId)?.teamName}&rdquo; 공연을
-              현재 라이브로 지정합니다. 기존 라이브 공연이 있으면 교체됩니다.
+              &ldquo;{data?.find((p) => p.id === pendingLiveId)?.performanceName}&rdquo; 공연을 현재
+              라이브로 지정합니다. 기존 라이브 공연이 있으면 교체됩니다.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>취소</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => {
-                if (pendingLiveTeamId != null) handleSetLive(pendingLiveTeamId);
-                setPendingLiveTeamId(null);
+                if (pendingLiveId != null) handleSetLive(pendingLiveId);
+                setPendingLiveId(null);
               }}
             >
               라이브로 지정
