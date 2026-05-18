@@ -32,7 +32,7 @@ export function ReservationBoothPicker() {
   const navigate = useNavigate();
 
   const isBooth = user?.role === 'Booth';
-  const myBoothId = isBooth ? user?.boothId : undefined;
+  const myBoothId = isBooth ? (user?.boothId ?? undefined) : undefined;
 
   // Booth 계정의 본인 배치 (초기 날짜·포커스 resolve 용).
   // 자리가 여러 개일 수 있으나 다중 자리 UX 는 follow-up — 일단 첫 자리만 사용.
@@ -82,9 +82,9 @@ export function ReservationBoothPicker() {
   const allBoothsQuery = useBooths();
   const reservationsQuery = useReservations();
   const boothById = useMemo(() => {
-    const m = new Map<number, { name: string; organizationName: string }>();
+    const m = new Map<number, { name: string; organization: string }>();
     for (const b of allBoothsQuery.data ?? []) {
-      m.set(b.id, { name: b.name, organizationName: b.organizationName });
+      m.set(b.id, { name: b.name, organization: b.organization });
     }
     return m;
   }, [allBoothsQuery.data]);
@@ -103,7 +103,7 @@ export function ReservationBoothPicker() {
         placement: p,
         profile: {
           name: profile?.name || '이름 미입력 부스',
-          organizationName: profile?.organizationName || '-',
+          organization: profile?.organization || '-',
         },
         counts: countsByBooth.get(p.boothId) ?? { waiting: 0, completed: 0, cancelled: 0 },
       };

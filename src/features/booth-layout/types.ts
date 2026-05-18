@@ -48,10 +48,10 @@ export interface BoothPlacement {
 
 /**
  * 슬라이더 카드 렌더용 머지 결과.
- * 페이지 레벨에서 placement + BoothProfile(이름·단체명) + 예약 카운트 집계를 합쳐서 생성.
+ * 페이지 레벨에서 placement + Booth(이름·단체명) + 예약 카운트 집계를 합쳐서 생성.
  */
 export interface PickerBooth {
   placement: BoothPlacement;
-  profile: { name: string; organizationName: string };
+  profile: { name: string; organization: string };
   counts: { waiting: number; completed: number; cancelled: number };
 }

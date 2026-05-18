@@ -36,7 +36,7 @@ export function DashboardPage() {
     return {
       reservationCount: reservations.length,
       waitingCount: reservations.filter((r) => r.status === 'waiting').length,
-      activeBoothCount: booths.filter((b) => b.reservationEnabled && !!b.name).length,
+      activeBoothCount: booths.filter((b) => b.isReservable && !!b.name).length,
       totalBoothCount: booths.length,
       performanceCount: performances.length,
       userCount: users.length,

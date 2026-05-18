@@ -25,7 +25,7 @@ import {
   type FestivalDate,
 } from '@/features/booth-layout/sections';
 import type { BoothPlacement, MapSectionId } from '@/features/booth-layout/types';
-import type { BoothProfile } from '@/features/booths/types';
+import type { Booth } from '@/features/booths/types';
 import { PlacementToolbar } from './placement-toolbar';
 import { PlacementList } from './placement-list';
 import { PlacementEditorCanvas } from './placement-editor-canvas';
@@ -51,7 +51,7 @@ function nextAvailableBoothNumber(existing: BoothPlacement[]): string {
 
 export interface PlacementEditorProps {
   /** 운영자(부스 계정) 풀. 페이지에서 useBooths() 로 끌어와 내려준다. */
-  booths: BoothProfile[];
+  booths: Booth[];
 }
 
 export function PlacementEditor({ booths }: PlacementEditorProps) {
@@ -94,9 +94,9 @@ export function PlacementEditor({ booths }: PlacementEditorProps) {
     [placementsQuery.data, selectedSection],
   );
 
-  /** 캔버스 핀 hover tooltip 용 booth id → BoothProfile lookup. */
+  /** 캔버스 핀 hover tooltip 용 booth id → Booth lookup. */
   const boothById = useMemo(() => {
-    const m = new Map<number, BoothProfile>();
+    const m = new Map<number, Booth>();
     for (const b of booths) m.set(b.id, b);
     return m;
   }, [booths]);
