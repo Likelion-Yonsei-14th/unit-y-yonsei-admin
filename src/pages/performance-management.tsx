@@ -15,20 +15,7 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
-import {
-  ArrowLeft,
-  Plus,
-  Trash2,
-  Instagram,
-  Youtube,
-  Music,
-  Check,
-  Edit,
-  X,
-  Star,
-  Upload,
-  ChevronDown,
-} from 'lucide-react';
+import { ArrowLeft, Plus, Music, Check, Edit, X } from 'lucide-react';
 import { useAuth } from '@/features/auth/hooks';
 import {
   useAddPerformanceImage,
@@ -42,27 +29,17 @@ import {
   useUpdateMyPerformance,
   useUpdateSetlistItem,
 } from '@/features/performances/hooks';
-import {
-  PERFORMANCE_CATEGORY_LABEL,
-  PERFORMANCE_STATUS_LABEL,
-  type Performance,
-  type PerformanceCategory,
-  type PerformanceStatus,
-  type SetlistItem,
-} from '@/features/performances/types';
+import type { Performance, SetlistItem } from '@/features/performances/types';
 import type { SetlistEditableField } from '@/features/performances/components/draggable-setlist-item';
 import { DraggableSetlistItem } from '@/features/performances/components/draggable-setlist-item';
+import { PerformanceProfileFields } from '@/features/performances/components/performance-profile-fields';
+import {
+  PerformanceTimetable,
+  dateLabel,
+} from '@/features/performances/components/performance-timetable';
+import { PerformanceImageGrid } from '@/features/performances/components/performance-image-grid';
+import { diffSetlist } from '@/features/performances/setlist-diff';
 import { uploadImage } from '@/features/uploads/api';
-
-/** 공연 날짜 정수(2~4) ↔ 표시 라벨. 1=5/26 블루런 은 공연 없음. */
-const PERFORMANCE_DATE_OPTIONS: { value: number; label: string }[] = [
-  { value: 2, label: '5/27' },
-  { value: 3, label: '5/28' },
-  { value: 4, label: '5/29' },
-];
-
-const dateLabel = (d: number | null): string =>
-  PERFORMANCE_DATE_OPTIONS.find((o) => o.value === d)?.label ?? '-';
 
 /**
  * 공연 상세/편집. 두 진입 경로:
@@ -119,7 +96,6 @@ export function PerformanceManagement() {
 
   // 직접 업로드 진행 상태 — 업로드 중 중복 클릭 차단.
   const [isUploading, setIsUploading] = useState(false);
-  const uploadInputRef = useRef<HTMLInputElement>(null);
 
   // 로컬에서 신규 추가한 셋리스트 행은 음수 임시 id 로 구분(서버 id 와 충돌 방지).
   // 마운트 단위로 스코프 — 편집 세션 내에서 고유한 음수 id 를 발급한다.
@@ -148,8 +124,6 @@ export function PerformanceManagement() {
 
   const handleImageUpload = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    // 같은 파일 재선택도 onChange 가 다시 뜨도록 input 값 초기화.
-    if (uploadInputRef.current) uploadInputRef.current.value = '';
     if (!file) return;
     setIsUploading(true);
     setActionError(null);
@@ -224,10 +198,8 @@ export function PerformanceManagement() {
 
   /**
    * 본문 PATCH + 셋리스트 diff 반영을 함께 실행.
-   * 셋리스트는 백엔드에 임베디드 일괄저장이 없어 항목별 endpoint 로 처리한다:
-   *   - 음수 임시 id = 신규 → POST
-   *   - 서버에 있던 id 중 버퍼에 없음 = 삭제 → DELETE
-   *   - 남은 항목 = 내용/순서 변경 가능 → PATCH (full body)
+   * 셋리스트 diff 계산은 `diffSetlist`(순수 함수)에 위임하고, 여기서는
+   * 산출된 작업 목록을 항목별 mutation 으로 소비한다.
    */
   const handleSave = async () => {
     if (!editingData || !data) return;
@@ -250,36 +222,15 @@ export function PerformanceManagement() {
       // 중간 항목에서 실패하면 일부만 서버에 반영된 부분 저장 상태가 되고,
       // 편집 버퍼는 여전히 전체를 보여준다(서버와 불일치). 백엔드에 일괄 저장
       // 엔드포인트가 생기기 전까지의 한계.
-      const serverIds = new Set(setlist.map((s) => s.id));
-      const bufferIds = new Set(editingSetlist.filter((s) => s.id > 0).map((s) => s.id));
-
-      // 삭제 — 서버엔 있고 버퍼엔 없음.
-      for (const s of setlist) {
-        if (!bufferIds.has(s.id)) {
-          await deleteSetlistMutation.mutateAsync(s.id);
-        }
+      const { creates, updates, deletes } = diffSetlist(setlist, editingSetlist);
+      for (const id of deletes) {
+        await deleteSetlistMutation.mutateAsync(id);
       }
-      // 신규 + 수정.
-      for (const s of editingSetlist) {
-        const body = {
-          songTitle: s.songTitle,
-          singerName: s.singerName,
-          songOrder: s.songOrder,
-          note: s.note || null,
-        };
-        if (s.id < 0) {
-          await addSetlistMutation.mutateAsync(body);
-        } else if (serverIds.has(s.id)) {
-          const before = setlist.find((x) => x.id === s.id)!;
-          const changed =
-            before.songTitle !== s.songTitle ||
-            before.singerName !== s.singerName ||
-            before.songOrder !== s.songOrder ||
-            before.note !== s.note;
-          if (changed) {
-            await updateSetlistMutation.mutateAsync({ setlistId: s.id, input: body });
-          }
-        }
+      for (const dto of creates) {
+        await addSetlistMutation.mutateAsync(dto);
+      }
+      for (const { id, dto } of updates) {
+        await updateSetlistMutation.mutateAsync({ setlistId: id, input: dto });
       }
 
       setIsEditMode(false);
@@ -430,375 +381,32 @@ export function PerformanceManagement() {
         <h2 className="text-xl font-bold text-foreground mb-6">공연 프로필</h2>
 
         <div className="space-y-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-            <div>
-              <label
-                htmlFor="perf-name"
-                className="block text-sm font-semibold text-foreground mb-2"
-              >
-                공연명
-              </label>
-              <input
-                id="perf-name"
-                type="text"
-                placeholder="공연 이름을 입력하세요"
-                className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
-                value={displayData.performanceName}
-                onChange={(e) => patchEditing({ performanceName: e.target.value })}
-                disabled={!isEditMode}
-              />
-            </div>
-            <div>
-              <label
-                htmlFor="perf-lineup"
-                className="block text-sm font-semibold text-foreground mb-2"
-              >
-                라인업명
-              </label>
-              <input
-                id="perf-lineup"
-                type="text"
-                placeholder="라인업/팀 표기명"
-                className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
-                value={displayData.lineupName}
-                onChange={(e) => patchEditing({ lineupName: e.target.value })}
-                disabled={!isEditMode}
-              />
-            </div>
-          </div>
-
-          <div>
-            <label
-              htmlFor="perf-description"
-              className="block text-sm font-semibold text-foreground mb-2"
-            >
-              공연 소개글
-            </label>
-            <textarea
-              id="perf-description"
-              rows={5}
-              placeholder="동아리 소개, 구성원 소개 등을 작성하세요"
-              className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all resize-none"
-              value={displayData.performanceDescription}
-              onChange={(e) => patchEditing({ performanceDescription: e.target.value })}
-              disabled={!isEditMode}
-            />
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-            <div>
-              <label
-                htmlFor="perf-category"
-                className="block text-sm font-semibold text-foreground mb-2"
-              >
-                공연 분류
-              </label>
-              <div className="relative">
-                <select
-                  id="perf-category"
-                  className={`w-full appearance-none border border-border rounded-lg bg-background py-3 pl-4 transition-all focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent ${
-                    isEditMode ? 'pr-10' : 'pr-4'
-                  }`}
-                  value={displayData.performanceCategory ?? ''}
-                  onChange={(e) =>
-                    patchEditing({
-                      performanceCategory: (e.target.value || null) as PerformanceCategory | null,
-                    })
-                  }
-                  disabled={!isEditMode}
-                >
-                  <option value="">미정</option>
-                  {(Object.keys(PERFORMANCE_CATEGORY_LABEL) as PerformanceCategory[]).map((c) => (
-                    <option key={c} value={c}>
-                      {PERFORMANCE_CATEGORY_LABEL[c]}
-                    </option>
-                  ))}
-                </select>
-                {isEditMode && (
-                  <ChevronDown
-                    size={16}
-                    aria-hidden="true"
-                    className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
-                  />
-                )}
-              </div>
-            </div>
-            <div>
-              <label
-                htmlFor="perf-status"
-                className="block text-sm font-semibold text-foreground mb-2"
-              >
-                공연 상태
-              </label>
-              <div className="relative">
-                <select
-                  id="perf-status"
-                  className={`w-full appearance-none border border-border rounded-lg bg-background py-3 pl-4 transition-all focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent ${
-                    isEditMode && canEditTimetable ? 'pr-10' : 'pr-4'
-                  }`}
-                  value={displayData.performanceStatus}
-                  onChange={(e) =>
-                    patchEditing({ performanceStatus: e.target.value as PerformanceStatus })
-                  }
-                  disabled={!isEditMode || !canEditTimetable}
-                >
-                  {(Object.keys(PERFORMANCE_STATUS_LABEL) as PerformanceStatus[]).map((s) => (
-                    <option key={s} value={s}>
-                      {PERFORMANCE_STATUS_LABEL[s]}
-                    </option>
-                  ))}
-                </select>
-                {isEditMode && canEditTimetable && (
-                  <ChevronDown
-                    size={16}
-                    aria-hidden="true"
-                    className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
-                  />
-                )}
-              </div>
-            </div>
-          </div>
-
-          <div>
-            {/* SNS 묶음은 그룹 라벨이라 htmlFor 단일 매칭이 어색함. 각 input 에 aria-label 로 매칭. */}
-            <span className="block text-sm font-semibold text-foreground mb-2">
-              SNS 링크 (선택)
-            </span>
-            <div className="space-y-3">
-              <div className="flex items-center gap-3">
-                <div
-                  className="flex items-center justify-center w-10 h-10 bg-muted text-muted-foreground rounded-lg"
-                  aria-hidden="true"
-                >
-                  <Instagram size={20} />
-                </div>
-                <input
-                  type="text"
-                  placeholder="인스타그램 URL"
-                  aria-label="인스타그램 URL"
-                  className="flex-1 px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
-                  value={displayData.instagramUrl}
-                  onChange={(e) => patchEditing({ instagramUrl: e.target.value })}
-                  disabled={!isEditMode}
-                />
-              </div>
-              <div className="flex items-center gap-3">
-                <div
-                  className="flex items-center justify-center w-10 h-10 bg-muted text-muted-foreground rounded-lg"
-                  aria-hidden="true"
-                >
-                  <Youtube size={20} />
-                </div>
-                <input
-                  type="text"
-                  placeholder="유튜브 URL"
-                  aria-label="유튜브 URL"
-                  className="flex-1 px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
-                  value={displayData.youtubeUrl}
-                  onChange={(e) => patchEditing({ youtubeUrl: e.target.value })}
-                  disabled={!isEditMode}
-                />
-              </div>
-            </div>
-          </div>
+          <PerformanceProfileFields
+            data={displayData}
+            isEditMode={isEditMode}
+            canEditTimetable={canEditTimetable}
+            onChange={patchEditing}
+          />
 
           {/* 공연 이미지 — 항목별 즉시 반영(추가/삭제). */}
-          <div>
-            <span className="block text-sm font-semibold text-foreground mb-2">공연 이미지</span>
-
-            {isEditMode && (
-              <label
-                className={`block border-2 border-dashed border-ds-border-strong rounded-lg p-8 text-center transition-colors ${
-                  isUploading
-                    ? 'cursor-not-allowed opacity-60'
-                    : 'cursor-pointer hover:border-primary'
-                }`}
-              >
-                <input
-                  ref={uploadInputRef}
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageUpload}
-                  disabled={isUploading}
-                  className="hidden"
-                />
-                <Upload className="mx-auto mb-3 text-ds-text-disabled" size={32} />
-                <p className="text-sm text-muted-foreground mb-1">
-                  {isUploading ? '이미지를 업로드하는 중…' : '이미지를 클릭하여 업로드'}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  첫 이미지는 대표 이미지로 등록됩니다
-                </p>
-              </label>
-            )}
-
-            {images.length > 0 && (
-              <div
-                className={`${isEditMode ? 'mt-4' : ''} grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4`}
-              >
-                {images.map((image) => {
-                  const isProfile = image.imageType === 'PROFILE';
-                  return (
-                    <div
-                      key={image.id}
-                      className={`relative group aspect-square rounded-lg overflow-hidden border-2 transition-all ${
-                        isProfile ? 'border-primary' : 'border-border'
-                      }`}
-                    >
-                      <img
-                        src={image.imageUrl}
-                        alt="공연 이미지"
-                        className="w-full h-full object-cover"
-                      />
-
-                      {isProfile && (
-                        <div className="absolute top-2 left-2 px-2 py-1 bg-primary text-primary-foreground text-xs font-semibold rounded-full flex items-center gap-1 shadow-lg">
-                          <Star size={12} fill="currentColor" />
-                          대표
-                        </div>
-                      )}
-
-                      {isEditMode && (
-                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-all duration-200 flex items-center justify-center">
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveImage(image.id)}
-                            disabled={deleteImageMutation.isPending}
-                            className="opacity-0 group-hover:opacity-100 p-2 bg-destructive text-destructive-foreground rounded-lg hover:bg-ds-error-pressed transition-all disabled:opacity-50"
-                          >
-                            <Trash2 size={14} />
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-
-            {!isEditMode && images.length === 0 && (
-              <div className="rounded-lg p-8 text-center bg-muted">
-                <Upload className="mx-auto mb-3 text-ds-text-disabled" size={32} />
-                <p className="text-sm text-ds-text-disabled">등록된 이미지가 없습니다</p>
-              </div>
-            )}
-          </div>
+          <PerformanceImageGrid
+            images={images}
+            isEditMode={isEditMode}
+            isUploading={isUploading}
+            isDeleting={deleteImageMutation.isPending}
+            onUpload={handleImageUpload}
+            onRemove={handleRemoveImage}
+          />
         </div>
       </div>
 
       {/* 공연 타임테이블 */}
-      <div className="bg-background rounded-2xl p-4 md:p-8 mb-6 shadow-sm">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-bold text-foreground">공연 타임테이블</h2>
-          {isEditMode && !canEditTimetable && (
-            <span className="text-xs text-muted-foreground">운영진만 수정 가능</span>
-          )}
-        </div>
-
-        {(() => {
-          const timetableEditable = isEditMode && canEditTimetable;
-          const selectClass =
-            'w-full appearance-none border border-border rounded-lg bg-background py-3 pl-4 transition-all focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent ' +
-            (timetableEditable ? 'pr-10' : 'pr-4');
-          return (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-              <div>
-                <label
-                  htmlFor="perf-date"
-                  className="block text-sm font-semibold text-foreground mb-2"
-                >
-                  공연 날짜
-                </label>
-                <div className="relative">
-                  <select
-                    id="perf-date"
-                    className={selectClass}
-                    value={displayData.performanceDate ?? ''}
-                    onChange={(e) =>
-                      patchEditing({
-                        performanceDate: e.target.value ? Number(e.target.value) : null,
-                      })
-                    }
-                    disabled={!timetableEditable}
-                  >
-                    <option value="">미정</option>
-                    {PERFORMANCE_DATE_OPTIONS.map((o) => (
-                      <option key={o.value} value={o.value}>
-                        {o.label}
-                      </option>
-                    ))}
-                  </select>
-                  {timetableEditable && (
-                    <ChevronDown
-                      size={16}
-                      aria-hidden="true"
-                      className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
-                    />
-                  )}
-                </div>
-              </div>
-              <div>
-                <label
-                  htmlFor="perf-location"
-                  className="block text-sm font-semibold text-foreground mb-2"
-                >
-                  공연 장소
-                </label>
-                <input
-                  id="perf-location"
-                  type="number"
-                  placeholder="장소 ID"
-                  className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
-                  value={displayData.locationId ?? ''}
-                  onChange={(e) =>
-                    patchEditing({
-                      locationId: e.target.value ? Number(e.target.value) : null,
-                    })
-                  }
-                  disabled={!timetableEditable}
-                />
-                {displayData.locationName && (
-                  <p className="text-xs text-muted-foreground mt-1">{displayData.locationName}</p>
-                )}
-              </div>
-              <div>
-                <label
-                  htmlFor="perf-start-time"
-                  className="block text-sm font-semibold text-foreground mb-2"
-                >
-                  공연 시작 시간
-                </label>
-                <input
-                  id="perf-start-time"
-                  type="time"
-                  step={300}
-                  className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
-                  value={displayData.startTime ?? ''}
-                  onChange={(e) => patchEditing({ startTime: e.target.value || null })}
-                  disabled={!timetableEditable}
-                />
-              </div>
-              <div>
-                <label
-                  htmlFor="perf-end-time"
-                  className="block text-sm font-semibold text-foreground mb-2"
-                >
-                  공연 종료 시간
-                </label>
-                <input
-                  id="perf-end-time"
-                  type="time"
-                  step={300}
-                  className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
-                  value={displayData.endTime ?? ''}
-                  onChange={(e) => patchEditing({ endTime: e.target.value || null })}
-                  disabled={!timetableEditable}
-                />
-              </div>
-            </div>
-          );
-        })()}
-      </div>
+      <PerformanceTimetable
+        data={displayData}
+        isEditMode={isEditMode}
+        canEditTimetable={canEditTimetable}
+        onChange={patchEditing}
+      />
 
       {/* 공연 셋리스트 */}
       <div className="bg-background rounded-2xl p-4 md:p-8 shadow-sm">
