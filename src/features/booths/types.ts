@@ -32,9 +32,13 @@ export interface Booth {
   location: number | null;
   status: BoothStatus;
   isFood: boolean;
+  /** 푸드트럭(외부 업체 운영) 여부. */
+  isFoodTruck: boolean;
   instagram: string;
   isReservable: boolean;
   account: string;
+  /** 부스 공지("오늘 18시 조기 마감" 등). 미입력 null. */
+  notice: string | null;
   /** 지도 위치 엔티티 ID. booth-layout 연동용 — 이번 범위에선 읽기만. */
   locationId: number | null;
   /** 백엔드 계산값. organization·date·openTime·closeTime·sector·location 모두 입력 시 true. */
@@ -63,9 +67,11 @@ export interface BoothDTO {
   location: number | null;
   status: BoothStatus;
   isFood: boolean;
+  isFoodTruck: boolean;
   instagram: string;
   isReservable: boolean;
   account: string;
+  notice: string | null;
   locationId: number | null;
   profileComplete: boolean;
   representativeMenus: string[];
@@ -86,11 +92,15 @@ export interface BoothUpdateDTO {
   location: number | null;
   status: BoothStatus;
   isFood: boolean;
+  /** 백엔드 BoothUpdateRequest 가 @NotNull 로 요구 — 누락 시 400. */
+  isFoodTruck: boolean;
   instagram: string;
   isReservable: boolean;
   account: string;
   locationId: number | null;
   representativeMenus: string[];
+  /** 부스 공지. 미전송 시 백엔드가 null 로 덮어쓰므로 반드시 round-trip. */
+  notice: string | null;
   /** 백엔드 tags 도입 후 활성. 도입 전엔 백엔드가 무시. */
   tags?: string[];
 }
