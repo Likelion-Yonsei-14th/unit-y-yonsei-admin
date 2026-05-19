@@ -3,13 +3,18 @@ import { ArrowLeft, Store } from 'lucide-react';
 import { useMyBooth, useUpdateMyBooth } from '@/features/booths/hooks';
 import { BoothInfoForm } from '@/features/booths/components/booth-info-form';
 import { BoothStatusCards } from '@/features/booths/components/booth-status-cards';
+import { useMenus } from '@/features/menus/hooks';
+import { MenuListForm } from '@/features/menus/components/menu-list-form';
+
+/** 카드 입구 / 부스 상세 폼 / 메뉴 리스트 — 셋 중 하나를 보여준다. */
+type View = 'cards' | 'booth-info' | 'menu';
 
 /**
  * Booth 역할 사용자의 자기 부스 관리 페이지.
  *
  * 컨테이너 책임:
  *  - booth 데이터 fetch + 로딩/에러 분기
- *  - 부스 정보 폼의 표시 토글
+ *  - 카드 / 부스 상세 폼 / 메뉴 리스트 뷰 전환
  *  - 헤더의 부스 운영 ON/OFF 토글 + BoothInfoForm 의 토글 동기화
  *
  * 폼 내부 state(필드) 는 BoothInfoForm 이 직접 들고 있어 페이지가 비대해지지
@@ -19,8 +24,10 @@ export function BoothManagement() {
   // 이 페이지는 RequirePermission('booth.update.own') 으로 가드 → Booth 역할만 진입.
   const { data: booth, isPending, isError } = useMyBooth();
   const updateBooth = useUpdateMyBooth();
+  // 메뉴 카드의 작성완료 뱃지용 — 음식 부스일 때만 조회한다.
+  const menusQuery = useMenus(booth?.isFood ? booth.id : null);
 
-  const [showBoothInfoForm, setShowBoothInfoForm] = useState(false);
+  const [view, setView] = useState<View>('cards');
 
   // 부스 운영 ON/OFF — 헤더 토글과 BoothInfoForm 의 토글이 같은 값을 가리키므로
   // 페이지에서 단일 진실로 두고 둘에 모두 전달한다. 저장은 BoothInfoForm 에서
@@ -34,12 +41,13 @@ export function BoothManagement() {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- 의도적으로 좁힌 deps. 위 주석 참고.
   }, [booth?.id, booth?.isReservable]);
 
-  // 작성 완료 여부는 백엔드 계산값(profileComplete)을 그대로 사용.
+  // 작성 완료 여부 — 부스 상세는 백엔드 계산값(profileComplete), 메뉴는 1개 이상 등록 여부.
   const boothInfoCompleted = booth?.profileComplete ?? false;
+  const menuCompleted = (menusQuery.data?.length ?? 0) > 0;
 
-  // 폼 → 상태 카드로 복귀. 카드 밖 '이전으로' 버튼이 호출.
+  // 폼/메뉴 → 카드 입구로 복귀.
   const handleBackToCards = () => {
-    setShowBoothInfoForm(false);
+    setView('cards');
   };
 
   if (isPending) {
@@ -61,8 +69,8 @@ export function BoothManagement() {
 
   return (
     <div className="p-4 md:p-8">
-      {/* '이전으로' — 폼 진입 시 카드 밖(헤더 위)에 노출해 복귀 동선을 명확히. */}
-      {showBoothInfoForm && (
+      {/* '이전으로' — 폼/메뉴 진입 시 카드 밖(헤더 위)에 노출해 복귀 동선을 명확히. */}
+      {view !== 'cards' && (
         <button
           type="button"
           onClick={handleBackToCards}
@@ -105,14 +113,17 @@ export function BoothManagement() {
         </div>
       </div>
 
-      {!showBoothInfoForm && (
+      {view === 'cards' && (
         <BoothStatusCards
           boothInfoCompleted={boothInfoCompleted}
-          onOpenBoothInfo={() => setShowBoothInfoForm(true)}
+          onOpenBoothInfo={() => setView('booth-info')}
+          isFoodBooth={booth.isFood}
+          menuCompleted={menuCompleted}
+          onOpenMenuList={() => setView('menu')}
         />
       )}
 
-      {showBoothInfoForm && (
+      {view === 'booth-info' && (
         <BoothInfoForm
           booth={booth}
           isReservable={isReservable}
@@ -124,6 +135,8 @@ export function BoothManagement() {
           onSaved={handleBackToCards}
         />
       )}
+
+      {view === 'menu' && <MenuListForm boothId={booth.id} />}
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { Check, Store, X } from 'lucide-react';
+import { Check, Store, UtensilsCrossed, X } from 'lucide-react';
 
 interface StatusCardProps {
   title: React.ReactNode;
@@ -52,15 +52,26 @@ interface Props {
   /** 백엔드 계산값(Booth.profileComplete). */
   boothInfoCompleted: boolean;
   onOpenBoothInfo: () => void;
+  /** 음식 부스(isFood)일 때만 메뉴 카드를 노출한다. */
+  isFoodBooth: boolean;
+  /** 메뉴가 1개 이상 등록됐는지. */
+  menuCompleted: boolean;
+  onOpenMenuList: () => void;
 }
 
 /**
- * 부스 관리 페이지의 입구 — 부스 상세 정보 작성 완료 상태를 보여주고
- * 클릭으로 폼 진입.
+ * 부스 관리 페이지의 입구 — 작성 상태 카드.
+ * 항상 '부스 상세 정보' 카드를 보여주고, 음식 부스면 '메뉴 리스트' 카드를 함께 띄운다.
  */
-export function BoothStatusCards({ boothInfoCompleted, onOpenBoothInfo }: Props) {
+export function BoothStatusCards({
+  boothInfoCompleted,
+  onOpenBoothInfo,
+  isFoodBooth,
+  menuCompleted,
+  onOpenMenuList,
+}: Props) {
   return (
-    <div className="mb-8 max-w-lg">
+    <div className={`mb-8 grid grid-cols-1 gap-6 ${isFoodBooth ? 'sm:grid-cols-2' : 'max-w-lg'}`}>
       <StatusCard
         title={
           <>
@@ -73,6 +84,20 @@ export function BoothStatusCards({ boothInfoCompleted, onOpenBoothInfo }: Props)
         decoration={<Store size={56} aria-hidden="true" />}
         onClick={onOpenBoothInfo}
       />
+      {isFoodBooth && (
+        <StatusCard
+          title={
+            <>
+              메뉴 리스트
+              <br />
+              작성
+            </>
+          }
+          completed={menuCompleted}
+          decoration={<UtensilsCrossed size={56} aria-hidden="true" />}
+          onClick={onOpenMenuList}
+        />
+      )}
     </div>
   );
 }
