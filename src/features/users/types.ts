@@ -51,10 +51,28 @@ export interface CreateUserDTO {
   representativeName: string;
   representativePhone: string;
   memo: string;
-  /** BOOTH 역할일 때 필수 — 백엔드 service 가 검증(BOOTH_INFO_REQUIRED). 그 외 역할이면 미전송. */
+
+  // ---- BOOTH 역할 전용 (역할이 BOOTH 일 때만 전송) ----
+  /** 필수 — 백엔드 service 가 검증(BOOTH_INFO_REQUIRED). */
   boothName?: string;
-  /** PERFORMER 역할일 때 필수 — 백엔드 service 가 검증(PERFORMER_INFO_REQUIRED). 그 외 역할이면 미전송. */
+  /** 선택 — '한글탑' | '백양로' | '송도' (백엔드 BoothSector enum). */
+  boothSector?: string;
+  /** 선택 — 축제 일차 2~4 (FestivalDayService: 2=5/27, 3=5/28, 4=5/29). */
+  boothOperatingDate?: number;
+  /** 선택 — 자리 후보 메모. */
+  boothLocationMemo?: string;
+
+  // ---- PERFORMER 역할 전용 (역할이 PERFORMER 일 때만 전송) ----
+  /** 필수 — 백엔드 service 가 검증(PERFORMER_INFO_REQUIRED). */
   performanceName?: string;
+  /** 선택 — 축제 일차 2~4. */
+  performanceDate?: number;
+  /** 선택 — 공연 장소 MapLocation id (1=언기도 앞, 2=노천극장, 3=동문광장). */
+  performanceLocationId?: number;
+  /** 선택 — 'HH:MM' (백엔드 LocalTime). */
+  performanceStartTime?: string;
+  /** 선택 — 'HH:MM'. */
+  performanceEndTime?: string;
 }
 
 /** 생성 결과 (AdminUserCreateResponse). */

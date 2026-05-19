@@ -45,10 +45,10 @@ export const createUserSchema = z
     /** Booth 캠퍼스 — MapSectionId 와 일치(global=송도, baekyang=백양로, hangeul=한글탑). */
     boothCampus: z.enum(['global', 'baekyang', 'hangeul']).optional(),
     /**
-     * Booth 운영 날짜 — 한 부스가 여러 날 운영 가능하므로 다중 선택.
+     * Booth 운영 날짜 — 백엔드 Booth.date 가 단일 정수라 한 부스 = 하루, 단일 선택.
      * 부스 운영 가능일은 5/27 (송도), 5/28 / 5/29 (신촌). 5/26 블루런 은 부스 없음.
      */
-    boothOperatingDates: z.array(z.enum(FESTIVAL_DATE_ENUM)).optional(),
+    boothOperatingDate: z.enum(FESTIVAL_DATE_ENUM).optional(),
     /** 부스 자리 후보 메모. 좌표 입력 X — PlacementEditor 에서 별도. */
     boothLocationNote: z.string().optional(),
     /** Performer 공연 일자(YYYY-MM-DD). FESTIVAL_DATES 단일 소스 사용. */

@@ -1,6 +1,21 @@
 import { roleFromBackend, roleToBackend } from '@/types/role';
+import { dayForDate } from '@/features/booth-layout/sections';
 import type { CreateUserFormValues } from './schema';
 import type { AdminUser, AdminUserDTO, CreatedUser, CreatedUserDTO, CreateUserDTO } from './types';
+
+/** 폼 캠퍼스 enum → 백엔드 BoothSector enum 문자열. */
+const SECTOR_BY_CAMPUS: Record<'global' | 'baekyang' | 'hangeul', string> = {
+  global: '송도',
+  baekyang: '백양로',
+  hangeul: '한글탑',
+};
+
+/** 폼 스테이지 enum → 백엔드 공연장 MapLocation id (백엔드 @Schema 라벨 기준). */
+const LOCATION_ID_BY_STAGE: Record<'songdo' | 'dongmoon' | 'nocheon', number> = {
+  songdo: 1, // 언기도 앞
+  nocheon: 2, // 노천극장
+  dongmoon: 3, // 동문광장
+};
 
 /**
  * 백엔드 목록 DTO → AdminUser.
@@ -27,27 +42,52 @@ export const toAdminUser = (d: AdminUserDTO): AdminUser => ({
 /**
  * 계정 생성 폼 → 백엔드 생성 요청(AdminUserCreateRequest).
  *
- * BOOTH 역할은 boothName, PERFORMER 역할은 performanceName 을 백엔드 service 가
- * 필수로 검증한다(BOOTH_INFO_REQUIRED / PERFORMER_INFO_REQUIRED) — 역할에 맞춰
- * 함께 보낸다. 폼은 superRefine 으로 두 값을 이미 필수 검증하므로 여기 도달 시 존재.
+ * 공통 7필드 + 역할별 운영 필드를 보낸다. BOOTH 는 boothName, PERFORMER 는
+ * performanceName 이 백엔드 service 필수 검증 대상(BOOTH_INFO_REQUIRED /
+ * PERFORMER_INFO_REQUIRED) — 폼 superRefine 이 이미 필수 검증하므로 여기 도달 시 존재.
+ * 나머지 운영 필드는 백엔드에서 모두 선택이라 폼에 입력됐을 때만 전송한다.
  *
- * 나머지 운영 정보(boothSector / boothOperatingDate / performanceDate /
- * performanceLocationId / 시간 등)는 백엔드에선 모두 선택이라 미전송 — 폼 enum↔백엔드
- * 코드 매핑(날짜 다중선택↔1~3 정수 등)이 필요해 별도 정합 항목으로 남긴다.
+ * 운영일은 폼의 ISO 날짜를 dayForDate 로 축제 일차 정수(2~4)로 변환해 보낸다 —
+ * 백엔드 FestivalDayService 정의(2=5/27, 3=5/28, 4=5/29)와 Booth.date 가 동일 체계.
  */
-export const fromCreateUserFormValues = (v: CreateUserFormValues): CreateUserDTO => ({
-  loginId: v.userId,
-  password: v.tempPassword,
-  organization: v.affiliation,
-  role: roleToBackend(v.permissionType),
-  representativeName: v.representativeName,
-  representativePhone: v.representativePhone,
-  memo: v.internalMemo,
-  ...(v.permissionType === 'Booth' && v.boothName ? { boothName: v.boothName } : {}),
-  ...(v.permissionType === 'Performer' && v.performanceTeamName
-    ? { performanceName: v.performanceTeamName }
-    : {}),
-});
+export const fromCreateUserFormValues = (v: CreateUserFormValues): CreateUserDTO => {
+  const base: CreateUserDTO = {
+    loginId: v.userId,
+    password: v.tempPassword,
+    organization: v.affiliation,
+    role: roleToBackend(v.permissionType),
+    representativeName: v.representativeName,
+    representativePhone: v.representativePhone,
+    memo: v.internalMemo,
+  };
+
+  if (v.permissionType === 'Booth') {
+    return {
+      ...base,
+      ...(v.boothName ? { boothName: v.boothName } : {}),
+      ...(v.boothCampus ? { boothSector: SECTOR_BY_CAMPUS[v.boothCampus] } : {}),
+      ...(v.boothOperatingDate
+        ? { boothOperatingDate: dayForDate(v.boothOperatingDate) ?? undefined }
+        : {}),
+      ...(v.boothLocationNote ? { boothLocationMemo: v.boothLocationNote } : {}),
+    };
+  }
+
+  if (v.permissionType === 'Performer') {
+    return {
+      ...base,
+      ...(v.performanceTeamName ? { performanceName: v.performanceTeamName } : {}),
+      ...(v.performanceDate ? { performanceDate: dayForDate(v.performanceDate) ?? undefined } : {}),
+      ...(v.performanceStage
+        ? { performanceLocationId: LOCATION_ID_BY_STAGE[v.performanceStage] }
+        : {}),
+      ...(v.performanceStartTime ? { performanceStartTime: v.performanceStartTime } : {}),
+      ...(v.performanceEndTime ? { performanceEndTime: v.performanceEndTime } : {}),
+    };
+  }
+
+  return base;
+};
 
 export const toCreatedUser = (d: CreatedUserDTO): CreatedUser => ({
   id: d.id,
