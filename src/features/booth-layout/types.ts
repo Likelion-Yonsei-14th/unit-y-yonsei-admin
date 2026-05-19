@@ -92,5 +92,14 @@ export interface PickerBooth {
   counts: { waiting: number; completed: number; cancelled: number };
 }
 
-/** width/height 가 null 인 MapLocation 을 PlacementBox 로 만들 때의 기본 크기(%). */
-export const DEFAULT_BOX_SIZE = { width: 5, height: 3 } as const;
+/**
+ * 섹션별 새 부스 자리 기본 크기(%) — width/height 미지정 자리의 폴백이자
+ * 편집기 신규 배치의 초기 크기. 섹션마다 부스 규격이 달라 분리한다.
+ * 송도(국제캠)는 지도 비율상 세로가 더 긴 규격.
+ */
+export const DEFAULT_BOX_SIZE_BY_SECTION: Record<MapSectionId, { width: number; height: number }> =
+  {
+    global: { width: 3.606, height: 4.456 },
+    baekyang: { width: 5, height: 3 },
+    hangeul: { width: 5, height: 3 },
+  };
