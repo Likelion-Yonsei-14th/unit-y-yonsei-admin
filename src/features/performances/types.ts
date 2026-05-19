@@ -70,7 +70,7 @@ export interface Performance {
   performanceStatus: PerformanceStatus;
   locationId: number | null;
   locationName: string | null;
-  /** 백엔드 Performance 엔티티에 아직 없음(추가 예정) — 매퍼에서 ?? '' 방어. */
+  /** 공연 SNS 링크. 미입력 시 빈 문자열. */
   instagramUrl: string;
   youtubeUrl: string;
 }
@@ -102,9 +102,9 @@ export interface PerformanceDTO {
   performanceStatus: PerformanceStatus;
   locationId: number | null;
   locationName: string | null;
-  /** 백엔드 SNS 필드 도입 전엔 응답에 없음. */
-  instagramUrl?: string;
-  youtubeUrl?: string;
+  /** 미설정 시 백엔드가 null 로 내려준다. */
+  instagramUrl?: string | null;
+  youtubeUrl?: string | null;
 }
 
 export interface PerformanceImageDTO {
@@ -137,7 +137,6 @@ export interface PerformanceUpdateDTO {
   performanceStatus?: PerformanceStatus;
   lineupName?: string;
   locationId?: number | null;
-  /** 백엔드 SNS 도입 후 활성. 도입 전엔 백엔드가 무시. */
   instagramUrl?: string;
   youtubeUrl?: string;
 }

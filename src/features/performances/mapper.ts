@@ -38,7 +38,7 @@ export const toPerformance = (d: PerformanceDTO): Performance => ({
   performanceStatus: d.performanceStatus,
   locationId: d.locationId,
   locationName: d.locationName,
-  // 백엔드 SNS 도입 전: 응답에 없음 → 빈 문자열 방어.
+  // 미설정 시 백엔드가 null → 빈 문자열로 정규화.
   instagramUrl: d.instagramUrl ?? '',
   youtubeUrl: d.youtubeUrl ?? '',
 });
