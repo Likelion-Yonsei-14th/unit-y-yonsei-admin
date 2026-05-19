@@ -1,4 +1,5 @@
 import { ChevronDown, Instagram, Youtube } from 'lucide-react';
+import { TagInput } from '@/components/common/tag-input';
 import {
   PERFORMANCE_CATEGORY_LABEL,
   PERFORMANCE_STATUS_LABEL,
@@ -77,6 +78,32 @@ export function PerformanceProfileFields({
           onChange={(e) => onChange({ performanceDescription: e.target.value })}
           disabled={!isEditMode}
         />
+      </div>
+
+      <div>
+        <span className="block text-sm font-semibold text-foreground mb-2">
+          해시태그 <span className="font-normal text-muted-foreground">(최대 3개 · 6자 이내)</span>
+        </span>
+        {isEditMode ? (
+          <TagInput
+            value={data.hashtags}
+            onChange={(hashtags) => onChange({ hashtags })}
+            maxTags={3}
+            maxLen={6}
+            inputLabel="해시태그 입력"
+            placeholderExample="라이브밴드"
+          />
+        ) : data.hashtags.length > 0 ? (
+          <div className="flex flex-wrap gap-2">
+            {data.hashtags.map((tag) => (
+              <span key={tag} className="rounded-full bg-muted px-3 py-1 text-sm text-foreground">
+                {tag}
+              </span>
+            ))}
+          </div>
+        ) : (
+          <p className="text-sm text-ds-text-disabled">등록된 해시태그가 없습니다.</p>
+        )}
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">

@@ -61,6 +61,7 @@ interface RawPerformance {
   endTime: string;
   category: PerformanceCategory;
   status: PerformanceStatus;
+  hashtags?: string[];
   images: PerformanceSeed['_images'];
   setlist: PerformanceSeed['_setlist'];
 }
@@ -104,6 +105,7 @@ const RAW: RawPerformance[] = [
     performanceDescription: '록 사운드 기반의 5인조 밴드. 연세대 중앙 락밴드 동아리.',
     instagramUrl: 'https://instagram.com/occlusion_band',
     youtubeUrl: '',
+    hashtags: ['#록밴드', '#잔나비'],
     performanceDate: D_SONGDO,
     loc: LOC.songdo,
     startTime: '21:30',
@@ -202,6 +204,7 @@ const RAW: RawPerformance[] = [
       '연세대학교 IT 창업 동아리. 2026년 대동제에서 열정적인 무대를 선보입니다!',
     instagramUrl: 'https://instagram.com/likelion_yonsei',
     youtubeUrl: 'https://youtube.com/likelion',
+    hashtags: ['#IT창업', '#밴드', '#열정'],
     performanceDate: D_SINCHON_1,
     loc: LOC.dongmoon,
     startTime: '14:00',
@@ -247,6 +250,7 @@ const RAW: RawPerformance[] = [
     performanceDescription: '대형 메인 무대 헤드라이너. K-Pop 댄스 메들리.',
     instagramUrl: 'https://instagram.com/btl_yonsei',
     youtubeUrl: 'https://youtube.com/btl_yonsei',
+    hashtags: ['#KPOP', '#댄스', '#메인무대'],
     performanceDate: D_SINCHON_1,
     loc: LOC.dongmoon,
     startTime: '18:00',
@@ -488,6 +492,7 @@ const performances: Performance[] = RAW.map((r) => ({
   locationName: r.loc.name,
   instagramUrl: r.instagramUrl,
   youtubeUrl: r.youtubeUrl,
+  hashtags: r.hashtags ?? [],
 }));
 
 // 이미지/셋리스트 id 시퀀스 — 시드 전부 펼친 뒤 다음 값에서 이어 발급.

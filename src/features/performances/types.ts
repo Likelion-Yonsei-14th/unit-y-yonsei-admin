@@ -73,6 +73,8 @@ export interface Performance {
   /** 공연 SNS 링크. 미입력 시 빈 문자열. */
   instagramUrl: string;
   youtubeUrl: string;
+  /** 해시태그 — '#' 접두 포함, 최대 3개. */
+  hashtags: string[];
 }
 
 // ---- 백엔드 DTO (camelCase — 모델과 거의 동일) ----
@@ -105,6 +107,10 @@ export interface PerformanceDTO {
   /** 미설정 시 백엔드가 null 로 내려준다. */
   instagramUrl?: string | null;
   youtubeUrl?: string | null;
+  /** 해시태그 내용 — '#' 미포함. 미설정 시 null. */
+  hashtag1?: string | null;
+  hashtag2?: string | null;
+  hashtag3?: string | null;
 }
 
 export interface PerformanceImageDTO {
@@ -139,6 +145,10 @@ export interface PerformanceUpdateDTO {
   locationId?: number | null;
   instagramUrl?: string;
   youtubeUrl?: string;
+  /** 해시태그 내용 — '#' 미포함. 빈 슬롯은 null. */
+  hashtag1?: string | null;
+  hashtag2?: string | null;
+  hashtag3?: string | null;
 }
 
 export interface PerformanceImageCreateDTO {
