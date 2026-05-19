@@ -12,17 +12,19 @@ export const toNotice = (d: NoticeDTO): Notice => ({
   content: d.content,
   date: d.date,
   hasImage: d.hasImage,
+  imageUrl: d.imageUrl ?? '',
+  isPinned: d.isPinned ?? false,
   category: toNoticeCategory(d.category),
 });
 
 export const fromNotice = (
-  n: Pick<Notice, 'title' | 'content' | 'hasImage' | 'category'>,
+  n: Pick<Notice, 'title' | 'content' | 'imageUrl' | 'isPinned' | 'category'>,
 ): NoticeWriteDTO => ({
   title: n.title,
   content: n.content,
-  hasImage: n.hasImage,
-  // 프론트엔 이미지 URL·상단 고정 개념이 없어 기본값 전송 — 백엔드 기능 도입 시 보강.
-  imageUrl: '',
-  isPinned: false,
+  // 백엔드 hasImage 는 imageUrl 유무와 동치 — 매퍼가 단일 진실로 계산.
+  hasImage: n.imageUrl !== '',
+  imageUrl: n.imageUrl,
+  isPinned: n.isPinned,
   category: n.category,
 });

@@ -37,8 +37,12 @@ export interface Notice {
   content: string;
   /** 등록일자 — yyyy-mm-dd. */
   date: string;
-  /** 카드뉴스 이미지 첨부 여부. 실제 URL 은 별도 필드/엔드포인트로 분리될 수 있음. */
+  /** 카드뉴스 이미지 첨부 여부. imageUrl 이 비어 있지 않은지와 동치. */
   hasImage: boolean;
+  /** 카드뉴스 이미지 URL. 없으면 빈 문자열. */
+  imageUrl: string;
+  /** 상단 고정 여부 — 목록·앱 상단에 우선 노출. */
+  isPinned: boolean;
   category: NoticeCategory;
 }
 
@@ -60,7 +64,7 @@ export function isNewNotice(noticeDate: string, today: Date = new Date()): boole
 
 /**
  * 백엔드 공지 응답 (NoticeResponse).
- * 프론트가 쓰는 필드만 선언 — imageUrl/isPinned/viewCount/performanceId/boothId 는 미사용.
+ * 프론트가 쓰는 필드만 선언 — viewCount/performanceId/boothId 는 미사용.
  */
 export interface NoticeDTO {
   id: number;
@@ -68,6 +72,8 @@ export interface NoticeDTO {
   content: string;
   date: string;
   hasImage: boolean;
+  imageUrl: string;
+  isPinned: boolean;
   /** 백엔드는 자유 문자열. toNotice 가 NoticeCategory 로 정규화. */
   category: string;
 }
@@ -85,7 +91,9 @@ export interface NoticeWriteDTO {
 export interface CreateNoticeInput {
   title: string;
   content: string;
-  hasImage: boolean;
+  /** 업로드 완료된 이미지 URL. 없으면 빈 문자열. */
+  imageUrl: string;
+  isPinned: boolean;
   category: NoticeCategory;
 }
 
@@ -93,6 +101,8 @@ export interface UpdateNoticeInput {
   id: number;
   title: string;
   content: string;
-  hasImage: boolean;
+  /** 업로드 완료된 이미지 URL. 없으면 빈 문자열. */
+  imageUrl: string;
+  isPinned: boolean;
   category: NoticeCategory;
 }

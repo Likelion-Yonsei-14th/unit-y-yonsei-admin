@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { Upload, Plus, Trash2, Edit2, FileText, X } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { Upload, Plus, Trash2, Edit2, FileText, X, Pin } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   useCreateNotice,
@@ -7,6 +7,7 @@ import {
   useNotices,
   useUpdateNotice,
 } from '@/features/notices/hooks';
+import { uploadImage } from '@/features/uploads/api';
 import {
   isNewNotice,
   NOTICE_CATEGORIES,
@@ -42,7 +43,12 @@ const CATEGORY_TONE_CLASS: Record<NoticeCategoryMeta['tone'], string> = {
 
 export function NoticePage() {
   const noticesQuery = useNotices();
-  const notices = noticesQuery.data ?? [];
+  const notices = useMemo(() => noticesQuery.data ?? [], [noticesQuery.data]);
+  // 상단 고정 공지를 목록 맨 위로. JS sort 는 안정 정렬이라 그룹 내 기존 순서 유지.
+  const sortedNotices = useMemo(
+    () => [...notices].sort((a, b) => Number(b.isPinned) - Number(a.isPinned)),
+    [notices],
+  );
   const createMutation = useCreateNotice();
   const updateMutation = useUpdateNotice();
   const deleteMutation = useDeleteNotice();
@@ -55,25 +61,32 @@ export function NoticePage() {
   const [titleDraft, setTitleDraft] = useState('');
   const [contentDraft, setContentDraft] = useState('');
   const [categoryDraft, setCategoryDraft] = useState<NoticeCategory>('general');
-  // 새로 첨부한 이미지의 object URL — 미리보기 + cleanup 대상.
+  const [isPinnedDraft, setIsPinnedDraft] = useState(false);
+  // 새로 첨부한 파일 + 그 object URL(미리보기·cleanup 대상).
+  const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
-  // 편집 진입 시 기존 이미지 보유 여부 — 새 파일을 올리지 않고 그대로 저장하면 유지된다.
-  const [hasExistingImage, setHasExistingImage] = useState(false);
+  // 편집 진입 시 이미 저장돼 있던 이미지 URL. 새 파일을 올리지 않으면 그대로 유지된다.
+  const [existingImageUrl, setExistingImageUrl] = useState<string | null>(null);
+  // 이미지 S3 업로드 진행 중 — 저장 버튼 잠금.
+  const [isUploading, setIsUploading] = useState(false);
 
   useEffect(() => {
     if (!showForm) return;
     if (editingNotice) {
       setTitleDraft(editingNotice.title);
       setContentDraft(editingNotice.content);
-      setHasExistingImage(editingNotice.hasImage);
+      setExistingImageUrl(editingNotice.imageUrl || null);
+      setIsPinnedDraft(editingNotice.isPinned);
       setCategoryDraft(editingNotice.category);
     } else {
       setTitleDraft('');
       setContentDraft('');
-      setHasExistingImage(false);
+      setExistingImageUrl(null);
+      setIsPinnedDraft(false);
       setCategoryDraft('general');
     }
-    // 새 미리보기는 폼 진입 시 항상 초기화 — revoke 는 아래 cleanup effect 가 책임.
+    // 새 파일·미리보기는 폼 진입 시 항상 초기화 — revoke 는 아래 cleanup effect 가 책임.
+    setImageFile(null);
     setImagePreviewUrl(null);
   }, [editingNotice, showForm]);
 
@@ -87,8 +100,17 @@ export function NoticePage() {
   }, [imagePreviewUrl]);
 
   const handleImageChange = (file: File | null) => {
+    setImageFile(file);
     setImagePreviewUrl(file ? URL.createObjectURL(file) : null);
-    if (file) setHasExistingImage(false);
+    // 새 파일을 고르면 기존 이미지는 대체된다.
+    if (file) setExistingImageUrl(null);
+  };
+
+  /** 첨부 이미지 제거 — 신규 파일·기존 이미지 모두 비운다. */
+  const handleRemoveImage = () => {
+    setImageFile(null);
+    setImagePreviewUrl(null);
+    setExistingImageUrl(null);
   };
 
   const handleCreateNew = () => {
@@ -120,12 +142,24 @@ export function NoticePage() {
     setEditingNotice(null);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!titleDraft.trim() || !contentDraft.trim()) {
       toast.error('제목과 본문을 모두 입력해주세요.');
       return;
     }
-    const hasImage = !!imagePreviewUrl || hasExistingImage;
+    // 새 파일이 있으면 먼저 S3 업로드해 URL 을 얻고, 없으면 기존 URL 을 유지한다.
+    let imageUrl = existingImageUrl ?? '';
+    if (imageFile) {
+      setIsUploading(true);
+      try {
+        imageUrl = await uploadImage(imageFile, 'notice');
+      } catch {
+        toast.error('이미지 업로드에 실패했습니다. 잠시 후 다시 시도해주세요.');
+        return;
+      } finally {
+        setIsUploading(false);
+      }
+    }
     const onAfter = () => {
       setShowForm(false);
       setEditingNotice(null);
@@ -136,7 +170,8 @@ export function NoticePage() {
           id: editingNotice.id,
           title: titleDraft.trim(),
           content: contentDraft.trim(),
-          hasImage,
+          imageUrl,
+          isPinned: isPinnedDraft,
           category: categoryDraft,
         },
         {
@@ -152,7 +187,8 @@ export function NoticePage() {
         {
           title: titleDraft.trim(),
           content: contentDraft.trim(),
-          hasImage,
+          imageUrl,
+          isPinned: isPinnedDraft,
           category: categoryDraft,
         },
         {
@@ -166,7 +202,7 @@ export function NoticePage() {
     }
   };
 
-  const isSaving = createMutation.isPending || updateMutation.isPending;
+  const isSaving = createMutation.isPending || updateMutation.isPending || isUploading;
 
   return (
     <div className="p-4 md:p-8">
@@ -219,7 +255,7 @@ export function NoticePage() {
                 </tr>
               </thead>
               <tbody>
-                {notices.map((notice) => {
+                {sortedNotices.map((notice) => {
                   const category = NOTICE_CATEGORIES[notice.category];
                   const isNew = isNewNotice(notice.date);
                   return (
@@ -232,6 +268,12 @@ export function NoticePage() {
                           aria-label={`${notice.title} 수정`}
                         >
                           <div className="flex flex-wrap items-center gap-1.5 mb-1.5">
+                            {notice.isPinned && (
+                              <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[10px] font-bold bg-ds-warning-subtle text-ds-warning-pressed">
+                                <Pin size={9} aria-hidden="true" />
+                                고정
+                              </span>
+                            )}
                             {isNew && (
                               <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-destructive text-destructive-foreground">
                                 NEW
@@ -363,42 +405,20 @@ export function NoticePage() {
               <span className="block text-sm font-semibold text-foreground mb-2">
                 카드뉴스 이미지
               </span>
-              {imagePreviewUrl ? (
+              {imagePreviewUrl || existingImageUrl ? (
                 <div className="relative inline-block max-w-full overflow-hidden rounded-lg border border-border bg-muted">
                   <img
-                    src={imagePreviewUrl}
-                    alt="첨부한 카드뉴스 미리보기"
+                    src={imagePreviewUrl ?? existingImageUrl ?? ''}
+                    alt="첨부된 카드뉴스 미리보기"
                     className="block max-h-80 w-auto max-w-full object-contain"
                   />
                   <button
                     type="button"
-                    onClick={() => handleImageChange(null)}
+                    onClick={handleRemoveImage}
                     aria-label="이미지 제거"
                     className="absolute right-2 top-2 inline-flex h-7 w-7 items-center justify-center rounded-full bg-background/90 text-muted-foreground shadow-sm hover:bg-background hover:text-destructive"
                   >
                     <X size={14} />
-                  </button>
-                </div>
-              ) : hasExistingImage ? (
-                /* 편집 진입 시 mock 데이터엔 URL 이 없어 미리보기를 띄울 수 없는 경우.
-                   '기존 이미지 유지' 의도를 명시하고, 변경하려면 새로 업로드. */
-                <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border bg-muted px-4 py-3 text-sm text-muted-foreground">
-                  <span>기존 이미지가 첨부되어 있습니다.</span>
-                  <label className="cursor-pointer rounded-md border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground hover:border-ds-border-strong">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={(e) => handleImageChange(e.target.files?.[0] ?? null)}
-                    />
-                    이미지 변경
-                  </label>
-                  <button
-                    type="button"
-                    onClick={() => setHasExistingImage(false)}
-                    className="text-xs font-medium text-destructive hover:underline"
-                  >
-                    이미지 제거
                   </button>
                 </div>
               ) : (
@@ -415,6 +435,22 @@ export function NoticePage() {
                   </p>
                 </label>
               )}
+            </div>
+
+            {/* 상단 고정 — 켜면 목록·앱 상단에 우선 노출. */}
+            <div>
+              <label className="flex cursor-pointer items-center gap-3">
+                <input
+                  type="checkbox"
+                  checked={isPinnedDraft}
+                  onChange={(e) => setIsPinnedDraft(e.target.checked)}
+                  className="h-4 w-4 accent-primary"
+                />
+                <span className="text-sm font-semibold text-foreground">상단 고정</span>
+                <span className="text-xs font-normal text-muted-foreground">
+                  목록·앱 상단에 우선 노출됩니다.
+                </span>
+              </label>
             </div>
 
             <div>
@@ -461,7 +497,13 @@ export function NoticePage() {
                 disabled={isSaving}
                 className="px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-ds-primary-pressed transition-colors duration-200 disabled:opacity-70 disabled:cursor-not-allowed"
               >
-                {isSaving ? '저장 중…' : editingNotice ? '수정 완료' : '공지사항 등록'}
+                {isUploading
+                  ? '이미지 업로드 중…'
+                  : isSaving
+                    ? '저장 중…'
+                    : editingNotice
+                      ? '수정 완료'
+                      : '공지사항 등록'}
               </button>
             </div>
           </div>
