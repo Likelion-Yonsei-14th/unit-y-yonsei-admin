@@ -2,8 +2,8 @@ import { useEffect, useRef } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import {
+  getReservationSummary,
   listBoothReservations,
-  listReservations,
   setReservationStatus,
   setReservationsStatusBulk,
 } from './api';
@@ -28,16 +28,16 @@ export function useBoothReservations(boothId: number) {
 }
 
 /**
- * 예약 풀 전체 조회 — 부스 picker 의 부스별 카운트 집계용.
+ * 부스별 예약 현황 요약 — dashboard KPI · 부스 picker 의 부스별 카운트 집계용.
  *
- * ⚠️ 실제 백엔드엔 전체 예약 목록 엔드포인트가 없다. picker 는 booth-layout
- * (지도 배치) 도메인에 묶여 있어, 그 도메인 연동 작업 때 카운트 출처
- * (예: GET /booths/reservable 의 waitingCount) 를 함께 정리한다.
+ * 예약 행 전체가 아니라 부스별 상태 카운트만 받는다 (GET /admin/reservations/summary).
+ * queryKey 가 ['reservations', ...] 프리픽스라 상태 변경 mutation 의
+ * invalidateQueries(['reservations']) 에 함께 갱신된다.
  */
-export function useReservations() {
+export function useReservationSummary() {
   return useQuery({
-    queryKey: ['reservations'],
-    queryFn: listReservations,
+    queryKey: ['reservations', 'summary'],
+    queryFn: getReservationSummary,
   });
 }
 
