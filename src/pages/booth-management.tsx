@@ -1,6 +1,17 @@
 import { useEffect, useState } from 'react';
 import { ArrowLeft, Store } from 'lucide-react';
-import { useMyBooth, useUpdateMyBooth } from '@/features/booths/hooks';
+import { toast } from 'sonner';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { useMyBooth, useSetBoothReservable, useUpdateMyBooth } from '@/features/booths/hooks';
 import { BoothInfoForm } from '@/features/booths/components/booth-info-form';
 import { BoothStatusCards } from '@/features/booths/components/booth-status-cards';
 import { useMenus } from '@/features/menus/hooks';
@@ -24,10 +35,14 @@ export function BoothManagement() {
   // 이 페이지는 RequirePermission('booth.update.own') 으로 가드 → Booth 역할만 진입.
   const { data: booth, isPending, isError } = useMyBooth();
   const updateBooth = useUpdateMyBooth();
+  const setReservable = useSetBoothReservable();
   // 메뉴 카드의 작성완료 뱃지용 — 음식 부스일 때만 조회한다.
   const menusQuery = useMenus(booth?.isFood ? booth.id : null);
 
   const [view, setView] = useState<View>('cards');
+  // 부스 운영 ON/OFF 는 즉시 토글하지 않고 확인 다이얼로그를 한 번 거친다.
+  // null = 다이얼로그 닫힘, true/false = 전환하려는 목표 값.
+  const [pendingReservable, setPendingReservable] = useState<boolean | null>(null);
 
   // 부스 운영 ON/OFF — 헤더 토글과 BoothInfoForm 의 토글이 같은 값을 가리키므로
   // 페이지에서 단일 진실로 두고 둘에 모두 전달한다. 저장은 BoothInfoForm 에서
@@ -96,7 +111,7 @@ export function BoothManagement() {
         <div className="flex items-center gap-2">
           <span className="text-sm text-muted-foreground">부스 운영 ON/OFF</span>
           <button
-            onClick={() => setIsReservable(!isReservable)}
+            onClick={() => setPendingReservable(!isReservable)}
             aria-label={isReservable ? '부스 운영 끄기' : '부스 운영 켜기'}
             className={`
               relative w-14 h-7 rounded-full transition-all duration-300
@@ -137,6 +152,46 @@ export function BoothManagement() {
       )}
 
       {view === 'menu' && <MenuListForm boothId={booth.id} />}
+
+      <AlertDialog
+        open={pendingReservable !== null}
+        onOpenChange={(o) => {
+          if (!o) setPendingReservable(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              부스 운영을 {pendingReservable ? '켜시겠어요' : '끄시겠어요'}?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {pendingReservable
+                ? '부스 운영을 켜면 방문객이 예약을 접수할 수 있게 됩니다.'
+                : '부스 운영을 끄면 방문객의 예약 접수가 중단됩니다.'}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>취소</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                const target = pendingReservable;
+                if (target === null) return;
+                // 전용 엔드포인트로 즉시 저장 — 성공 시 캐시 갱신 → 토글이 따라 움직인다.
+                setReservable.mutate(
+                  { id: booth.id, isReservable: target },
+                  {
+                    onSuccess: () =>
+                      toast.success(target ? '부스 운영을 켰습니다.' : '부스 운영을 껐습니다.'),
+                    onError: () => toast.error('부스 운영 상태 변경에 실패했습니다.'),
+                  },
+                );
+              }}
+            >
+              {pendingReservable ? '운영 켜기' : '운영 끄기'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
