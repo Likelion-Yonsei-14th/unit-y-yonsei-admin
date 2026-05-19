@@ -1,4 +1,11 @@
-import type { Reservation, ReservationDTO, ReservationState } from './types';
+import type {
+  Reservation,
+  ReservationCounts,
+  ReservationDTO,
+  ReservationState,
+  ReservationSummary,
+  ReservationSummaryDTO,
+} from './types';
 
 // ---- 예약 상태 enum 변환 ----
 // 백엔드: PENDING | CONFIRMED | CANCELLED ↔ 프론트: waiting | completed | cancelled
@@ -32,3 +39,26 @@ export const toReservation = (d: ReservationDTO): Reservation => ({
   contact: d.phoneNumber,
   status: reservationStateFromBackend(d.status),
 });
+
+// ---- 예약 현황 요약 ----
+// 백엔드 상태 키(pending/confirmed/cancelled) → 프론트 상태 키(waiting/completed/cancelled).
+
+export const toReservationSummary = (d: ReservationSummaryDTO): ReservationSummary => {
+  const byBooth = new Map<number, ReservationCounts>();
+  for (const b of d.booths) {
+    byBooth.set(b.boothId, {
+      waiting: b.pending,
+      completed: b.confirmed,
+      cancelled: b.cancelled,
+    });
+  }
+  return {
+    byBooth,
+    totals: {
+      waiting: d.totals.pending,
+      completed: d.totals.confirmed,
+      cancelled: d.totals.cancelled,
+      total: d.totals.total,
+    },
+  };
+};

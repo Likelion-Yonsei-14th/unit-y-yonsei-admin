@@ -1,16 +1,32 @@
 import { api } from '@/lib/api-client';
 import { env } from '@/lib/env';
 import { mockReservations } from '@/mocks/reservations';
-import { reservationStateToBackend, toReservation } from './mapper';
-import type { Reservation, ReservationDTO, ReservationState } from './types';
+import { reservationStateToBackend, toReservation, toReservationSummary } from './mapper';
+import type {
+  Reservation,
+  ReservationCounts,
+  ReservationDTO,
+  ReservationState,
+  ReservationSummary,
+  ReservationSummaryDTO,
+} from './types';
 
 const memory: Reservation[] = mockReservations.map((r) => ({ ...r }));
 
 // ---- list / mutations (mock) ----
 
-async function listReservationsMock(): Promise<Reservation[]> {
+async function getReservationSummaryMock(): Promise<ReservationSummary> {
   await new Promise((r) => setTimeout(r, 100));
-  return memory.slice();
+  const byBooth = new Map<number, ReservationCounts>();
+  const totals: ReservationSummary['totals'] = { waiting: 0, completed: 0, cancelled: 0, total: 0 };
+  for (const r of memory) {
+    const counts = byBooth.get(r.boothId) ?? { waiting: 0, completed: 0, cancelled: 0 };
+    counts[r.status] += 1;
+    byBooth.set(r.boothId, counts);
+    totals[r.status] += 1;
+    totals.total += 1;
+  }
+  return { byBooth, totals };
 }
 
 async function setReservationStatusMock(input: {
@@ -78,11 +94,9 @@ async function listBoothReservationsMock(boothId: number): Promise<Reservation[]
 
 // ---- list / mutations (real) ----
 
-async function listReservationsReal(): Promise<Reservation[]> {
-  // ⚠️ 백엔드는 부스별 조회(GET /admin/reservations/booths/{boothId})만 제공한다.
-  // 전체 예약 목록 엔드포인트(GET /admin/reservations)는 아직 없음 — 백엔드 추가 요청 항목.
-  const dtos = await api.get<ReservationDTO[]>('/admin/reservations');
-  return dtos.map(toReservation);
+async function getReservationSummaryReal(): Promise<ReservationSummary> {
+  const dto = await api.get<ReservationSummaryDTO>('/admin/reservations/summary');
+  return toReservationSummary(dto);
 }
 
 async function listBoothReservationsReal(boothId: number): Promise<Reservation[]> {
@@ -113,7 +127,9 @@ async function setReservationsStatusBulkReal(input: {
 
 // ---- 분기 export ----
 
-export const listReservations = env.USE_MOCK ? listReservationsMock : listReservationsReal;
+export const getReservationSummary = env.USE_MOCK
+  ? getReservationSummaryMock
+  : getReservationSummaryReal;
 export const listBoothReservations = env.USE_MOCK
   ? listBoothReservationsMock
   : listBoothReservationsReal;

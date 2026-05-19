@@ -19,22 +19,8 @@ import {
 } from '@/features/booth-layout/types';
 import { useAuth } from '@/features/auth/hooks';
 import { useBooths, useMyBooth } from '@/features/booths/hooks';
-import { useReservations } from '@/features/reservations/hooks';
+import { useReservationSummary } from '@/features/reservations/hooks';
 import type { Booth } from '@/features/booths/types';
-import type { Reservation, ReservationState } from '@/features/reservations/types';
-
-/** boothId → 상태별 카운트 집계. */
-function buildReservationCountsByBooth(
-  reservations: Reservation[],
-): Map<number, Record<ReservationState, number>> {
-  const m = new Map<number, Record<ReservationState, number>>();
-  for (const r of reservations) {
-    const cur = m.get(r.boothId) ?? { waiting: 0, completed: 0, cancelled: 0 };
-    cur[r.status] += 1;
-    m.set(r.boothId, cur);
-  }
-  return m;
-}
 
 /** MapLocation + Booth → PlacementBox. */
 function toBox(loc: MapLocation, booth: Booth): PlacementBox {
@@ -63,7 +49,7 @@ export function ReservationBoothPicker() {
 
   const locationsQuery = useMapLocations();
   const allBoothsQuery = useBooths();
-  const reservationsQuery = useReservations();
+  const reservationSummaryQuery = useReservationSummary();
   const myBoothQuery = useMyBooth();
 
   // locationId → MapLocation 조회.
@@ -73,10 +59,8 @@ export function ReservationBoothPicker() {
     return m;
   }, [locationsQuery.data]);
 
-  const countsByBooth = useMemo(
-    () => buildReservationCountsByBooth(reservationsQuery.data ?? []),
-    [reservationsQuery.data],
-  );
+  // boothId → 상태별 카운트. summary 응답의 byBooth Map 을 그대로 쓴다.
+  const countsByBooth = reservationSummaryQuery.data?.byBooth;
 
   /** 일차 → PickerBooth[] (배치된 부스만). */
   const pickerBoothByDay = useMemo(() => {
@@ -91,7 +75,7 @@ export function ReservationBoothPicker() {
           name: booth.name || '이름 미입력 부스',
           organization: booth.organization || '-',
         },
-        counts: countsByBooth.get(booth.id) ?? { waiting: 0, completed: 0, cancelled: 0 },
+        counts: countsByBooth?.get(booth.id) ?? { waiting: 0, completed: 0, cancelled: 0 },
       };
       const list = byDay.get(booth.date) ?? [];
       list.push(pb);

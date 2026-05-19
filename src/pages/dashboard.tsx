@@ -6,7 +6,7 @@ import { useLostItems } from '@/features/lost-found/hooks';
 import { useNotices } from '@/features/notices/hooks';
 import { useReviews } from '@/features/performance-review/hooks';
 import { usePerformances } from '@/features/performances/hooks';
-import { useReservations } from '@/features/reservations/hooks';
+import { useReservationSummary } from '@/features/reservations/hooks';
 import { useAdminUsers } from '@/features/users/hooks';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -18,7 +18,7 @@ import { Skeleton } from '@/components/ui/skeleton';
  * 즉시 채워지고, 처음 진입이면 로딩 스켈레톤만 잠깐 보인 뒤 채워짐.
  */
 export function DashboardPage() {
-  const reservationsQuery = useReservations();
+  const reservationSummaryQuery = useReservationSummary();
   const boothsQuery = useBooths();
   const performancesQuery = usePerformances();
   const reviewsQuery = useReviews();
@@ -28,20 +28,20 @@ export function DashboardPage() {
 
   // ---- KPI 계산 ----
   const stats = useMemo(() => {
-    const reservations = reservationsQuery.data ?? [];
+    const reservationTotals = reservationSummaryQuery.data?.totals;
     const booths = boothsQuery.data ?? [];
     const performances = performancesQuery.data ?? [];
     const users = usersQuery.data ?? [];
 
     return {
-      reservationCount: reservations.length,
-      waitingCount: reservations.filter((r) => r.status === 'waiting').length,
+      reservationCount: reservationTotals?.total ?? 0,
+      waitingCount: reservationTotals?.waiting ?? 0,
       activeBoothCount: booths.filter((b) => b.isReservable && !!b.name).length,
       totalBoothCount: booths.length,
       performanceCount: performances.length,
       userCount: users.length,
     };
-  }, [reservationsQuery.data, boothsQuery.data, performancesQuery.data, usersQuery.data]);
+  }, [reservationSummaryQuery.data, boothsQuery.data, performancesQuery.data, usersQuery.data]);
 
   // ---- 인기 곡 TOP 3 ----
   const topSongs = useMemo(() => {
@@ -83,8 +83,8 @@ export function DashboardPage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <KpiCard
           label="총 예약"
-          loading={reservationsQuery.isLoading}
-          isError={reservationsQuery.isError}
+          loading={reservationSummaryQuery.isLoading}
+          isError={reservationSummaryQuery.isError}
           icon={<Calendar size={24} />}
           tone="primary"
           value={stats.reservationCount}
