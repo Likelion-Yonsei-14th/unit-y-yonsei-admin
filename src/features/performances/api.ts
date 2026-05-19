@@ -89,19 +89,23 @@ async function deleteSetlistItemReal(setlistId: number): Promise<void> {
   await api.delete(`/admin/performances/me/setlists/${setlistId}`);
 }
 
-// ---- 라이브 (백엔드 수동지정 엔드포인트 미구현 — 추가 예정) ----
-// 백엔드가 GET/PUT /performances/live 를 추가하기 전까지 real 은 사실상 미동작.
-// 스펙은 plan "범위 외" 절 참고.
+// ---- 라이브 수동지정 ----
+// GET  /performances/live       — 공개 조회. 운영진이 수동 지정한 라이브 공연. 미지정 시 응답 null.
+// PUT  /admin/performances/live — SUPER 전용 지정/교체/해제. performanceId=null 이면 해제.
+// 백엔드 bac-89 (LivePerformanceAdminController). 둘 다 PerformanceCurrentResponse 를 반환하나
+// FE 는 공연 id 만 필요하므로 그 필드만 좁혀 number|null 로 다룬다.
+type LivePerformanceResponse = { id: number } | null;
+
 async function getLivePerformanceReal(): Promise<number | null> {
-  const res = await api.get<{ performanceId: number | null }>('/performances/live');
-  return res.performanceId;
+  const res = await api.get<LivePerformanceResponse>('/performances/live');
+  return res?.id ?? null;
 }
 
 async function setLivePerformanceReal(performanceId: number | null): Promise<number | null> {
-  const res = await api.put<{ performanceId: number | null }>('/performances/live', {
+  const res = await api.put<LivePerformanceResponse>('/admin/performances/live', {
     performanceId,
   });
-  return res.performanceId;
+  return res?.id ?? null;
 }
 
 // ---- 분기 export ----
