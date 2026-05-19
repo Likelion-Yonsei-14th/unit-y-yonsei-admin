@@ -23,11 +23,23 @@ export interface AdminUser {
   infoCompleted: boolean;
 }
 
+/** AdminUserListResponse.linkedBooths 원소 — 어드민에 연결된 부스 요약. */
+export interface AdminUserLinkedBooth {
+  id: number;
+  name: string;
+}
+
+/** AdminUserListResponse.linkedPerformance — 어드민에 연결된 공연 요약. */
+export interface AdminUserLinkedPerformance {
+  id: number;
+  performanceName: string;
+}
+
 /**
  * 백엔드 어드민 목록 응답 DTO (AdminUserListResponse).
  *
- * ⚠️ boothName / performanceTeamName / email / phone / infoCompleted 는 백엔드가
- * 아직 안 내려준다 — 매퍼가 기본값으로 채운다 (백엔드 추가 요청 항목).
+ * email / phone 은 목록 응답에 없어 매퍼가 기본값으로 채운다.
+ * linkedBooths / linkedPerformance 는 @JsonInclude(NON_NULL) 라 없으면 생략될 수 있다.
  */
 export interface AdminUserDTO {
   id: number;
@@ -39,6 +51,10 @@ export interface AdminUserDTO {
   /** 'ACTIVE' | 'INACTIVE' */
   status: string;
   representativeName: string;
+  /** 백엔드가 booth/performance join 으로 계산해 내려주는 작성 완료 플래그. */
+  infoCompleted: boolean;
+  linkedBooths?: AdminUserLinkedBooth[];
+  linkedPerformance?: AdminUserLinkedPerformance | null;
 }
 
 /** 신규 계정 생성 요청 (AdminUserCreateRequest). */
