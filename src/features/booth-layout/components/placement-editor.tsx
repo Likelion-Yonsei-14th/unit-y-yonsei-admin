@@ -269,6 +269,7 @@ export function PlacementEditor({ booths }: PlacementEditorProps) {
           booths={booths}
           placedBoothIds={placedBoothIds}
           selectedDay={selectedDay}
+          selectedSector={sectorForSection[selectedSection]}
           selectedBoothId={selectedBoothId}
           onSelectBooth={setSelectedBoothId}
           onHoverBooth={setHoveredBoothId}
