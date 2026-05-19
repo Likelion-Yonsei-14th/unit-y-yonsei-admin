@@ -22,6 +22,7 @@ import {
   MAP_SECTIONS,
   sectionsValidFor,
   sectionForSector,
+  sectorForSection,
   dayForDate,
   type FestivalDate,
 } from '@/features/booth-layout/sections';
@@ -159,16 +160,25 @@ export function PlacementEditor({ booths }: PlacementEditorProps) {
       return;
     }
     setStickySize({ width: input.width, height: input.height });
+    // 새 자리는 "지금 보고 있는 섹션/일차"에 속한다 — 부스의 기존 sector/date 가
+    // 비어 있거나 다른 값이면 자리가 엉뚱한 섹션으로 가 화면에서 사라진다.
+    // 클릭한 섹션·일차를 단일 진실로 삼아 자리·부스 양쪽을 맞춘다.
+    const placedSector = sectorForSection[selectedSection];
     try {
       const loc = await createMut.mutateAsync({
-        locationName: booth.name || `${booth.sector ?? selectedSection} 부스 슬롯`,
-        sector: booth.sector ?? '백양로',
+        locationName: booth.name || `${placedSector} 부스 슬롯`,
+        sector: placedSector,
         mapX: input.x,
         mapY: input.y,
         width: input.width,
         height: input.height,
       });
-      await updateBoothMut.mutateAsync({ ...booth, locationId: loc.id });
+      await updateBoothMut.mutateAsync({
+        ...booth,
+        locationId: loc.id,
+        sector: placedSector,
+        date: selectedDay,
+      });
       setSelectedLocationId(loc.id);
     } catch (err) {
       toast.error((err as Error).message);
