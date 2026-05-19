@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router';
-import { Calendar } from 'lucide-react';
+import { Calendar, MapPinOff } from 'lucide-react';
 import { BoothMapPicker } from '@/features/booth-layout/components/booth-map-picker';
 import { useMapLocations } from '@/features/booth-layout/hooks';
 import {
@@ -168,8 +168,17 @@ export function ReservationBoothPicker() {
     (myBoothQuery.data == null || myBoothQuery.data.locationId == null)
   ) {
     return (
-      <div className="p-8 text-sm text-muted-foreground">
-        소속 부스의 지도 배치가 아직 설정되지 않았습니다. 관리자에게 문의해 주세요.
+      <div className="flex min-h-[60vh] flex-col items-center justify-center gap-3 p-8 text-center">
+        <div className="flex h-14 w-14 items-center justify-center rounded-full bg-muted text-muted-foreground">
+          <MapPinOff size={28} aria-hidden="true" />
+        </div>
+        <h2 className="text-lg font-semibold text-foreground">
+          지도 배치가 아직 설정되지 않았어요
+        </h2>
+        <p className="max-w-sm text-sm leading-relaxed text-muted-foreground">
+          소속 부스의 자리가 축제 배치도에 아직 등록되지 않았습니다. 운영진이 배치를 완료하면 이
+          화면에서 예약을 관리할 수 있어요. 배치가 필요하면 운영진에게 문의해 주세요.
+        </p>
       </div>
     );
   }

@@ -25,6 +25,17 @@ async function listBoothsMock(): Promise<Booth[]> {
   return Object.values(mockBoothsById);
 }
 
+async function setBoothReservableMock(input: {
+  id: number;
+  isReservable: boolean;
+}): Promise<Booth> {
+  await new Promise((r) => setTimeout(r, 150));
+  const booth = mockBoothsById[input.id];
+  if (!booth) throw new Error(`mock: booth ${input.id} 을(를) 찾을 수 없습니다.`);
+  mockBoothsById[input.id] = { ...booth, isReservable: input.isReservable };
+  return mockBoothsById[input.id];
+}
+
 // ---- Real ----
 
 async function getMyBoothReal(): Promise<Booth | null> {
@@ -44,8 +55,20 @@ async function listBoothsReal(): Promise<Booth[]> {
   return dtos.map(toBooth);
 }
 
+/** 부스 운영 ON/OFF 단건 변경 — 전체 PUT 과 별개의 전용 엔드포인트. */
+async function setBoothReservableReal(input: {
+  id: number;
+  isReservable: boolean;
+}): Promise<Booth> {
+  const dto = await api.patch<BoothDTO>(`/admin/booths/${input.id}/reservable`, {
+    isReservable: input.isReservable,
+  });
+  return toBooth(dto);
+}
+
 // ---- 분기 export ----
 
 export const getMyBooth = env.USE_MOCK ? getMyBoothMock : getMyBoothReal;
 export const updateMyBooth = env.USE_MOCK ? updateMyBoothMock : updateMyBoothReal;
 export const listBooths = env.USE_MOCK ? listBoothsMock : listBoothsReal;
+export const setBoothReservable = env.USE_MOCK ? setBoothReservableMock : setBoothReservableReal;
