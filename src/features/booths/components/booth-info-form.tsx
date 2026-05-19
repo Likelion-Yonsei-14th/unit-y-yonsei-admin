@@ -44,6 +44,8 @@ interface Props {
   initiallyEditing: boolean;
   /** 부스 mutation 인스턴스. 페이지에서 useUpdateMyBooth() 로 생성해 내려준다. */
   updateMutation: UseMutationResult<Booth, Error, Booth>;
+  /** 저장 성공 시 호출 — 페이지가 카드 화면으로 복귀시켜 작성완료 상태를 바로 보여준다. */
+  onSaved: () => void;
 }
 
 const inputClass =
@@ -61,6 +63,7 @@ export function BoothInfoForm({
   onIsReservableChange,
   initiallyEditing,
   updateMutation,
+  onSaved,
 }: Props) {
   const [isEditing, setIsEditing] = useState(initiallyEditing);
   const [name, setName] = useState(booth.name);
@@ -137,6 +140,8 @@ export function BoothInfoForm({
       onSuccess: () => {
         setIsEditing(false);
         toast.success('부스 정보를 저장했습니다.');
+        // 카드 화면으로 복귀 — 갱신된 작성완료 상태를 바로 보여준다.
+        onSaved();
       },
       onError: () => {
         toast.error('저장에 실패했습니다. 잠시 후 다시 시도해주세요.');
