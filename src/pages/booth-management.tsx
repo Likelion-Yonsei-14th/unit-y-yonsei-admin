@@ -120,6 +120,8 @@ export function BoothManagement() {
           // 작성 안 된 부스 카드 클릭 → 바로 편집 모드로.
           initiallyEditing={!boothInfoCompleted}
           updateMutation={updateBooth}
+          // 저장 성공 → 카드 화면으로 복귀, 갱신된 작성완료 상태 노출.
+          onSaved={handleBackToCards}
         />
       )}
     </div>

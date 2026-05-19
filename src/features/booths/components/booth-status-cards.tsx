@@ -12,7 +12,7 @@ function StatusCard({ title, completed, decoration, onClick }: StatusCardProps) 
     <button
       onClick={onClick}
       className={`
-        relative overflow-hidden rounded-2xl p-8 transition-all duration-300 text-left cursor-pointer hover:scale-105
+        relative w-full overflow-hidden rounded-2xl p-8 transition-all duration-300 text-left cursor-pointer hover:scale-105
         ${
           completed
             ? 'bg-ds-success-subtle border-2 border-ds-success-subtle hover:border-ds-success'
@@ -60,7 +60,7 @@ interface Props {
  */
 export function BoothStatusCards({ boothInfoCompleted, onOpenBoothInfo }: Props) {
   return (
-    <div className="mb-8">
+    <div className="mb-8 max-w-lg">
       <StatusCard
         title={
           <>
