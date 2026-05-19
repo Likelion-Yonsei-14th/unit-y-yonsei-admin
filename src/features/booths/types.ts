@@ -53,6 +53,19 @@ export interface Booth {
   tags: string[];
 }
 
+/**
+ * 백엔드 BoothResponse.mapLocation — 부스에 연결된 지도 위치. 미배치면 null.
+ * ⚠️ 응답은 평탄 locationId 가 아니라 이 중첩 객체로 내려온다. toBooth 가 id 를 추출.
+ */
+export interface BoothMapLocationDTO {
+  id: number;
+  sector: BoothSector | null;
+  mapX: number | string;
+  mapY: number | string;
+  width: number | string | null;
+  height: number | string | null;
+}
+
 /** 백엔드 응답 DTO (BoothResponse). tags 는 백엔드 도입 전까지 optional. */
 export interface BoothDTO {
   id: number;
@@ -72,7 +85,8 @@ export interface BoothDTO {
   isReservable: boolean;
   account: string;
   notice: string | null;
-  locationId: number | null;
+  /** 부스에 연결된 지도 위치. 미배치면 null. locationId 는 mapLocation.id 에서 얻는다. */
+  mapLocation: BoothMapLocationDTO | null;
   profileComplete: boolean;
   representativeMenus: string[];
   waitingCount: number;
