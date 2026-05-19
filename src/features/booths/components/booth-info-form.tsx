@@ -315,6 +315,7 @@ export function BoothInfoForm({
               <input
                 id="booth-open-time"
                 type="time"
+                step={600}
                 value={openTime}
                 onChange={(e) => setOpenTime(e.target.value)}
                 className={inputClass}
@@ -336,6 +337,7 @@ export function BoothInfoForm({
               <input
                 id="booth-close-time"
                 type="time"
+                step={600}
                 value={closeTime}
                 onChange={(e) => setCloseTime(e.target.value)}
                 className={inputClass}
