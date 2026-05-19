@@ -27,8 +27,13 @@ export const toAdminUser = (d: AdminUserDTO): AdminUser => ({
 /**
  * 계정 생성 폼 → 백엔드 생성 요청(AdminUserCreateRequest).
  *
- * 폼의 운영 정보(boothCampus / boothOperatingDates / performance* 등)는 현재
- * 백엔드 생성 엔드포인트가 받지 않아 전송하지 않는다 (백엔드 협의 항목).
+ * BOOTH 역할은 boothName, PERFORMER 역할은 performanceName 을 백엔드 service 가
+ * 필수로 검증한다(BOOTH_INFO_REQUIRED / PERFORMER_INFO_REQUIRED) — 역할에 맞춰
+ * 함께 보낸다. 폼은 superRefine 으로 두 값을 이미 필수 검증하므로 여기 도달 시 존재.
+ *
+ * 나머지 운영 정보(boothSector / boothOperatingDate / performanceDate /
+ * performanceLocationId / 시간 등)는 백엔드에선 모두 선택이라 미전송 — 폼 enum↔백엔드
+ * 코드 매핑(날짜 다중선택↔1~3 정수 등)이 필요해 별도 정합 항목으로 남긴다.
  */
 export const fromCreateUserFormValues = (v: CreateUserFormValues): CreateUserDTO => ({
   loginId: v.userId,
@@ -38,6 +43,10 @@ export const fromCreateUserFormValues = (v: CreateUserFormValues): CreateUserDTO
   representativeName: v.representativeName,
   representativePhone: v.representativePhone,
   memo: v.internalMemo,
+  ...(v.permissionType === 'Booth' && v.boothName ? { boothName: v.boothName } : {}),
+  ...(v.permissionType === 'Performer' && v.performanceTeamName
+    ? { performanceName: v.performanceTeamName }
+    : {}),
 });
 
 export const toCreatedUser = (d: CreatedUserDTO): CreatedUser => ({

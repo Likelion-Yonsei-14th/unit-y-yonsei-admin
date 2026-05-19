@@ -51,6 +51,10 @@ export interface CreateUserDTO {
   representativeName: string;
   representativePhone: string;
   memo: string;
+  /** BOOTH 역할일 때 필수 — 백엔드 service 가 검증(BOOTH_INFO_REQUIRED). 그 외 역할이면 미전송. */
+  boothName?: string;
+  /** PERFORMER 역할일 때 필수 — 백엔드 service 가 검증(PERFORMER_INFO_REQUIRED). 그 외 역할이면 미전송. */
+  performanceName?: string;
 }
 
 /** 생성 결과 (AdminUserCreateResponse). */
