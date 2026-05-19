@@ -21,7 +21,8 @@ export const toBooth = (d: BoothDTO): Booth => ({
   isReservable: d.isReservable,
   account: d.account,
   notice: d.notice ?? null,
-  locationId: d.locationId,
+  // 백엔드는 평탄 locationId 가 아니라 중첩 mapLocation 객체로 내려준다.
+  locationId: d.mapLocation?.id ?? null,
   profileComplete: d.profileComplete,
   representativeMenus: d.representativeMenus ?? [],
   waitingCount: d.waitingCount ?? 0,
