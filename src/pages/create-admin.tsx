@@ -67,7 +67,7 @@ const EMPTY_FORM: CreateUserFormValues = {
   internalMemo: '',
   // 운영 정보 (선택) — 모두 미입력 default. 펼침 영역에서만 노출.
   boothCampus: undefined,
-  boothOperatingDates: [],
+  boothOperatingDate: undefined,
   boothLocationNote: '',
   performanceDate: undefined,
   performanceStage: undefined,
@@ -418,36 +418,33 @@ export function CreateAdmin() {
 
                   <div>
                     <span
-                      id="booth-operating-dates-label"
+                      id="booth-operating-date-label"
                       className="block text-sm font-semibold text-foreground mb-2"
                     >
                       운영 날짜
                     </span>
-                    {/* 부스 운영 가능일 — FESTIVAL_DATES 단일 소스. 5/26 블루런 은 별도 일정이라
-                        FESTIVAL_DATES 에 포함되지 않음(부스 없음 동일). 다중 선택. */}
+                    {/* 부스 운영일 — FESTIVAL_DATES 단일 소스. 5/26 블루런 은 별도 일정이라
+                        FESTIVAL_DATES 에 포함되지 않음. 백엔드 Booth.date 가 단일이라 단일 선택. */}
                     {(() => {
                       // watch 는 컴포넌트 본문 레벨에서 한 번만 구독 — map 안에서 매 반복 호출 방지.
-                      const currentDates = watch('boothOperatingDates') ?? [];
+                      const currentDate = watch('boothOperatingDate');
                       return (
                         <div
                           role="group"
-                          aria-labelledby="booth-operating-dates-label"
+                          aria-labelledby="booth-operating-date-label"
                           className="flex flex-wrap gap-2"
                         >
                           {FESTIVAL_DATES.map((d) => {
-                            const selected = currentDates.includes(d);
+                            const selected = currentDate === d;
                             const [, m, day] = d.split('-');
                             return (
                               <button
                                 key={d}
                                 type="button"
                                 aria-pressed={selected}
-                                onClick={() => {
-                                  const next = selected
-                                    ? currentDates.filter((x) => x !== d)
-                                    : [...currentDates, d];
-                                  setValue('boothOperatingDates', next);
-                                }}
+                                onClick={() =>
+                                  setValue('boothOperatingDate', selected ? undefined : d)
+                                }
                                 className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
                                   selected
                                     ? 'bg-primary text-primary-foreground'
@@ -462,7 +459,7 @@ export function CreateAdmin() {
                       );
                     })()}
                     <p className="text-xs text-muted-foreground mt-1">
-                      한 부스가 여러 날 운영 가능합니다. 본인이 부스 정보 페이지에서 변경 가능.
+                      부스는 하루 운영입니다. 발급 후 부스 정보 페이지에서 변경 가능.
                     </p>
                   </div>
 
