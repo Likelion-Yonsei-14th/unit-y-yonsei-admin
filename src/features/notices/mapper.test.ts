@@ -11,6 +11,8 @@ describe('notices mapper', () => {
         content: '본문',
         date: '2026-05-01',
         hasImage: true,
+        imageUrl: 'https://img/x.jpg',
+        isPinned: true,
         category: 'songdo',
       };
       expect(toNotice(dto)).toEqual({
@@ -19,6 +21,8 @@ describe('notices mapper', () => {
         content: '본문',
         date: '2026-05-01',
         hasImage: true,
+        imageUrl: 'https://img/x.jpg',
+        isPinned: true,
         category: 'songdo',
       });
     });
@@ -30,6 +34,8 @@ describe('notices mapper', () => {
         content: 'c',
         date: '2026-01-01',
         hasImage: false,
+        imageUrl: '',
+        isPinned: false,
         category: 'general',
       };
       expect(toNotice(dto).hasImage).toBe(false);
@@ -42,6 +48,8 @@ describe('notices mapper', () => {
         content: 'c',
         date: '2026-05-26',
         hasImage: false,
+        imageUrl: '',
+        isPinned: false,
         category: 'sinchon_29',
       };
       expect(toNotice(dto).category).toBe('sinchon_29');
@@ -54,6 +62,8 @@ describe('notices mapper', () => {
         content: 'c',
         date: '2026-05-26',
         hasImage: false,
+        imageUrl: '',
+        isPinned: false,
         category: 'unknown_value',
       };
       expect(toNotice(dto).category).toBe('general');
@@ -61,21 +71,33 @@ describe('notices mapper', () => {
   });
 
   describe('fromNotice', () => {
-    it('모델을 백엔드 생성 요청으로 변환 — imageUrl/isPinned 기본값 포함', () => {
+    it('이미지 URL 이 있으면 hasImage true 로 변환한다', () => {
       const result = fromNotice({
         title: 't',
         content: 'c',
-        hasImage: true,
+        imageUrl: 'https://img/c.jpg',
+        isPinned: true,
         category: 'bluerun',
       });
       expect(result).toEqual({
         title: 't',
         content: 'c',
         hasImage: true,
-        imageUrl: '',
-        isPinned: false,
+        imageUrl: 'https://img/c.jpg',
+        isPinned: true,
         category: 'bluerun',
       });
+    });
+
+    it('이미지 URL 이 비어 있으면 hasImage false', () => {
+      const result = fromNotice({
+        title: 't',
+        content: 'c',
+        imageUrl: '',
+        isPinned: false,
+        category: 'general',
+      });
+      expect(result.hasImage).toBe(false);
     });
   });
 });

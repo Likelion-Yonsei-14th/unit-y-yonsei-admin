@@ -26,7 +26,9 @@ async function createNoticeMock(input: CreateNoticeInput): Promise<Notice> {
     id: nextId,
     title: input.title.trim(),
     content: input.content.trim(),
-    hasImage: input.hasImage,
+    hasImage: input.imageUrl !== '',
+    imageUrl: input.imageUrl,
+    isPinned: input.isPinned,
     category: input.category,
     date: todayString(),
   };
@@ -42,7 +44,9 @@ async function updateNoticeMock(input: UpdateNoticeInput): Promise<Notice> {
     ...memory[idx],
     title: input.title.trim(),
     content: input.content.trim(),
-    hasImage: input.hasImage,
+    hasImage: input.imageUrl !== '',
+    imageUrl: input.imageUrl,
+    isPinned: input.isPinned,
     category: input.category,
   };
   memory[idx] = next;
