@@ -8,8 +8,29 @@ import { TagInput } from '@/components/common/tag-input';
 
 const SECTORS: BoothSector[] = ['한글탑', '백양로', '송도'];
 const STATUSES: BoothStatus[] = ['OPEN', 'PREPARING', 'CLOSED'];
-/** 축제 일차 1~4 (5/26~5/29). */
-const DATES = [1, 2, 3, 4];
+/**
+ * 부스 운영 가능 일차 — 2~4일차(5/27~5/29)만. 1일차(5/26 블루런)는 부스가 없다.
+ * 백엔드 FestivalDayService 의 일차 정의(2=5/27, 3=5/28, 4=5/29)와 동일 체계.
+ */
+const FESTIVAL_DAYS: { value: number; label: string }[] = [
+  { value: 2, label: '2일차 (5/27 · 국제캠)' },
+  { value: 3, label: '3일차 (5/28 · 신촌캠)' },
+  { value: 4, label: '4일차 (5/29 · 신촌캠)' },
+];
+
+/** Booth.date 정수 → 사람이 읽는 일차 라벨. 매칭 없으면 'N일차' 로 폴백. */
+const festivalDayLabel = (day: number): string =>
+  FESTIVAL_DAYS.find((d) => d.value === day)?.label ?? `${day}일차`;
+
+/**
+ * 일차별 선택 가능 구역. 2일차=국제캠(송도), 3·4일차=신촌캠(한글탑/백양로).
+ * 일차 미선택 시엔 전체를 열어 둔다.
+ */
+function sectorsForDay(day: number | null): BoothSector[] {
+  if (day === 2) return ['송도'];
+  if (day === 3 || day === 4) return ['한글탑', '백양로'];
+  return SECTORS;
+}
 
 interface Props {
   booth: Booth;
@@ -74,6 +95,17 @@ export function BoothInfoForm({
     setRepresentativeMenusRaw(booth.representativeMenus.join(', '));
     setTags(booth.tags);
   }, [booth]);
+
+  // 일차 변경 시 구역 정합 — 2일차(국제캠)는 송도 강제, 3·4일차에서 송도였으면 해제.
+  const handleDateChange = (raw: string) => {
+    const nextDate = raw ? Number(raw) : null;
+    setDate(nextDate);
+    if (nextDate === 2) {
+      setSector('송도');
+    } else if (sector && !sectorsForDay(nextDate).includes(sector)) {
+      setSector(null);
+    }
+  };
 
   const handleSave = () => {
     const next: Booth = {
@@ -247,19 +279,19 @@ export function BoothInfoForm({
               <select
                 id="booth-date"
                 value={date ?? ''}
-                onChange={(e) => setDate(e.target.value ? Number(e.target.value) : null)}
+                onChange={(e) => handleDateChange(e.target.value)}
                 className={inputClass}
               >
                 <option value="">선택 안 함</option>
-                {DATES.map((d) => (
-                  <option key={d} value={d}>
-                    {d}일차
+                {FESTIVAL_DAYS.map((d) => (
+                  <option key={d.value} value={d.value}>
+                    {d.label}
                   </option>
                 ))}
               </select>
             ) : (
               <div id="booth-date" className={readonlyClass}>
-                {date != null ? `${date}일차` : '-'}
+                {date != null ? festivalDayLabel(date) : '-'}
               </div>
             )}
           </div>
@@ -323,7 +355,7 @@ export function BoothInfoForm({
                 className={inputClass}
               >
                 <option value="">선택 안 함</option>
-                {SECTORS.map((s) => (
+                {sectorsForDay(date).map((s) => (
                   <option key={s} value={s}>
                     {s}
                   </option>
