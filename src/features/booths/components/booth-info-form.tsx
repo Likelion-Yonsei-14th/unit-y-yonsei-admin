@@ -551,6 +551,21 @@ export function BoothInfoForm({
             </button>
           </div>
         </div>
+
+        {/* 하단 저장 버튼 — 긴 폼을 끝까지 스크롤한 뒤 상단으로 올라가지 않아도 저장 가능. */}
+        {isEditing && (
+          <div className="flex justify-end pt-2">
+            <button
+              type="button"
+              onClick={handleSave}
+              disabled={updateMutation.isPending}
+              className="flex items-center justify-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-ds-primary-pressed transition-colors duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              <Check size={18} />
+              {updateMutation.isPending ? '저장 중…' : '저장'}
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
