@@ -20,24 +20,28 @@ const LOCATION_ID_BY_STAGE: Record<'songdo' | 'dongmoon' | 'nocheon', number> = 
 /**
  * 백엔드 목록 DTO → AdminUser.
  *
- * boothName / performanceTeamName / email / phone / infoCompleted 는 백엔드
- * 응답(AdminUserListResponse)에 없어 기본값으로 채운다. 백엔드가 해당 필드를
- * 추가하면 이 매퍼만 갱신하면 된다.
+ * infoCompleted·연결 부스/공연은 백엔드 AdminUserListResponse 에서 그대로 읽는다.
+ * email / phone 은 목록 응답에 없어 기본값('')으로 둔다.
  */
-export const toAdminUser = (d: AdminUserDTO): AdminUser => ({
-  id: d.id,
-  userId: d.loginId,
-  role: roleFromBackend(d.role),
-  affiliation: d.organization,
-  representative: d.representativeName,
-  boothId: null,
-  boothName: '-',
-  performanceTeamId: null,
-  performanceTeamName: '-',
-  email: '',
-  phone: '',
-  infoCompleted: false,
-});
+export const toAdminUser = (d: AdminUserDTO): AdminUser => {
+  // 부스↔어드민은 1:1 — 목록 응답은 배열로 주지만 첫 원소만 표시에 쓴다.
+  const booth = d.linkedBooths?.[0] ?? null;
+  return {
+    id: d.id,
+    userId: d.loginId,
+    role: roleFromBackend(d.role),
+    affiliation: d.organization,
+    representative: d.representativeName,
+    boothId: booth?.id ?? null,
+    boothName: booth?.name ?? '-',
+    performanceTeamId: d.linkedPerformance?.id ?? null,
+    performanceTeamName: d.linkedPerformance?.performanceName ?? '-',
+    // email / phone 은 목록 응답에 없다.
+    email: '',
+    phone: '',
+    infoCompleted: d.infoCompleted ?? false,
+  };
+};
 
 /**
  * 계정 생성 폼 → 백엔드 생성 요청(AdminUserCreateRequest).
