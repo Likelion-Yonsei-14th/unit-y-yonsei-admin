@@ -1,4 +1,4 @@
-import { api } from '@/lib/api-client';
+import { api, ApiError } from '@/lib/api-client';
 import { env } from '@/lib/env';
 import {
   fromPerformancePatch,
@@ -36,8 +36,17 @@ async function getPerformanceReal(id: number): Promise<Performance | null> {
 }
 
 async function getMyPerformanceReal(): Promise<Performance | null> {
-  const dto = await api.get<PerformanceDTO>('/admin/performances/me');
-  return toPerformance(dto);
+  try {
+    const dto = await api.get<PerformanceDTO>('/admin/performances/me');
+    return toPerformance(dto);
+  } catch (err) {
+    // P-006(Performance not found) = 이 performer 에 배정된 공연이 아직 없음.
+    // 에러가 아니라 "빈 상태" 로 다뤄 화면이 안내 문구를 띄우게 한다.
+    if (err instanceof ApiError && (err.status === 404 || err.body?.code === 'P-006')) {
+      return null;
+    }
+    throw err;
+  }
 }
 
 async function updateMyPerformanceReal(patch: Partial<Performance>): Promise<Performance> {

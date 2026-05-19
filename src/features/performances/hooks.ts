@@ -50,14 +50,15 @@ export function usePerformance(id: number | null | undefined) {
  */
 export function useMyPerformance() {
   const user = useAuthStore((s) => s.user);
-  const isPerformer = user?.role === 'Performer' && user.performanceTeamId != null;
 
   return useQuery({
-    // `/me` 는 단수형 엔드포인트라 id 가 필요 없다 — 정적 키.
-    // (performanceTeamId 는 enabled 게이트에만 쓰고 캐시 키엔 넣지 않는다.)
+    // `/admin/performances/me` 는 단수형 엔드포인트라 id 가 필요 없다 — 정적 키.
+    // performanceTeamId 로는 게이트하지 않는다 — `/me` 응답이 늦거나 그 필드를
+    // 안 주면 쿼리가 비활성 → data 없음·isLoading false → 로딩 중에 "소속 공연
+    // 없음" 을 잘못 띄운다. 역할만으로 게이트하고 실제 유무는 응답으로 판단.
     queryKey: ['performances', 'me'],
     queryFn: getMyPerformance,
-    enabled: isPerformer,
+    enabled: user?.role === 'Performer',
   });
 }
 
