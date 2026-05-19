@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Check, Pencil, Plus, Trash2, X } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Check, GripVertical, Pencil, Plus, Trash2, X } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   AlertDialog,
@@ -11,7 +11,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { useCreateMenu, useDeleteMenu, useMenus, useUpdateMenu } from '@/features/menus/hooks';
+import {
+  useCreateMenu,
+  useDeleteMenu,
+  useMenus,
+  useReorderMenus,
+  useUpdateMenu,
+} from '@/features/menus/hooks';
 import type { Menu } from '@/features/menus/types';
 
 const inputClass =
@@ -34,21 +40,30 @@ interface Props {
 }
 
 /**
- * 부스 메뉴 관리 — 목록 + 추가/수정/삭제.
- * 백엔드 displayOrder 가 부스 단위 UNIQUE 라 순서변경(DnD)은 v1 범위 외 —
- * 새 메뉴는 항상 끝에 붙는다(api 레이어가 max+1 채움).
+ * 부스 메뉴 관리 — 목록 + 추가/수정/삭제 + 드래그 순서변경.
+ * 행을 끌어 순서를 바꾸면 PUT /menus/order 로 displayOrder 를 일괄 재배정한다.
  */
 export function MenuListForm({ boothId }: Props) {
   const menusQuery = useMenus(boothId);
   const createMut = useCreateMenu(boothId);
   const updateMut = useUpdateMenu(boothId);
   const deleteMut = useDeleteMenu(boothId);
+  const reorderMut = useReorderMenus(boothId);
 
   const [editingId, setEditingId] = useState<DraftId | null>(null);
   const [draft, setDraft] = useState<Draft>(EMPTY_DRAFT);
   const [pendingDelete, setPendingDelete] = useState<Menu | null>(null);
 
+  // 드래그 재정렬용 로컬 순서 — 서버 데이터로 동기화하되, 드래그 중엔 로컬에서 미리 재배열.
+  const [localMenus, setLocalMenus] = useState<Menu[]>([]);
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
+  useEffect(() => {
+    setLocalMenus(menusQuery.data ?? []);
+  }, [menusQuery.data]);
+
   const saving = createMut.isPending || updateMut.isPending;
+  // 편집/추가 중이 아니고 메뉴가 2개 이상일 때만 드래그 재정렬 허용.
+  const canReorder = editingId === null && localMenus.length > 1 && !reorderMut.isPending;
 
   const startAdd = () => {
     setDraft(EMPTY_DRAFT);
@@ -114,6 +129,35 @@ export function MenuListForm({ boothId }: Props) {
         toast.success('메뉴를 삭제했습니다.');
       },
       onError: () => toast.error('메뉴 삭제에 실패했습니다.'),
+    });
+  };
+
+  // ---- 드래그 재정렬 ----
+  const handleDragStart = (index: number) => setDragIndex(index);
+
+  const handleDragEnter = (index: number) => {
+    if (dragIndex === null || dragIndex === index) return;
+    setLocalMenus((prev) => {
+      const next = [...prev];
+      const [moved] = next.splice(dragIndex, 1);
+      next.splice(index, 0, moved);
+      return next;
+    });
+    setDragIndex(index);
+  };
+
+  const handleDragEnd = () => {
+    setDragIndex(null);
+    const newOrder = localMenus.map((m) => m.id);
+    const serverOrder = (menusQuery.data ?? []).map((m) => m.id);
+    // 순서가 그대로면 서버 호출하지 않는다.
+    if (newOrder.join(',') === serverOrder.join(',')) return;
+    reorderMut.mutate(newOrder, {
+      onSuccess: () => toast.success('메뉴 순서를 변경했습니다.'),
+      onError: () => {
+        toast.error('메뉴 순서 변경에 실패했습니다.');
+        setLocalMenus(menusQuery.data ?? []); // 롤백
+      },
     });
   };
 
@@ -209,8 +253,6 @@ export function MenuListForm({ boothId }: Props) {
     </div>
   );
 
-  const menus = menusQuery.data ?? [];
-
   return (
     <div className="bg-background rounded-2xl p-4 md:p-8 mb-6 shadow-sm">
       <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
@@ -244,32 +286,56 @@ export function MenuListForm({ boothId }: Props) {
 
       {!menusQuery.isPending && !menusQuery.isError && (
         <div className="space-y-3">
-          {menus.length === 0 && editingId !== 'new' && (
+          {localMenus.length === 0 && editingId !== 'new' && (
             <div className="w-full px-4 py-8 border border-dashed border-border rounded-lg bg-muted text-center text-sm text-muted-foreground">
               등록된 메뉴가 없습니다. &lsquo;메뉴 추가&rsquo;로 첫 메뉴를 등록하세요.
             </div>
           )}
 
-          {menus.map((m) =>
+          {canReorder && (
+            <p className="text-xs text-muted-foreground">
+              행을 드래그해 메뉴 노출 순서를 바꿀 수 있습니다.
+            </p>
+          )}
+
+          {localMenus.map((m, index) =>
             editingId === m.id ? (
               <div key={m.id}>{draftForm}</div>
             ) : (
               <div
                 key={m.id}
-                className="flex items-center justify-between gap-4 rounded-lg border border-border p-4"
+                draggable={canReorder}
+                onDragStart={() => handleDragStart(index)}
+                onDragEnter={() => handleDragEnter(index)}
+                onDragOver={(e) => e.preventDefault()}
+                onDragEnd={handleDragEnd}
+                className={`flex items-center justify-between gap-4 rounded-lg border border-border p-4 ${
+                  canReorder ? 'cursor-move' : ''
+                } ${dragIndex === index ? 'opacity-50' : ''}`}
               >
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="font-semibold text-foreground truncate">{m.name}</span>
-                    {m.isSoldOut && (
-                      <span className="shrink-0 rounded-full bg-ds-error-subtle px-2 py-0.5 text-xs font-medium text-ds-error-pressed">
-                        품절
-                      </span>
+                <div className="flex min-w-0 items-center gap-3">
+                  {canReorder && (
+                    <GripVertical
+                      size={18}
+                      className="shrink-0 text-muted-foreground"
+                      aria-hidden="true"
+                    />
+                  )}
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold text-foreground truncate">{m.name}</span>
+                      {m.isSoldOut && (
+                        <span className="shrink-0 rounded-full bg-ds-error-subtle px-2 py-0.5 text-xs font-medium text-ds-error-pressed">
+                          품절
+                        </span>
+                      )}
+                    </div>
+                    {m.description && (
+                      <p className="mt-0.5 text-sm text-muted-foreground truncate">
+                        {m.description}
+                      </p>
                     )}
                   </div>
-                  {m.description && (
-                    <p className="mt-0.5 text-sm text-muted-foreground truncate">{m.description}</p>
-                  )}
                 </div>
                 <div className="flex shrink-0 items-center gap-3">
                   <span className="font-semibold text-foreground tabular-nums">

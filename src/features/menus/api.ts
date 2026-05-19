@@ -58,6 +58,18 @@ async function deleteMenuMock(boothId: number, menuId: number): Promise<void> {
   if (list) memory[boothId] = list.filter((m) => m.id !== menuId);
 }
 
+async function reorderMenusMock(boothId: number, menuIds: number[]): Promise<Menu[]> {
+  await new Promise((r) => setTimeout(r, 120));
+  const byId = new Map((memory[boothId] ?? []).map((m) => [m.id, m]));
+  const reordered = menuIds.map((id, i) => {
+    const m = byId.get(id);
+    if (!m) throw new Error(`mock: menu ${id} 을(를) 찾을 수 없습니다.`);
+    return { ...m, displayOrder: i + 1 };
+  });
+  memory[boothId] = reordered;
+  return reordered.map((m) => ({ ...m }));
+}
+
 // ---- Real ----
 
 async function listMenusReal(boothId: number): Promise<Menu[]> {
@@ -91,9 +103,16 @@ async function deleteMenuReal(boothId: number, menuId: number): Promise<void> {
   await api.delete(`/admin/booths/${boothId}/menus/${menuId}`);
 }
 
+/** 메뉴 순서 일괄 재배정 — menuIds 순서대로 displayOrder 1..N 재부여. */
+async function reorderMenusReal(boothId: number, menuIds: number[]): Promise<Menu[]> {
+  const dtos = await api.put<MenuDTO[]>(`/admin/booths/${boothId}/menus/order`, { menuIds });
+  return dtos.map(toMenu).sort(byOrder);
+}
+
 // ---- 분기 export ----
 
 export const listMenus = env.USE_MOCK ? listMenusMock : listMenusReal;
 export const createMenu = env.USE_MOCK ? createMenuMock : createMenuReal;
 export const updateMenu = env.USE_MOCK ? updateMenuMock : updateMenuReal;
 export const deleteMenu = env.USE_MOCK ? deleteMenuMock : deleteMenuReal;
+export const reorderMenus = env.USE_MOCK ? reorderMenusMock : reorderMenusReal;
