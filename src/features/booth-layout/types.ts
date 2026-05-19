@@ -100,6 +100,6 @@ export interface PickerBooth {
 export const DEFAULT_BOX_SIZE_BY_SECTION: Record<MapSectionId, { width: number; height: number }> =
   {
     global: { width: 3.606, height: 4.456 },
-    baekyang: { width: 5, height: 3 },
+    baekyang: { width: 5, height: 1 },
     hangeul: { width: 5, height: 3 },
   };
