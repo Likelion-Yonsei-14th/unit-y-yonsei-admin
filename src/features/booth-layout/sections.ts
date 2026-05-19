@@ -56,6 +56,13 @@ export const sectionForSector: Record<BoothSector, MapSectionId> = {
   한글탑: 'hangeul',
 };
 
+/** 지도 이미지 섹션 키 → MapLocation.sector(한글탑/백양로/송도). sectionForSector 의 역. */
+export const sectorForSection: Record<MapSectionId, BoothSector> = {
+  global: '송도',
+  baekyang: '백양로',
+  hangeul: '한글탑',
+};
+
 /**
  * 축제 일차(Booth.date) ↔ 캘린더 날짜.
  * day 1 = 5/26(블루런, 부스 없음)이라 layout UI 는 day 2~4 만 쓴다.
