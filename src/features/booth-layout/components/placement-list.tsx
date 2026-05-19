@@ -1,7 +1,7 @@
 // src/features/booth-layout/components/placement-list.tsx
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Search, X, AlertTriangle } from 'lucide-react';
-import type { Booth } from '@/features/booths/types';
+import type { Booth, BoothSector } from '@/features/booths/types';
 
 export interface PlacementListProps {
   /** 운영자(부스 계정) 풀. */
@@ -10,6 +10,8 @@ export interface PlacementListProps {
   placedBoothIds: Set<number>;
   /** 선택 일차(Booth.date 비교용). null 이면 날짜 필터 비활성. */
   selectedDay: number | null;
+  /** 선택 섹션의 장소(Booth.sector 비교용). */
+  selectedSector: BoothSector;
   selectedBoothId: number | null;
   onSelectBooth: (boothId: number | null) => void;
   /** 캔버스 상에서 ghost highlight 동기화용. 리스트 hover → 캔버스 핀 살짝 강조. */
@@ -19,15 +21,16 @@ export interface PlacementListProps {
 /**
  * 편집기 좌측의 운영자 리스트.
  *
- * 기본 동작: 현재 일차에 운영하는 부스만 보여 컨텍스트와 무관한 부스가 시야를 가리지
- * 않게 한다. 1:1 모델이라 한 부스는 배치(슬롯 있음) 또는 미배치 둘 중 하나다.
+ * 기본 동작: 현재 일차·장소(섹션)에 해당하는 부스만 보여 컨텍스트와 무관한 부스가
+ * 시야를 가리지 않게 한다. 1:1 모델이라 한 부스는 배치(슬롯 있음) 또는 미배치 둘 중 하나다.
  *
- * 정렬: 이 섹션 배치 → 같은 날 미배치 → 그 외(다른 날).
+ * 정렬: 이 섹션 배치 → 이 날짜·장소 미배치 → 그 외(다른 날/장소).
  */
 export function PlacementList({
   booths,
   placedBoothIds,
   selectedDay,
+  selectedSector,
   selectedBoothId,
   onSelectBooth,
   onHoverBooth,
@@ -71,17 +74,19 @@ export function PlacementList({
     (b: Booth) => selectedDay != null && b.date === selectedDay,
     [selectedDay],
   );
+  /** 부스가 선택 섹션(장소)에 속하는지. */
+  const inSection = useCallback((b: Booth) => b.sector === selectedSector, [selectedSector]);
 
   const normalizedQuery = query.trim().toLowerCase();
 
-  // 검색어가 비어있을 때만 '이 날짜만' / '미배치만' 필터를 적용. 검색 중에는 전체 풀 매칭.
+  // 검색어가 비어있을 때만 '이 날짜·장소만' / '미배치만' 필터를 적용. 검색 중에는 전체 풀 매칭.
   const visibleBooths = useMemo(() => {
     let pool = booths;
     if (!normalizedQuery) {
       if (missingOnly) {
-        pool = pool.filter((b) => inDate(b) && !isPlaced(b));
+        pool = pool.filter((b) => inDate(b) && inSection(b) && !isPlaced(b));
       } else if (!showAll) {
-        pool = pool.filter((b) => inDate(b));
+        pool = pool.filter((b) => inDate(b) && inSection(b));
       }
     }
     if (normalizedQuery) {
@@ -90,11 +95,11 @@ export function PlacementList({
         return haystack.includes(normalizedQuery);
       });
     }
-    // 정렬 우선순위: 이 섹션 배치 > 같은 날 미배치 > 그 외. 안정 정렬용 원본 인덱스 보조키.
+    // 정렬 우선순위: 이 섹션 배치 > 이 날짜·장소 미배치 > 그 외. 안정 정렬용 원본 인덱스 보조키.
     const order = new Map(booths.map((b, i) => [b.id, i] as const));
     const rank = (b: Booth) => {
       if (isPlaced(b)) return 0;
-      if (inDate(b)) return 1;
+      if (inDate(b) && inSection(b)) return 1;
       return 2;
     };
     return [...pool].sort((a, b) => {
@@ -102,11 +107,14 @@ export function PlacementList({
       if (r !== 0) return r;
       return (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0);
     });
-  }, [booths, normalizedQuery, showAll, missingOnly, isPlaced, inDate]);
+  }, [booths, normalizedQuery, showAll, missingOnly, isPlaced, inDate, inSection]);
 
-  const totalInDate = useMemo(() => booths.filter((b) => inDate(b)).length, [booths, inDate]);
+  const totalInScope = useMemo(
+    () => booths.filter((b) => inDate(b) && inSection(b)).length,
+    [booths, inDate, inSection],
+  );
   const totalPlaced = useMemo(() => booths.filter((b) => isPlaced(b)).length, [booths, isPlaced]);
-  const missingFromSection = totalInDate - totalPlaced;
+  const missingFromSection = totalInScope - totalPlaced;
 
   return (
     <aside className="flex h-full min-h-0 w-72 flex-col border-r border-border bg-background">
@@ -121,9 +129,9 @@ export function PlacementList({
         {/* 검증 패널 — 이 (날짜, 섹션) 에 배치된 부스 / 미배치 카운트. */}
         <div className="rounded-md border border-border bg-muted/40 px-3 py-2 text-xs">
           <div className="flex items-center justify-between gap-2">
-            <span className="text-muted-foreground">이 날짜 운영</span>
+            <span className="text-muted-foreground">이 날짜·장소 운영</span>
             <span className="font-semibold text-foreground">
-              {totalInDate}
+              {totalInScope}
               <span className="font-normal text-ds-text-disabled"> / {booths.length}</span>
             </span>
           </div>
@@ -180,15 +188,15 @@ export function PlacementList({
           )}
         </div>
 
-        {/* 날짜 필터 토글. 검색·미배치 모드 중에는 무시되므로 disabled. */}
+        {/* 날짜·장소 필터 토글. 검색·미배치 모드 중에는 무시되므로 disabled. */}
         <label className="flex items-center justify-between text-xs text-muted-foreground">
-          <span>이 날짜에 운영하는 부스만</span>
+          <span>이 날짜·장소에 해당하는 부스만</span>
           <input
             type="checkbox"
             checked={!showAll}
             onChange={(e) => setShowAll(!e.target.checked)}
             disabled={!!normalizedQuery || missingOnly}
-            aria-label="이 날짜에 운영하는 부스만 보기"
+            aria-label="이 날짜·장소에 해당하는 부스만 보기"
             className="h-4 w-4 accent-primary disabled:opacity-40"
           />
         </label>
@@ -213,7 +221,7 @@ export function PlacementList({
               ? `미배치 ${visibleBooths.length}개`
               : showAll
                 ? `전체 ${booths.length}개 부스 표시`
-                : `이 날짜 운영 ${totalInDate}개 / 전체 ${booths.length}개`}
+                : `이 날짜·장소 ${totalInScope}개 / 전체 ${booths.length}개`}
         </div>
       </header>
 
@@ -225,26 +233,35 @@ export function PlacementList({
           <li className="px-4 py-8 text-center text-xs text-muted-foreground">
             {normalizedQuery
               ? '검색 결과가 없습니다.'
-              : '이 날짜에 운영하는 부스가 없습니다. 새 부스를 배치하려면 위 토글을 해제해 전체를 보세요.'}
+              : '이 날짜·장소에 해당하는 부스가 없습니다. 새 부스를 배치하려면 위 토글을 해제해 전체를 보세요.'}
           </li>
         )}
         {visibleBooths.map((b) => {
           const placed = isPlaced(b);
-          const operatesToday = inDate(b);
+          const inScope = inDate(b) && inSection(b);
+          const placedElsewhere = !placed && b.locationId != null;
           const selected = selectedBoothId === b.id;
           const displayName = b.name || `(이름 미작성, id: ${b.id})`;
-          // 배지 톤 — 이 섹션 배치 success, 같은 날 미배치 warning, 그 외 muted.
+          // 배지 톤 — 이 섹션 배치 success, 이 날짜·장소 미배치 warning, 그 외 muted.
           const badgeClass = placed
             ? 'bg-ds-success-subtle text-ds-success-pressed'
-            : operatesToday
+            : inScope
               ? 'bg-ds-warning-subtle text-ds-warning-pressed'
               : 'bg-muted text-muted-foreground';
-          const badgeLabel = placed ? '배치' : operatesToday ? '미배치' : '다른 날';
+          const badgeLabel = placed
+            ? '배치'
+            : inScope
+              ? '미배치'
+              : placedElsewhere
+                ? '타 섹션'
+                : '대상 외';
           const badgeTitle = placed
             ? '이 (날짜, 섹션) 에 배치된 부스'
-            : operatesToday
-              ? '이 날짜에 운영하나 아직 배치되지 않은 부스'
-              : '다른 날짜에 운영하는 부스';
+            : inScope
+              ? '이 날짜·장소에 운영하나 아직 배치되지 않은 부스'
+              : placedElsewhere
+                ? '다른 섹션에 이미 배치된 부스'
+                : '이 날짜·장소 대상이 아닌 부스';
           return (
             <li key={b.id} ref={getLiRef(b.id)} onMouseEnter={() => onHoverBooth?.(b.id)}>
               <button

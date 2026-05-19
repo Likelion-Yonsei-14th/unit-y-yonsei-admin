@@ -83,7 +83,7 @@ export function ReservationManagement() {
   );
 
   // 파이프: boothReservations → 검색 → 상태 필터 → filteredReservations.
-  // 연락처/시간/인원수는 검색 대상 제외(user-management 와 동일한 이유: 값 형태가 잡다).
+  // 연락처/인원수는 검색 대상 제외(user-management 와 동일한 이유: 값 형태가 잡다).
   const normalizedQuery = searchQuery.trim().toLowerCase();
   const searchedReservations = useMemo(() => {
     if (!normalizedQuery) return boothReservations;
@@ -104,13 +104,13 @@ export function ReservationManagement() {
     );
   };
 
-  // 대기 순번은 시간 오름차순 기준 고정이라 boothReservations 가 바뀔 때만
-  // 다시 계산한다. 렌더마다 getWaitingNumber 에서 filter+sort 를 돌리면
-  // 행 렌더 횟수에 비례해 O(n² log n) 까지 악화되므로 Map 으로 O(1) 조회.
+  // 대기 순번은 접수 번호 오름차순 기준 고정이라 boothReservations 가 바뀔 때만
+  // 다시 계산한다. 렌더마다 filter+sort 를 돌리면 행 렌더 횟수에 비례해
+  // O(n² log n) 까지 악화되므로 Map 으로 O(1) 조회.
   const waitingNumberById = useMemo(() => {
     const sorted = boothReservations
       .filter((r) => r.status === 'waiting')
-      .sort((a, b) => a.time.localeCompare(b.time));
+      .sort((a, b) => a.reservationNumber - b.reservationNumber);
     const map = new Map<string, number>();
     sorted.forEach((r, i) => map.set(r.id, i + 1));
     return map;
@@ -379,25 +379,22 @@ export function ReservationManagement() {
                     }
                   />
                 </th>
-                <th className="w-[10%] px-6 py-4 text-left text-sm font-semibold text-foreground">
+                <th className="w-[13%] px-6 py-4 text-left text-sm font-semibold text-foreground">
                   예약 ID
                 </th>
-                <th className="w-[10%] px-6 py-4 text-left text-sm font-semibold text-foreground">
-                  예약 시간
-                </th>
-                <th className="w-[12%] px-6 py-4 text-left text-sm font-semibold text-foreground">
+                <th className="w-[17%] px-6 py-4 text-left text-sm font-semibold text-foreground">
                   예약 신청자명
                 </th>
-                <th className="w-[8%] px-6 py-4 text-left text-sm font-semibold text-foreground">
+                <th className="w-[11%] px-6 py-4 text-left text-sm font-semibold text-foreground">
                   인원수
                 </th>
-                <th className="w-[18%] px-6 py-4 text-left text-sm font-semibold text-foreground">
+                <th className="w-[20%] px-6 py-4 text-left text-sm font-semibold text-foreground">
                   연락처
                 </th>
-                <th className="w-[18%] px-6 py-4 text-left text-sm font-semibold text-foreground">
+                <th className="w-[17%] px-6 py-4 text-left text-sm font-semibold text-foreground">
                   상태
                 </th>
-                <th className="w-[20%] px-6 py-4 text-center text-sm font-semibold text-foreground">
+                <th className="w-[18%] px-6 py-4 text-center text-sm font-semibold text-foreground">
                   액션
                 </th>
               </tr>
@@ -405,7 +402,7 @@ export function ReservationManagement() {
             <tbody>
               {filteredReservations.length === 0 && (
                 <tr>
-                  <td colSpan={8} className="px-6 py-12 text-center text-sm text-muted-foreground">
+                  <td colSpan={7} className="px-6 py-12 text-center text-sm text-muted-foreground">
                     {hasUnderlyingData ? '조건에 맞는 예약이 없습니다.' : '아직 예약이 없습니다.'}
                   </td>
                 </tr>
@@ -441,9 +438,6 @@ export function ReservationManagement() {
                     title={reservation.id}
                   >
                     {reservation.id}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-muted-foreground truncate">
-                    {reservation.time}
                   </td>
                   <td
                     className="px-6 py-4 text-sm text-foreground truncate"
@@ -541,18 +535,10 @@ export function ReservationManagement() {
                     {selectedReservation.contact}
                   </div>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <div className="text-sm text-muted-foreground mb-1">예약 시간</div>
-                    <div className="text-lg font-semibold text-foreground">
-                      {selectedReservation.time}
-                    </div>
-                  </div>
-                  <div>
-                    <div className="text-sm text-muted-foreground mb-1">인원수</div>
-                    <div className="text-lg font-semibold text-foreground">
-                      {selectedReservation.people}명
-                    </div>
+                <div>
+                  <div className="text-sm text-muted-foreground mb-1">인원수</div>
+                  <div className="text-lg font-semibold text-foreground">
+                    {selectedReservation.people}명
                   </div>
                 </div>
               </div>
@@ -665,8 +651,7 @@ export function ReservationManagement() {
           <AlertDialogHeader>
             <AlertDialogTitle>예약 취소</AlertDialogTitle>
             <AlertDialogDescription>
-              {pendingCancel?.name}님({pendingCancel?.time}, {pendingCancel?.people}명)의 예약을
-              취소합니다.
+              {pendingCancel?.name}님({pendingCancel?.people}명)의 예약을 취소합니다.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

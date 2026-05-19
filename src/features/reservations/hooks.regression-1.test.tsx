@@ -18,7 +18,7 @@ vi.mock('sonner', () => ({ toast: vi.fn() }));
 const res = (id: string, status: Reservation['status'] = 'waiting'): Reservation => ({
   id,
   boothId: 1,
-  time: '',
+  reservationNumber: 1,
   name: id,
   people: 1,
   contact: '010-0000-0000',

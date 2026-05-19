@@ -57,7 +57,6 @@ async function createUserMock(values: CreateUserFormValues): Promise<CreatedUser
     performanceTeamName:
       values.permissionType === 'Performer' ? (values.performanceTeamName?.trim() ?? '') : '-',
     representative: values.representativeName,
-    email: '',
     phone: values.representativePhone,
     infoCompleted: false,
   };

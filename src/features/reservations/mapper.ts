@@ -32,8 +32,7 @@ export function reservationStateToBackend(state: ReservationState): string {
 export const toReservation = (d: ReservationDTO): Reservation => ({
   id: String(d.id),
   boothId: d.boothId,
-  // 백엔드 예약은 대기열 모델 — 시간 슬롯 필드가 없다.
-  time: '',
+  reservationNumber: d.reservationNumber,
   name: d.bookerName,
   people: d.partySize,
   contact: d.phoneNumber,

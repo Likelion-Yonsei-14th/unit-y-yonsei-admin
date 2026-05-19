@@ -78,7 +78,8 @@ function maybeInjectMockReservation(boothId: number): void {
   memory.push({
     id: `MOCKNEW-${boothId}-${count + 1}`,
     boothId,
-    time: '',
+    // 합성 예약은 기존 시드보다 뒤 순번으로 — 대기열 맨 끝에 붙는다.
+    reservationNumber: 900 + count,
     name: `신규예약자${count + 1}`,
     people: 2,
     contact: '010-0000-0000',

@@ -21,7 +21,7 @@ const LOCATION_ID_BY_STAGE: Record<'songdo' | 'dongmoon' | 'nocheon', number> = 
  * 백엔드 목록 DTO → AdminUser.
  *
  * infoCompleted·연결 부스/공연은 백엔드 AdminUserListResponse 에서 그대로 읽는다.
- * email / phone 은 목록 응답에 없어 기본값('')으로 둔다.
+ * phone 은 목록 응답에 representativePhone 이 추가되기 전까진 ''.
  */
 export const toAdminUser = (d: AdminUserDTO): AdminUser => {
   // 부스↔어드민은 1:1 — 목록 응답은 배열로 주지만 첫 원소만 표시에 쓴다.
@@ -36,9 +36,7 @@ export const toAdminUser = (d: AdminUserDTO): AdminUser => {
     boothName: booth?.name ?? '-',
     performanceTeamId: d.linkedPerformance?.id ?? null,
     performanceTeamName: d.linkedPerformance?.performanceName ?? '-',
-    // email / phone 은 목록 응답에 없다.
-    email: '',
-    phone: '',
+    phone: d.representativePhone ?? '',
     infoCompleted: d.infoCompleted ?? false,
   };
 };

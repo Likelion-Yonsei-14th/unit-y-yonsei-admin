@@ -17,7 +17,6 @@ export interface AdminUser {
   /** Performer 역할이면 공연팀명, 아니면 '-' (표시용). */
   performanceTeamName: string;
   representative: string;
-  email: string;
   phone: string;
   /** 백엔드가 booth/performance join 으로 계산해 내려줄 플래그. */
   infoCompleted: boolean;
@@ -38,7 +37,8 @@ export interface AdminUserLinkedPerformance {
 /**
  * 백엔드 어드민 목록 응답 DTO (AdminUserListResponse).
  *
- * email / phone 은 목록 응답에 없어 매퍼가 기본값으로 채운다.
+ * representativePhone 은 백엔드 목록 응답에 추가되기 전까진 내려오지 않는다 —
+ * 매퍼가 빈 문자열로 채운다. (상세 응답 AdminUserDetailResponse 에는 이미 있음.)
  * linkedBooths / linkedPerformance 는 @JsonInclude(NON_NULL) 라 없으면 생략될 수 있다.
  */
 export interface AdminUserDTO {
@@ -51,6 +51,8 @@ export interface AdminUserDTO {
   /** 'ACTIVE' | 'INACTIVE' */
   status: string;
   representativeName: string;
+  /** 대표자 전화번호. 목록 응답에 추가되기 전까진 undefined. */
+  representativePhone?: string;
   /** 백엔드가 booth/performance join 으로 계산해 내려주는 작성 완료 플래그. */
   infoCompleted: boolean;
   linkedBooths?: AdminUserLinkedBooth[];
