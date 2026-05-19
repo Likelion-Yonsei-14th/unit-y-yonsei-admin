@@ -27,7 +27,7 @@ import {
   type FestivalDate,
 } from '@/features/booth-layout/sections';
 import {
-  DEFAULT_BOX_SIZE,
+  DEFAULT_BOX_SIZE_BY_SECTION,
   type MapLocation,
   type MapSectionId,
   type PlacementBox,
@@ -39,19 +39,19 @@ import { PlacementEditorCanvas } from './placement-editor-canvas';
 import { usePlacementUndo } from '@/features/booth-layout/hooks/use-placement-undo';
 import { clamp } from '@/features/booth-layout/utils/clamp';
 
-const DEFAULT_SIZE = DEFAULT_BOX_SIZE;
-
 /** MapLocation + Booth → PlacementBox 뷰모델. */
 function toBox(loc: MapLocation, booth: Booth): PlacementBox {
+  const section = sectionForSector[loc.sector];
+  const fallback = DEFAULT_BOX_SIZE_BY_SECTION[section];
   return {
     locationId: loc.id,
     boothId: booth.id,
     boothNumber: String(booth.location ?? '?'),
-    section: sectionForSector[loc.sector],
+    section,
     x: loc.mapX,
     y: loc.mapY,
-    width: loc.width ?? DEFAULT_SIZE.width,
-    height: loc.height ?? DEFAULT_SIZE.height,
+    width: loc.width ?? fallback.width,
+    height: loc.height ?? fallback.height,
   };
 }
 
@@ -67,7 +67,9 @@ export function PlacementEditor({ booths }: PlacementEditorProps) {
   const [selectedBoothId, setSelectedBoothId] = useState<number | null>(null);
   const [selectedLocationId, setSelectedLocationId] = useState<number | null>(null);
   const [hoveredBoothId, setHoveredBoothId] = useState<number | null>(null);
-  const [stickySize, setStickySize] = useState<{ width: number; height: number }>(DEFAULT_SIZE);
+  const [stickySize, setStickySize] = useState<{ width: number; height: number }>(
+    DEFAULT_BOX_SIZE_BY_SECTION[validSections[0]],
+  );
   const [isAddMode, setIsAddMode] = useState<boolean>(false);
   const [pendingDelete, setPendingDelete] = useState<PlacementBox | null>(null);
 
@@ -80,6 +82,11 @@ export function PlacementEditor({ booths }: PlacementEditorProps) {
   useEffect(() => {
     if (!validSections.includes(selectedSection)) setSelectedSection(validSections[0]);
   }, [selectedDate, selectedSection, validSections]);
+
+  // 섹션 전환 시 신규 배치 기본 크기를 그 섹션 규격으로 되돌린다.
+  useEffect(() => {
+    setStickySize(DEFAULT_BOX_SIZE_BY_SECTION[selectedSection]);
+  }, [selectedSection]);
 
   const locationsQuery = useMapLocations();
 

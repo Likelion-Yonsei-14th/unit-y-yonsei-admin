@@ -11,7 +11,7 @@ import {
   dateForDay,
 } from '@/features/booth-layout/sections';
 import {
-  DEFAULT_BOX_SIZE,
+  DEFAULT_BOX_SIZE_BY_SECTION,
   type MapLocation,
   type MapSectionId,
   type PickerBooth,
@@ -24,15 +24,17 @@ import type { Booth } from '@/features/booths/types';
 
 /** MapLocation + Booth → PlacementBox. */
 function toBox(loc: MapLocation, booth: Booth): PlacementBox {
+  const section = sectionForSector[loc.sector];
+  const fallback = DEFAULT_BOX_SIZE_BY_SECTION[section];
   return {
     locationId: loc.id,
     boothId: booth.id,
     boothNumber: String(booth.location ?? '?'),
-    section: sectionForSector[loc.sector],
+    section,
     x: loc.mapX,
     y: loc.mapY,
-    width: loc.width ?? DEFAULT_BOX_SIZE.width,
-    height: loc.height ?? DEFAULT_BOX_SIZE.height,
+    width: loc.width ?? fallback.width,
+    height: loc.height ?? fallback.height,
   };
 }
 
