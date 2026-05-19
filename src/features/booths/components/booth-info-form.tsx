@@ -22,6 +22,10 @@ const FESTIVAL_DAYS: { value: number; label: string }[] = [
 const festivalDayLabel = (day: number): string =>
   FESTIVAL_DAYS.find((d) => d.value === day)?.label ?? `${day}일차`;
 
+/** 운영 시간 기본값 — 대부분 부스가 17~22시 운영이라 미입력 시 프리필해 둔다. */
+const DEFAULT_OPEN_TIME = '17:00';
+const DEFAULT_CLOSE_TIME = '22:00';
+
 /**
  * 일차별 선택 가능 구역. 2일차=국제캠(송도), 3·4일차=신촌캠(한글탑/백양로).
  * 일차 미선택 시엔 전체를 열어 둔다.
@@ -63,8 +67,8 @@ export function BoothInfoForm({
   const [organization, setOrganization] = useState(booth.organization);
   const [description, setDescription] = useState(booth.description);
   const [date, setDate] = useState<number | null>(booth.date);
-  const [openTime, setOpenTime] = useState(booth.openTime ?? '');
-  const [closeTime, setCloseTime] = useState(booth.closeTime ?? '');
+  const [openTime, setOpenTime] = useState(booth.openTime ?? DEFAULT_OPEN_TIME);
+  const [closeTime, setCloseTime] = useState(booth.closeTime ?? DEFAULT_CLOSE_TIME);
   const [sector, setSector] = useState<BoothSector | null>(booth.sector);
   const [location, setLocation] = useState(booth.location);
   const [status, setStatus] = useState<BoothStatus>(booth.status);
@@ -84,8 +88,8 @@ export function BoothInfoForm({
     setOrganization(booth.organization);
     setDescription(booth.description);
     setDate(booth.date);
-    setOpenTime(booth.openTime ?? '');
-    setCloseTime(booth.closeTime ?? '');
+    setOpenTime(booth.openTime ?? DEFAULT_OPEN_TIME);
+    setCloseTime(booth.closeTime ?? DEFAULT_CLOSE_TIME);
     setSector(booth.sector);
     setLocation(booth.location);
     setStatus(booth.status);
