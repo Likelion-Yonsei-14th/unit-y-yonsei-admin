@@ -48,6 +48,13 @@ export const MAIN_NAV: NavItem[] = [
     requires: 'reservation.read',
   },
   {
+    // Super/Master 의 주요 기능 — 기타 정보 관리 하위가 아니라 상위 항목으로 노출.
+    path: '/general/booth-layout',
+    label: '부스 배치도 편집',
+    icon: Map,
+    requires: 'boothlayout.manage',
+  },
+  {
     path: '/performance',
     label: '공연 정보 관리',
     icon: Music,
@@ -70,12 +77,6 @@ export const MAIN_NAV: NavItem[] = [
         label: '분실물 관리',
         icon: Package,
         requires: 'lostfound.create',
-      },
-      {
-        path: '/general/booth-layout',
-        label: '부스 배치도 편집',
-        icon: Map,
-        requires: 'boothlayout.manage',
       },
       {
         path: '/general/performance-review',

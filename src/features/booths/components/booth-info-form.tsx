@@ -36,6 +36,15 @@ function sectorsForDay(day: number | null): BoothSector[] {
   return SECTORS;
 }
 
+/** 필수 입력 항목 표시. 작성완료(profileComplete)에 필요한 필드 라벨에 붙인다. */
+function RequiredMark() {
+  return (
+    <span className="ml-0.5 text-destructive" aria-hidden="true">
+      *
+    </span>
+  );
+}
+
 interface Props {
   booth: Booth;
   /** 부스 운영 ON/OFF 토글 — 페이지 헤더와 폼이 같은 값을 가리키므로 controlled. */
@@ -151,7 +160,7 @@ export function BoothInfoForm({
 
   return (
     <div className="bg-background rounded-2xl p-4 md:p-8 mb-6 shadow-sm">
-      <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
         <h2 className="text-xl font-bold text-foreground">부스 상세 정보</h2>
         {!isEditing ? (
           <button
@@ -173,6 +182,10 @@ export function BoothInfoForm({
         )}
       </div>
 
+      <p className="mb-6 text-xs text-muted-foreground">
+        <span className="text-destructive">*</span> 표시 항목을 모두 채우면 작성완료 상태가 됩니다.
+      </p>
+
       <div className="space-y-6">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
           <div>
@@ -181,6 +194,7 @@ export function BoothInfoForm({
               className="block text-sm font-semibold text-foreground mb-2"
             >
               부스명
+              <RequiredMark />
             </label>
             {isEditing ? (
               <input
@@ -203,6 +217,7 @@ export function BoothInfoForm({
               className="block text-sm font-semibold text-foreground mb-2"
             >
               단체명
+              <RequiredMark />
             </label>
             {isEditing ? (
               <input
@@ -283,6 +298,7 @@ export function BoothInfoForm({
               className="block text-sm font-semibold text-foreground mb-2"
             >
               축제 일차
+              <RequiredMark />
             </label>
             {isEditing ? (
               <select
@@ -310,6 +326,7 @@ export function BoothInfoForm({
               className="block text-sm font-semibold text-foreground mb-2"
             >
               운영 시작
+              <RequiredMark />
             </label>
             {isEditing ? (
               <input
@@ -332,6 +349,7 @@ export function BoothInfoForm({
               className="block text-sm font-semibold text-foreground mb-2"
             >
               운영 종료
+              <RequiredMark />
             </label>
             {isEditing ? (
               <input
@@ -357,6 +375,7 @@ export function BoothInfoForm({
               className="block text-sm font-semibold text-foreground mb-2"
             >
               구역
+              <RequiredMark />
             </label>
             {isEditing ? (
               <select
@@ -384,6 +403,7 @@ export function BoothInfoForm({
               className="block text-sm font-semibold text-foreground mb-2"
             >
               배치 번호
+              <RequiredMark />
             </label>
             {isEditing ? (
               <input
