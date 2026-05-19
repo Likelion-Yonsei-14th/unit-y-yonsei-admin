@@ -12,6 +12,33 @@ import type {
 
 const BASE = '/admin/map-locations';
 
+/** n 을 소수 digits 자리로 반올림. */
+const round = (n: number, digits: number): number => {
+  const f = 10 ** digits;
+  return Math.round(n * f) / f;
+};
+
+type CoordFields = {
+  mapX?: number;
+  mapY?: number;
+  width?: number | null;
+  height?: number | null;
+};
+
+/**
+ * 좌표 소수 자릿수를 백엔드 @Digits 한계로 절사한다.
+ * mapX/mapY = DECIMAL(10,4), width/height = DECIMAL(6,3) — 편집기가 픽셀÷이미지
+ * 비율로 만든 긴 소수(예: 42.857142857…)를 그대로 보내면 검증에서 400 이 난다.
+ */
+function clampCoords<T extends CoordFields>(v: T): T {
+  const out = { ...v };
+  if (typeof out.mapX === 'number') out.mapX = round(out.mapX, 4);
+  if (typeof out.mapY === 'number') out.mapY = round(out.mapY, 4);
+  if (typeof out.width === 'number') out.width = round(out.width, 3);
+  if (typeof out.height === 'number') out.height = round(out.height, 3);
+  return out;
+}
+
 /** 생성 입력. locationType 은 BOOTH 고정, displayStatus 는 VISIBLE 기본. */
 export interface CreateMapLocationInput {
   locationName: string;
@@ -53,13 +80,14 @@ export const listMapLocations = env.USE_MOCK ? listMapLocationsMock : listMapLoc
 // ---- createMapLocation ----
 
 const createMapLocationMock = async (input: CreateMapLocationInput): Promise<MapLocation> => {
+  const c = clampCoords(input);
   const dto = mapLocationStorage.createOne({
-    locationName: input.locationName,
-    sector: input.sector,
-    mapX: input.mapX,
-    mapY: input.mapY,
-    width: input.width,
-    height: input.height,
+    locationName: c.locationName,
+    sector: c.sector,
+    mapX: c.mapX,
+    mapY: c.mapY,
+    width: c.width,
+    height: c.height,
     locationType: 'BOOTH' as MapLocationType,
     displayOrder: 0,
     displayStatus: 'VISIBLE' as MapDisplayStatus,
@@ -68,13 +96,14 @@ const createMapLocationMock = async (input: CreateMapLocationInput): Promise<Map
 };
 
 const createMapLocationReal = async (input: CreateMapLocationInput): Promise<MapLocation> => {
+  const c = clampCoords(input);
   const dto = await api.post<MapLocationDTO>(BASE, {
-    locationName: input.locationName,
-    sector: input.sector,
-    mapX: input.mapX,
-    mapY: input.mapY,
-    width: input.width,
-    height: input.height,
+    locationName: c.locationName,
+    sector: c.sector,
+    mapX: c.mapX,
+    mapY: c.mapY,
+    width: c.width,
+    height: c.height,
     locationType: 'BOOTH',
     displayStatus: 'VISIBLE',
   });
@@ -88,13 +117,13 @@ export const createMapLocation = env.USE_MOCK ? createMapLocationMock : createMa
 const updateMapLocationMock = async (
   id: number,
   patch: UpdateMapLocationPatch,
-): Promise<MapLocation> => toMapLocation(mapLocationStorage.updateOne(id, patch));
+): Promise<MapLocation> => toMapLocation(mapLocationStorage.updateOne(id, clampCoords(patch)));
 
 const updateMapLocationReal = async (
   id: number,
   patch: UpdateMapLocationPatch,
 ): Promise<MapLocation> => {
-  const dto = await api.patch<MapLocationDTO>(`${BASE}/${id}`, patch);
+  const dto = await api.patch<MapLocationDTO>(`${BASE}/${id}`, clampCoords(patch));
   return toMapLocation(dto);
 };
 
