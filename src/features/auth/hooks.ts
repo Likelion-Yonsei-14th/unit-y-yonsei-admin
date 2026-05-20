@@ -2,9 +2,9 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router';
 import { useCallback } from 'react';
 import { hasPermission, type Permission } from '@/config/permissions';
-import { login, logout } from './api';
+import { fetchMe, login, logout } from './api';
 import { useAuthStore } from './store';
-import type { LoginPayload } from './types';
+import type { CurrentUser, LoginPayload } from './types';
 
 /** 소유자 판정을 위해 필요한 최소 필드. 실제 Booth/Performance 모델이 이를 만족해야 함. */
 interface OwnableBooth {
@@ -68,7 +68,15 @@ export function useAuth() {
 
 /**
  * 로그인 뮤테이션.
- * 성공 시 쿼리 캐시를 비우고(이전 사용자 잔재 방지) 스토어에 user 저장 + 홈으로 이동.
+ *
+ * 백엔드 `AdminLoginResponse` 와 `CurrentAdminUserResponse` 가 동일 shape 가 아닐 수
+ * 있어(로그인 응답엔 `boothId`/`performanceTeamId` 가 빠진 케이스 확인됨, 2026-05-20),
+ * 로그인 직후 `/me` 를 한 번 더 호출해 완전한 user 를 store 에 넣는다. 이 한 번이
+ * 빠지면 Booth 계정 첫 로그인 시 `useMyBooth` 의 `enabled: boothId!=null` gate 가
+ * 영원히 false 가 되어 `/booth` 페이지가 무한 스피너에 멈춘다(새로고침은 앱
+ * 부트스트랩이 `/me` 를 다시 호출해 풀린다).
+ *
+ * `/me` 실패 시엔 partial 로그인 응답으로 폴백 — 로그인 자체는 성공시킨다.
  */
 export function useLogin() {
   const navigate = useNavigate();
@@ -76,7 +84,14 @@ export function useLogin() {
   const qc = useQueryClient();
 
   return useMutation({
-    mutationFn: (payload: LoginPayload) => login(payload),
+    mutationFn: async (payload: LoginPayload): Promise<CurrentUser> => {
+      const loginUser = await login(payload);
+      try {
+        return await fetchMe();
+      } catch {
+        return loginUser;
+      }
+    },
     onSuccess: (user) => {
       qc.clear();
       setUser(user);
