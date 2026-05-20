@@ -165,8 +165,11 @@ export function UserManagement() {
           },
         );
       },
-      onError: () => {
-        toast.error('부스 삭제에 실패해 계정도 삭제하지 못했습니다.');
+      onError: (err) => {
+        // 서버가 보낸 상세 메시지가 있으면 토스트에 같이 노출 — 진단에 도움.
+        const detail =
+          err instanceof ApiError && err.body?.message ? `\n${err.body.message}` : '';
+        toast.error(`부스 삭제에 실패해 계정도 삭제하지 못했습니다.${detail}`);
         setPendingDeleteWithBooth(null);
       },
     });
