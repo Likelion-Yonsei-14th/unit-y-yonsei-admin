@@ -39,6 +39,7 @@ export function LoginPage() {
             alt="Jelly:U 마스코트"
             width={320}
             height={277}
+            decoding="async"
             className="mx-auto mt-4 w-40 h-auto"
           />
           {/* 공식 런칭 전 운영진 정보 입력 기간 안내 — 빨간 굵은 글씨로 강조. */}
