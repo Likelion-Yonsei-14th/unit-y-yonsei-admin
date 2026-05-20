@@ -190,6 +190,62 @@ export function BoothInfoForm({
       </p>
 
       <div className="space-y-6">
+        {/*
+          음식/체험 구분 + 부스 운영 ON/OFF — 부스 타입을 먼저 정해야 아래 라벨
+          (소개글/체험 설명, 대표 메뉴/체험명)이 맞는 맥락으로 노출되므로 폼 최상단.
+          음식 / 체험은 상호 배타(둘 중 하나) — `isFood` boolean 으로 인코딩.
+        */}
+        <div className="flex flex-wrap items-center gap-x-8 gap-y-4">
+          <div className="flex items-center gap-5">
+            <label className="flex cursor-pointer items-center gap-2">
+              <input
+                type="checkbox"
+                checked={isFood === true}
+                disabled={!isEditing}
+                onChange={() => setIsFood(true)}
+                className="h-4 w-4 accent-primary disabled:cursor-not-allowed disabled:opacity-50"
+              />
+              <span className="text-sm font-semibold text-foreground">
+                음식 부스
+                <RequiredMark />
+              </span>
+            </label>
+            <label className="flex cursor-pointer items-center gap-2">
+              <input
+                type="checkbox"
+                checked={isFood === false}
+                disabled={!isEditing}
+                onChange={() => setIsFood(false)}
+                className="h-4 w-4 accent-primary disabled:cursor-not-allowed disabled:opacity-50"
+              />
+              <span className="text-sm font-semibold text-foreground">
+                체험 부스
+                <RequiredMark />
+              </span>
+            </label>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="text-sm font-semibold text-foreground">부스 운영 여부</span>
+            <button
+              type="button"
+              onClick={() => isEditing && onIsReservableChange(!isReservable)}
+              disabled={!isEditing}
+              aria-pressed={isReservable}
+              className={`
+                relative w-14 h-7 rounded-full transition-all duration-300
+                ${isReservable ? 'bg-ds-success shadow-lg' : 'bg-ds-gray-400'}
+                ${!isEditing ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
+              `}
+            >
+              <div
+                className={`absolute top-1 w-5 h-5 bg-background rounded-full shadow-md transition-all duration-300 ${
+                  isReservable ? 'left-8' : 'left-1'
+                }`}
+              />
+            </button>
+          </div>
+        </div>
+
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
           <div>
             <label
@@ -244,13 +300,15 @@ export function BoothInfoForm({
             htmlFor="booth-description"
             className="block text-sm font-semibold text-foreground mb-2"
           >
-            부스 소개글
+            {isFood ? '부스 소개글' : '체험 설명'}
           </label>
           {isEditing ? (
             <textarea
               id="booth-description"
               rows={9}
-              placeholder={`아래 내용을 참고해 부스를 소개해주세요!
+              placeholder={
+                isFood
+                  ? `아래 내용을 참고해 부스를 소개해주세요!
 
 부스 컨셉 및 소개
 판매 메뉴와 가격 안내
@@ -258,7 +316,9 @@ export function BoothInfoForm({
 예약 방법 및 운영 시간
 현장 주문/웨이팅 방법
 결제 가능 수단 안내
-방문 시 유의사항 및 공지사항`}
+방문 시 유의사항 및 공지사항`
+                  : `체험 내용·소요 시간·참여 방법·준비물·유의사항 등을 안내해 주세요.`
+              }
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               className={`${inputClass} resize-none`}
@@ -539,13 +599,17 @@ export function BoothInfoForm({
             htmlFor="booth-representative-menus"
             className="block text-sm font-semibold text-foreground mb-2"
           >
-            대표 메뉴
+            {isFood ? '대표 메뉴' : '체험명'}
           </label>
           {isEditing ? (
             <input
               id="booth-representative-menus"
               type="text"
-              placeholder="쉼표로 구분해 입력 (예: 치킨, 맥주)"
+              placeholder={
+                isFood
+                  ? '쉼표로 구분해 입력 (예: 치킨, 맥주)'
+                  : '쉼표로 구분해 입력 (예: VR 체험, 보드게임)'
+              }
               value={representativeMenusRaw}
               onChange={(e) => setRepresentativeMenusRaw(e.target.value)}
               className={inputClass}
@@ -556,7 +620,7 @@ export function BoothInfoForm({
             </div>
           ) : (
             <div className="w-full px-4 py-3 border border-border rounded-lg bg-muted text-muted-foreground">
-              등록된 대표 메뉴가 없습니다.
+              {isFood ? '등록된 대표 메뉴가 없습니다.' : '등록된 체험명이 없습니다.'}
             </div>
           )}
         </div>
@@ -573,50 +637,6 @@ export function BoothInfoForm({
             </div>
           </div>
         )}
-
-        <div className="flex flex-wrap items-center gap-6 pt-4">
-          <div className="flex items-center gap-3">
-            <span className="text-sm font-semibold text-foreground">음식 부스</span>
-            <button
-              type="button"
-              onClick={() => isEditing && setIsFood(!isFood)}
-              disabled={!isEditing}
-              aria-pressed={isFood}
-              className={`
-                relative w-14 h-7 rounded-full transition-all duration-300
-                ${isFood ? 'bg-primary shadow-lg' : 'bg-ds-gray-400'}
-                ${!isEditing ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
-              `}
-            >
-              <div
-                className={`absolute top-1 w-5 h-5 bg-background rounded-full shadow-md transition-all duration-300 ${
-                  isFood ? 'left-8' : 'left-1'
-                }`}
-              />
-            </button>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <span className="text-sm font-semibold text-foreground">부스 운영 여부</span>
-            <button
-              type="button"
-              onClick={() => isEditing && onIsReservableChange(!isReservable)}
-              disabled={!isEditing}
-              aria-pressed={isReservable}
-              className={`
-                relative w-14 h-7 rounded-full transition-all duration-300
-                ${isReservable ? 'bg-ds-success shadow-lg' : 'bg-ds-gray-400'}
-                ${!isEditing ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
-              `}
-            >
-              <div
-                className={`absolute top-1 w-5 h-5 bg-background rounded-full shadow-md transition-all duration-300 ${
-                  isReservable ? 'left-8' : 'left-1'
-                }`}
-              />
-            </button>
-          </div>
-        </div>
 
         {/* 하단 저장 버튼 — 긴 폼을 끝까지 스크롤한 뒤 상단으로 올라가지 않아도 저장 가능. */}
         {isEditing && (
