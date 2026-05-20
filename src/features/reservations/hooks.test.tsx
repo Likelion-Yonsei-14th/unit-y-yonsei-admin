@@ -58,7 +58,12 @@ describe('useSetReservationStatus', () => {
     });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
-    expect(api.setReservationStatus).toHaveBeenCalledWith({ id: 'R1', status: 'completed' });
+    // TanStack Query v5 는 mutationFn 을 (variables, context) 2-arg 로 호출하므로
+    // 두 번째 인자는 context 객체. 첫 번째만 단언.
+    expect(api.setReservationStatus).toHaveBeenCalledWith(
+      { id: 'R1', status: 'completed' },
+      expect.anything(),
+    );
     expect(result.current.data).toEqual(res('R1', 'completed'));
   });
 
@@ -105,10 +110,10 @@ describe('useSetReservationsStatusBulk', () => {
     });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
-    expect(api.setReservationsStatusBulk).toHaveBeenCalledWith({
-      ids: ['R1', 'R2'],
-      status: 'cancelled',
-    });
+    expect(api.setReservationsStatusBulk).toHaveBeenCalledWith(
+      { ids: ['R1', 'R2'], status: 'cancelled' },
+      expect.anything(),
+    );
     expect(result.current.data).toHaveLength(2);
   });
 });
