@@ -57,6 +57,22 @@ async function updateMyPerformanceReal(patch: Partial<Performance>): Promise<Per
   return toPerformance(dto);
 }
 
+/**
+ * 운영진(SUPER/MASTER)이 임의 공연을 부분 갱신.
+ * `/me` 와 동일한 PerformanceUpdateRequest 시맨틱(non-null 필드만 반영).
+ * 백엔드 PerformanceAdminController.updatePerformance(id) — 2026-05-20 머지.
+ */
+async function updatePerformanceReal(
+  id: number,
+  patch: Partial<Performance>,
+): Promise<Performance> {
+  const dto = await api.patch<PerformanceDTO>(
+    `/admin/performances/${id}`,
+    fromPerformancePatch(patch),
+  );
+  return toPerformance(dto);
+}
+
 async function getPerformanceImagesReal(performanceId: number): Promise<PerformanceImage[]> {
   const dtos = await api.get<PerformanceImageDTO[]>(`/performances/${performanceId}/images`);
   return dtos.map(toPerformanceImage);
@@ -125,6 +141,7 @@ export const getMyPerformance = env.USE_MOCK ? mock.getMyPerformanceMock : getMy
 export const updateMyPerformance = env.USE_MOCK
   ? mock.updateMyPerformanceMock
   : updateMyPerformanceReal;
+export const updatePerformance = env.USE_MOCK ? mock.updatePerformanceMock : updatePerformanceReal;
 export const getPerformanceImages = env.USE_MOCK
   ? mock.getPerformanceImagesMock
   : getPerformanceImagesReal;

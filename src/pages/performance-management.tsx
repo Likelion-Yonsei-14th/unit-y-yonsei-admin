@@ -27,6 +27,7 @@ import {
   usePerformanceImages,
   useSetlist,
   useUpdateMyPerformance,
+  useUpdatePerformance,
   useUpdateSetlistItem,
 } from '@/features/performances/hooks';
 import type { Performance, SetlistItem } from '@/features/performances/types';
@@ -67,15 +68,21 @@ export function PerformanceManagement() {
   const setlistQuery = useSetlist(performanceId);
 
   const { can, canEditPerformance } = useAuth();
-  // 본문/이미지/셋리스트 편집은 본인 공연(`/me` 라우트) 에서만 — 백엔드 쓰기 엔드포인트가
-  // `/admin/performances/me` 단수형이라 다른 공연을 편집할 경로가 없다.
-  const canEdit = isMe && (data ? canEditPerformance({ id: data.id }) : false);
-  // 타임테이블(날짜·시작/종료) 은 축제 운영 스케줄의 입력이라 Performer 가 임의로
-  // 바꾸면 곤란 — performance.manage 권한자만. (`/me` 라우트엔 사실상 운영진이 없으므로
-  // 현재 흐름에서는 읽기 전용으로 동작.)
+  // 편집 권한: 본인 공연이면 자기 팀, 운영진(`performance.manage`)이면 임의 공연.
+  // 백엔드는 두 경로를 별도 엔드포인트로 받는다 — `PATCH /admin/performances/me`(`/me`
+  // 라우트), `PATCH /admin/performances/{id}`(`/:teamId` 라우트, 운영진 전용).
+  const canEdit = data ? canEditPerformance({ id: data.id }) : false;
+  // 타임테이블(날짜·시작/종료·상태) 은 축제 운영 스케줄이라 Performer 가 임의로 바꾸면
+  // 곤란 — performance.manage 권한자만.
   const canEditTimetable = canEdit && can('performance.manage');
+  // 이미지·셋리스트는 백엔드 sub-resource 가 `/me` 전용이라 운영진이 다른 팀 공연에
+  // 대해 수정할 수 없다(잘못 호출하면 본인 공연을 건드리는 사고). 본인 공연일 때만 연다.
+  const canEditSubResources = canEdit && isMe;
 
-  const updateMutation = useUpdateMyPerformance();
+  const myUpdateMutation = useUpdateMyPerformance();
+  const adminUpdateMutation = useUpdatePerformance(data?.id ?? null);
+  // 라우트별로 다른 PATCH 엔드포인트 — isMe 면 `/me`, 운영진이 :teamId 면 `/{id}`.
+  const updateMutation = isMe ? myUpdateMutation : adminUpdateMutation;
   const addImageMutation = useAddPerformanceImage(performanceId);
   const deleteImageMutation = useDeletePerformanceImage(performanceId);
   const addSetlistMutation = useAddSetlistItem(performanceId);
@@ -217,20 +224,22 @@ export function PerformanceManagement() {
         await updateMutation.mutateAsync(patch);
       }
 
-      // 2) 셋리스트 diff.
+      // 2) 셋리스트 diff — sub-resource 라 본인 공연일 때만 반영. 운영진 :teamId 편집에서는 스킵.
       // NOTE: 항목별 POST/PATCH/DELETE 를 순차 실행한다 — 비원자적(non-atomic).
       // 중간 항목에서 실패하면 일부만 서버에 반영된 부분 저장 상태가 되고,
       // 편집 버퍼는 여전히 전체를 보여준다(서버와 불일치). 백엔드에 일괄 저장
       // 엔드포인트가 생기기 전까지의 한계.
-      const { creates, updates, deletes } = diffSetlist(setlist, editingSetlist);
-      for (const id of deletes) {
-        await deleteSetlistMutation.mutateAsync(id);
-      }
-      for (const dto of creates) {
-        await addSetlistMutation.mutateAsync(dto);
-      }
-      for (const { id, dto } of updates) {
-        await updateSetlistMutation.mutateAsync({ setlistId: id, input: dto });
+      if (canEditSubResources) {
+        const { creates, updates, deletes } = diffSetlist(setlist, editingSetlist);
+        for (const id of deletes) {
+          await deleteSetlistMutation.mutateAsync(id);
+        }
+        for (const dto of creates) {
+          await addSetlistMutation.mutateAsync(dto);
+        }
+        for (const { id, dto } of updates) {
+          await updateSetlistMutation.mutateAsync({ setlistId: id, input: dto });
+        }
       }
 
       setIsEditMode(false);
@@ -388,10 +397,12 @@ export function PerformanceManagement() {
             onChange={patchEditing}
           />
 
-          {/* 공연 이미지 — 항목별 즉시 반영(추가/삭제). */}
+          {/* 공연 이미지 — 항목별 즉시 반영(추가/삭제).
+              운영진이 다른 팀 공연(/:teamId)을 편집할 때는 잠근다 — `/me` 전용 엔드포인트라
+              잘못 호출하면 자기 공연을 건드린다. */}
           <PerformanceImageGrid
             images={images}
-            isEditMode={isEditMode}
+            isEditMode={isEditMode && canEditSubResources}
             isUploading={isUploading}
             isDeleting={deleteImageMutation.isPending}
             onUpload={handleImageUpload}
@@ -408,11 +419,11 @@ export function PerformanceManagement() {
         onChange={patchEditing}
       />
 
-      {/* 공연 셋리스트 */}
+      {/* 공연 셋리스트 — 이미지와 동일하게 sub-resource 라 운영진 :teamId 편집에서는 잠근다. */}
       <div className="bg-background rounded-2xl p-4 md:p-8 shadow-sm">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-bold text-foreground">공연 셋리스트</h2>
-          {isEditMode && (
+          {isEditMode && canEditSubResources && (
             <button
               onClick={addSetlistItem}
               className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-ds-primary-pressed hover:shadow-lg transition-all duration-200 flex items-center gap-2 text-sm"
@@ -422,7 +433,7 @@ export function PerformanceManagement() {
           )}
         </div>
 
-        {isEditMode ? (
+        {isEditMode && canEditSubResources ? (
           <DndContext
             sensors={setlistSensors}
             collisionDetection={closestCenter}

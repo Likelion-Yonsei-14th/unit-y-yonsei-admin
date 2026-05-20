@@ -13,6 +13,7 @@ import {
   listPerformances,
   setLivePerformance,
   updateMyPerformance,
+  updatePerformance,
   updateSetlistItem,
 } from './api';
 import type {
@@ -75,6 +76,29 @@ export function useUpdateMyPerformance() {
       queryClient.setQueryData(['performances', 'me'], data);
       queryClient.setQueryData(['performances', data.id], data);
       // 리스트 invalidation — 공연명/날짜/상태 등 리스트 표시 필드가 바뀔 수 있어.
+      queryClient.invalidateQueries({ queryKey: ['performances'], exact: true });
+    },
+  });
+}
+
+/**
+ * 운영진(SUPER/MASTER) 이 임의 공연을 부분 갱신.
+ * `useUpdateMyPerformance` 와 별개 — `PATCH /admin/performances/{id}` 로 다른 팀
+ * 공연을 수정할 때 사용. 호출부가 `id` 를 미리 알고 hook 셋업 시 넘긴다.
+ * id 가 null 이면 mutate 호출이 막힌다(가드).
+ */
+export function useUpdatePerformance(performanceId: number | null) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (patch: Partial<Performance>) => {
+      if (performanceId == null) {
+        return Promise.reject(new Error('useUpdatePerformance: performanceId 가 없습니다.'));
+      }
+      return updatePerformance(performanceId, patch);
+    },
+    onSuccess: (data) => {
+      queryClient.setQueryData(['performances', data.id], data);
       queryClient.invalidateQueries({ queryKey: ['performances'], exact: true });
     },
   });

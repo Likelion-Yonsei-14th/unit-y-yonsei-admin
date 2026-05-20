@@ -570,6 +570,19 @@ export async function updateMyPerformanceMock(patch: Partial<Performance>): Prom
   return next;
 }
 
+/** 운영진의 임의 공연 부분 갱신 mock. updateMyPerformanceMock 와 동일하지만 id 를 인자로 받는다. */
+export async function updatePerformanceMock(
+  id: number,
+  patch: Partial<Performance>,
+): Promise<Performance> {
+  await delay(200);
+  const idx = performances.findIndex((p) => p.id === id);
+  if (idx < 0) throw new Error(`mock: performance ${id} not found`);
+  const next = { ...performances[idx], ...patch, id };
+  performances[idx] = next;
+  return next;
+}
+
 // ---- 이미지 mock ----
 
 export async function getPerformanceImagesMock(performanceId: number): Promise<PerformanceImage[]> {
