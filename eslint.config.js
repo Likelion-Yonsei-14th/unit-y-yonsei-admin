@@ -92,6 +92,16 @@ export default tseslint.config(
       '@typescript-eslint/no-empty-object-type': 'off',
     },
   },
+  // scripts/ 하위 .mjs 는 노드 런타임 — process/console/fetch 등 노드 globals 가 필요.
+  // 브라우저 env 만 깔린 디폴트로는 'no-undef' 가 false positive 를 낸다.
+  {
+    files: ['scripts/**/*.{mjs,js}'],
+    languageOptions: {
+      ecmaVersion: 2022,
+      sourceType: 'module',
+      globals: { ...globals.node },
+    },
+  },
   // Prettier 충돌 룰 끄기 — 반드시 마지막.
   prettierConfig,
 );
