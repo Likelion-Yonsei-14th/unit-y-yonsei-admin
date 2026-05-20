@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '@/features/auth/store';
-import { getMyBooth, listBooths, setBoothReservable, updateMyBooth } from './api';
+import { deleteBooth, getMyBooth, listBooths, setBoothReservable, updateMyBooth } from './api';
 import type { Booth } from './types';
 
 /** 로그인한 Booth 역할 사용자의 자기 부스 조회. boothId 없으면 enabled=false. */
@@ -59,6 +59,22 @@ export function useUpdateBooth() {
     mutationFn: (booth: Booth) => updateMyBooth(booth),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['booths'] });
+    },
+  });
+}
+
+/**
+ * 부스 삭제 — 어드민 계정 삭제(A-014) cascade 용. 단독 액션이 아니라
+ * user-management 의 계정 삭제 흐름에서 백엔드가 A-014 를 던질 때 호출한다.
+ * 성공 시 booth 목록·예약 요약(부스 카운트)·자기부스(me) 캐시 모두 invalidate.
+ */
+export function useDeleteBooth() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => deleteBooth(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['booths'] });
+      queryClient.invalidateQueries({ queryKey: ['reservations'] });
     },
   });
 }

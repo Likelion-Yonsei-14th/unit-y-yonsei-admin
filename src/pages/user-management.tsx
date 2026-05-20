@@ -7,6 +7,8 @@ import type { AdminUser as User } from '@/features/users/types';
 import { PageHeaderAction } from '@/components/common/page-header-action';
 import { TableSkeleton } from '@/components/common/table-skeleton';
 import { useAuth } from '@/features/auth/hooks';
+import { useDeleteBooth } from '@/features/booths/hooks';
+import { ApiError } from '@/lib/api-client';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -46,11 +48,14 @@ export function UserManagement() {
   const users: User[] = useMemo(() => usersQuery.data ?? [], [usersQuery.data]);
   const resetPasswordMutation = useResetUserPassword();
   const deleteMutation = useDeleteUser();
+  const deleteBoothMutation = useDeleteBooth();
 
   const [selectedRole, setSelectedRole] = useState<RoleFilter>('전체');
   const [searchQuery, setSearchQuery] = useState('');
   const [pendingPasswordReset, setPendingPasswordReset] = useState<User | null>(null);
   const [pendingDelete, setPendingDelete] = useState<User | null>(null);
+  // 계정 삭제가 A-014(소유 부스 존재) 로 막혔을 때 부스 cascade 컨펌 단계.
+  const [pendingDeleteWithBooth, setPendingDeleteWithBooth] = useState<User | null>(null);
   const [resetResult, setResetResult] = useState<ResetPasswordDialogState | null>(null);
   const navigate = useNavigate();
   const { user: currentUser, can } = useAuth();
@@ -124,9 +129,47 @@ export function UserManagement() {
       { id: target.id },
       {
         onSuccess: () => toast.success(`${target.userId} 계정을 삭제했습니다.`),
-        onError: () => toast.error('계정 삭제에 실패했습니다. 잠시 후 다시 시도해주세요.'),
+        onError: (err) => {
+          // A-014: 소유 부스가 있어 계정 삭제 불가 — 부스도 함께 지울지 컨펌.
+          if (err instanceof ApiError && err.body?.code === 'A-014' && target.boothId != null) {
+            setPendingDeleteWithBooth(target);
+            return;
+          }
+          toast.error('계정 삭제에 실패했습니다. 잠시 후 다시 시도해주세요.');
+        },
       },
     );
+  };
+
+  /**
+   * cascade 삭제: 부스 → 어드민 계정 순.
+   * 부스를 먼저 지워야 백엔드의 A-014 가드를 통과한다. 부스 삭제 자체가 실패하면
+   * 계정 삭제도 시도하지 않는다(반쪽 상태 회피).
+   */
+  const confirmDeleteWithBooth = () => {
+    const target = pendingDeleteWithBooth;
+    if (!target || target.boothId == null) {
+      setPendingDeleteWithBooth(null);
+      return;
+    }
+    deleteBoothMutation.mutate(target.boothId, {
+      onSuccess: () => {
+        deleteMutation.mutate(
+          { id: target.id },
+          {
+            onSuccess: () =>
+              toast.success(`${target.userId} 계정과 소속 부스를 함께 삭제했습니다.`),
+            onError: () =>
+              toast.error('부스는 삭제됐지만 계정 삭제에 실패했습니다. 잠시 후 다시 시도해주세요.'),
+            onSettled: () => setPendingDeleteWithBooth(null),
+          },
+        );
+      },
+      onError: () => {
+        toast.error('부스 삭제에 실패해 계정도 삭제하지 못했습니다.');
+        setPendingDeleteWithBooth(null);
+      },
+    });
   };
 
   const copyTempPassword = async () => {
@@ -430,6 +473,38 @@ export function UserManagement() {
           <AlertDialogFooter>
             <AlertDialogCancel>취소</AlertDialogCancel>
             <AlertDialogAction onClick={confirmDelete}>삭제</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* 부스 cascade — A-014 로 막혔을 때 부스도 함께 지울지 한 번 더 컨펌. */}
+      <AlertDialog
+        open={!!pendingDeleteWithBooth}
+        onOpenChange={(o) => !o && setPendingDeleteWithBooth(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>소속 부스를 먼저 삭제해야 합니다</AlertDialogTitle>
+            <AlertDialogDescription>
+              {pendingDeleteWithBooth?.userId} 어드민은 소유한 부스(
+              {pendingDeleteWithBooth?.boothName})가 있어 계정만 단독으로 삭제할 수 없습니다. 부스를
+              먼저 삭제한 뒤 계정도 함께 정리합니다.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="rounded-md border border-destructive bg-ds-error-subtle px-3 py-2 text-sm text-ds-error-pressed">
+            부스에 연결된 메뉴·예약 데이터까지 함께 사라지며 되돌릴 수 없습니다.
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel>취소</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDeleteWithBooth}
+              disabled={deleteBoothMutation.isPending || deleteMutation.isPending}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleteBoothMutation.isPending || deleteMutation.isPending
+                ? '삭제 중…'
+                : '부스 + 계정 삭제'}
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
