@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Check, Edit } from 'lucide-react';
+import { Check, Edit, Megaphone } from 'lucide-react';
 import { toast } from 'sonner';
 import type { UseMutationResult } from '@tanstack/react-query';
 import type { Booth, BoothSector, BoothStatus } from '@/features/booths/types';
@@ -78,6 +78,7 @@ export function BoothInfoForm({
   const [name, setName] = useState(booth.name);
   const [organization, setOrganization] = useState(booth.organization);
   const [description, setDescription] = useState(booth.description);
+  const [notice, setNotice] = useState(booth.notice ?? '');
   const [date, setDate] = useState<number | null>(booth.date);
   const [openTime, setOpenTime] = useState(booth.openTime ?? DEFAULT_OPEN_TIME);
   const [closeTime, setCloseTime] = useState(booth.closeTime ?? DEFAULT_CLOSE_TIME);
@@ -99,6 +100,7 @@ export function BoothInfoForm({
     setName(booth.name);
     setOrganization(booth.organization);
     setDescription(booth.description);
+    setNotice(booth.notice ?? '');
     setDate(booth.date);
     setOpenTime(booth.openTime ?? DEFAULT_OPEN_TIME);
     setCloseTime(booth.closeTime ?? DEFAULT_CLOSE_TIME);
@@ -129,6 +131,7 @@ export function BoothInfoForm({
       name,
       organization,
       description,
+      notice: notice.trim() || null,
       date,
       openTime: openTime || null,
       closeTime: closeTime || null,
@@ -263,6 +266,42 @@ export function BoothInfoForm({
           ) : (
             <div id="booth-description" className={`${readonlyClass} min-h-[112px]`}>
               {description}
+            </div>
+          )}
+        </div>
+
+        <div>
+          <label
+            htmlFor="booth-notice"
+            className="block text-sm font-semibold text-foreground mb-2"
+          >
+            부스 공지
+          </label>
+          {isEditing ? (
+            <>
+              <textarea
+                id="booth-notice"
+                rows={3}
+                placeholder="조기 마감·품절 등 방문객에게 바로 알릴 공지를 입력하세요. (예: 재료 소진으로 18시에 조기 마감합니다.)"
+                value={notice}
+                onChange={(e) => setNotice(e.target.value)}
+                className={`${inputClass} resize-none`}
+              />
+              <p className="mt-1 text-xs text-muted-foreground">
+                입력한 공지는 방문객용 앱의 부스 상세에 강조 표시됩니다.
+              </p>
+            </>
+          ) : notice.trim() ? (
+            <div
+              id="booth-notice"
+              className="flex items-start gap-2 rounded-lg border border-ds-success bg-ds-success-subtle px-4 py-3 text-ds-success-pressed"
+            >
+              <Megaphone size={18} className="mt-0.5 shrink-0" aria-hidden="true" />
+              <span className="whitespace-pre-wrap text-sm font-medium">{notice}</span>
+            </div>
+          ) : (
+            <div className="w-full px-4 py-3 border border-border rounded-lg bg-muted text-muted-foreground">
+              등록된 공지가 없습니다.
             </div>
           )}
         </div>
