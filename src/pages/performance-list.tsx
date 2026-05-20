@@ -19,11 +19,16 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 
-/** 공연 날짜 정수(2~4) ↔ 표시 라벨. 1=5/26 블루런 은 공연 없음. */
-const PERFORMANCE_DATE_OPTIONS: { value: number; label: string }[] = [
+/**
+ * 공연 날짜 정수(2~4) ↔ 표시 라벨. 1=5/26 블루런 은 공연 없음.
+ * `null` 은 "미정" 탭 — 운영진이 Performer 계정을 만들 때 날짜를 비워둔
+ * 공연이 그 어느 일차 탭에도 안 잡혀 보이지 않는 사고를 막는다.
+ */
+const PERFORMANCE_DATE_OPTIONS: { value: number | null; label: string }[] = [
   { value: 2, label: '5/27' },
   { value: 3, label: '5/28' },
   { value: 4, label: '5/29' },
+  { value: null, label: '미정' },
 ];
 
 /**
@@ -79,7 +84,13 @@ export function PerformanceListPage() {
     });
   };
 
-  const [date, setDate] = useState<number>(PERFORMANCE_DATE_OPTIONS[0].value);
+  const [date, setDate] = useState<number | null>(PERFORMANCE_DATE_OPTIONS[0].value);
+
+  // "미정" 탭 강조용 — 날짜가 비어 있는 공연이 있을 때 운영자가 즉시 발견할 수 있게 카운트 노출.
+  const undatedCount = useMemo(
+    () => (data ?? []).filter((p) => p.performanceDate == null).length,
+    [data],
+  );
   const [location, setLocation] = useState<string>('all');
 
   // 선택한 일차에 등장하는 장소명만 필터 옵션으로 노출.
@@ -168,9 +179,10 @@ export function PerformanceListPage() {
           <div className="flex gap-2">
             {PERFORMANCE_DATE_OPTIONS.map((o) => {
               const active = o.value === date;
+              const isUndated = o.value === null;
               return (
                 <button
-                  key={o.value}
+                  key={o.value ?? 'undated'}
                   type="button"
                   onClick={() => setDate(o.value)}
                   aria-pressed={active}
@@ -181,6 +193,17 @@ export function PerformanceListPage() {
                   }`}
                 >
                   {o.label}
+                  {isUndated && undatedCount > 0 && (
+                    <span
+                      className={`ml-1.5 inline-flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full text-[10px] font-semibold ${
+                        active
+                          ? 'bg-primary-foreground text-foreground'
+                          : 'bg-ds-warning text-white'
+                      }`}
+                    >
+                      {undatedCount}
+                    </span>
+                  )}
                 </button>
               );
             })}
