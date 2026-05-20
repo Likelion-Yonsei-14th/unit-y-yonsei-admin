@@ -46,3 +46,9 @@ export interface LoginPayload {
   userId: string;
   password: string;
 }
+
+/** 본인 비밀번호 변경 요청 (PATCH /admin/auth/me/password). */
+export interface ChangePasswordPayload {
+  currentPassword: string;
+  newPassword: string;
+}

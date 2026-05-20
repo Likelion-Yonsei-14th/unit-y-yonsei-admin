@@ -2,7 +2,13 @@ import { api, ApiError } from '@/lib/api-client';
 import { authStrategy } from '@/lib/auth-strategy';
 import { env } from '@/lib/env';
 import { roleFromBackend } from '@/types/role';
-import type { AdminAuthDTO, CurrentUser, CurrentUserDTO, LoginPayload } from './types';
+import type {
+  AdminAuthDTO,
+  ChangePasswordPayload,
+  CurrentUser,
+  CurrentUserDTO,
+  LoginPayload,
+} from './types';
 
 // ---- DTO → Model 매퍼 ----
 
@@ -166,6 +172,36 @@ async function logoutMock(): Promise<void> {
   authStrategy.clearAuth();
 }
 
+/**
+ * mock 비밀번호 변경.
+ * 백엔드(A-021/A-020) 에러 코드를 재현하고, 성공 시 실제 백엔드처럼 세션을 무효화한다.
+ * 단 mock 은 MOCK_USERS 를 mutate 하지 않으므로 다음 로그인엔 여전히 기존 비번을 써야 한다
+ * — real 백엔드 테스트가 본 기능의 진짜 검증 대상.
+ */
+async function changeMyPasswordMock(payload: ChangePasswordPayload): Promise<void> {
+  await new Promise((r) => setTimeout(r, 200));
+  const userId = localStorage.getItem(MOCK_TOKEN_KEY);
+  const record = userId ? MOCK_USERS[userId] : null;
+  if (!record) {
+    throw new ApiError(401, '로그인이 필요합니다.', { message: '로그인이 필요합니다.' });
+  }
+  if (record.password !== payload.currentPassword) {
+    throw new ApiError(400, '현재 비밀번호가 일치하지 않습니다.', {
+      message: '현재 비밀번호가 일치하지 않습니다.',
+      code: 'A-021',
+    });
+  }
+  if (record.password === payload.newPassword) {
+    throw new ApiError(400, '새 비밀번호는 현재 비밀번호와 달라야 합니다.', {
+      message: '새 비밀번호는 현재 비밀번호와 달라야 합니다.',
+      code: 'A-020',
+    });
+  }
+  // real 일치를 위해 세션 무효화 — 호출부가 로그아웃 처리 후 /login 으로 보낸다.
+  localStorage.removeItem(MOCK_TOKEN_KEY);
+  authStrategy.clearAuth();
+}
+
 // ---- 실제 구현 ----
 
 async function loginReal(payload: LoginPayload): Promise<CurrentUser> {
@@ -190,11 +226,19 @@ async function logoutReal(): Promise<void> {
   }
 }
 
+async function changeMyPasswordReal(payload: ChangePasswordPayload): Promise<void> {
+  // 백엔드가 변경 직후 세션을 invalidate 한다 — 응답은 ApiResponse<Void>.
+  await api.patch('/admin/auth/me/password', payload);
+  // 다음 요청부터 어차피 401 이지만, 호출부 흐름을 명확히 하려고 즉시 로컬 인증도 정리.
+  authStrategy.clearAuth();
+}
+
 // ---- 분기 export ----
 
 export const login = env.USE_MOCK ? loginMock : loginReal;
 export const fetchMe = env.USE_MOCK ? fetchMeMock : fetchMeReal;
 export const logout = env.USE_MOCK ? logoutMock : logoutReal;
+export const changeMyPassword = env.USE_MOCK ? changeMyPasswordMock : changeMyPasswordReal;
 
 /**
  * 앱 시작 시 `/me` 로 세션 복원을 시도할지 여부 (라우팅 초기화 전 빠른 체크용).

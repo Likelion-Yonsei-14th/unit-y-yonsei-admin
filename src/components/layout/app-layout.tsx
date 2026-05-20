@@ -1,10 +1,11 @@
 import { Outlet, Link, useLocation } from 'react-router';
 import { useEffect, useState } from 'react';
-import { LogOut, ChevronLeft, ChevronRight, ChevronDown, Menu, X } from 'lucide-react';
+import { LogOut, ChevronLeft, ChevronRight, ChevronDown, KeyRound, Menu, X } from 'lucide-react';
 import { MAIN_NAV, FOOTER_NAV, type NavItem } from '@/config/nav';
 import { useAuth, useLogout } from '@/features/auth/hooks';
 import { ROLE_LABEL } from '@/types/role';
 import { CsFloatingButton } from '@/components/common/cs-floating-button';
+import { ChangePasswordDialog } from '@/features/auth/components/change-password-dialog';
 
 /**
  * 어드민 공통 레이아웃.
@@ -21,6 +22,7 @@ export function AppLayout() {
   // 모바일 drawer 열림 상태. md 이상에서는 사이드바가 항상 노출되므로 무시된다.
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [expandedMenus, setExpandedMenus] = useState<Set<string>>(new Set());
+  const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
   const { user, can } = useAuth();
   const logout = useLogout();
 
@@ -321,6 +323,19 @@ export function AppLayout() {
           })}
 
           <button
+            onClick={() => setIsPasswordDialogOpen(true)}
+            className={`
+              flex items-center gap-3 rounded-lg w-full transition-all
+              ${effectiveCollapsed ? 'justify-center px-3 py-3' : 'px-4 py-2.5'}
+              text-muted-foreground hover:bg-muted
+            `}
+            title={effectiveCollapsed ? '비밀번호 변경' : undefined}
+          >
+            <KeyRound size={18} />
+            {!effectiveCollapsed && <span className="ds-body-2">비밀번호 변경</span>}
+          </button>
+
+          <button
             onClick={() => logout.mutate()}
             disabled={logout.isPending}
             className={`
@@ -363,6 +378,8 @@ export function AppLayout() {
 
       {/* 로그인 이후 전역 플로팅 CS 문의 버튼 */}
       <CsFloatingButton />
+
+      <ChangePasswordDialog open={isPasswordDialogOpen} onOpenChange={setIsPasswordDialogOpen} />
     </div>
   );
 }
