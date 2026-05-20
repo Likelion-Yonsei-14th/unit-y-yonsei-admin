@@ -7,13 +7,12 @@
  * (vitest)와 별개로, 통합 회귀 검증용.
  *
  * 사용:
- *   BASE_URL=https://api.jellyu-yonsei.com/api \
  *   BOOTH_ID=1 \
  *   BOOTH_ADMIN_LOGIN_ID=... \
  *   BOOTH_ADMIN_PASSWORD=... \
  *     node scripts/e2e-reservation-flow.mjs
  *
- * 기본 BASE_URL 은 Railway. EC2 는 명시적으로 BASE_URL 지정.
+ * 기본 BASE_URL 은 EC2(`api.jellyu-yonsei.com`). 다른 백엔드는 BASE_URL 환경변수로 오버라이드.
  *
  * 단계:
  *   1) POST /booths/{boothId}                   방문객이 공개 엔드포인트로 예약 생성
@@ -28,7 +27,7 @@
  * 삭제 엔드포인트가 없어 스크립트는 cancelled 상태로 두고 끝낸다.
  */
 
-const BASE_URL = process.env.BASE_URL ?? 'https://unit-y-yonsei-server-production.up.railway.app/api';
+const BASE_URL = process.env.BASE_URL ?? 'https://api.jellyu-yonsei.com/api';
 const BOOTH_ID = Number(process.env.BOOTH_ID ?? '');
 const LOGIN_ID = process.env.BOOTH_ADMIN_LOGIN_ID ?? '';
 const PASSWORD = process.env.BOOTH_ADMIN_PASSWORD ?? '';
