@@ -1,10 +1,11 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router';
 import { useCallback } from 'react';
+import { toast } from 'sonner';
 import { hasPermission, type Permission } from '@/config/permissions';
-import { fetchMe, login, logout } from './api';
+import { changeMyPassword, fetchMe, login, logout } from './api';
 import { useAuthStore } from './store';
-import type { CurrentUser, LoginPayload } from './types';
+import type { ChangePasswordPayload, CurrentUser, LoginPayload } from './types';
 
 /** 소유자 판정을 위해 필요한 최소 필드. 실제 Booth/Performance 모델이 이를 만족해야 함. */
 interface OwnableBooth {
@@ -112,6 +113,33 @@ export function useLogout() {
   return useMutation({
     mutationFn: () => logout(),
     onSettled: () => {
+      setUser(null);
+      qc.clear();
+      navigate('/login', { replace: true });
+    },
+  });
+}
+
+/**
+ * 본인 비밀번호 변경 뮤테이션.
+ *
+ * 백엔드는 변경 직후 현재 세션을 invalidate 한다 — 변경 후 같은 세션으로 다른
+ * 요청을 보내면 401 이 난다. 호출부가 onSuccess 에서 로컬 상태를 비우고
+ * `/login` 으로 보내야 다음 화면 진입에서 401 redirect 가 일어나지 않는다.
+ *
+ * 에러는 ApiError.body.code 로 분기:
+ *  - A-021 INVALID_CURRENT_PASSWORD : 현재 비밀번호 불일치
+ *  - A-020 PASSWORD_SAME_AS_CURRENT : 새 비밀번호 = 현재 비밀번호
+ */
+export function useChangeMyPassword() {
+  const navigate = useNavigate();
+  const setUser = useAuthStore((s) => s.setUser);
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: (payload: ChangePasswordPayload) => changeMyPassword(payload),
+    onSuccess: () => {
+      toast.success('비밀번호가 변경되었습니다. 새 비밀번호로 다시 로그인해주세요.');
       setUser(null);
       qc.clear();
       navigate('/login', { replace: true });
