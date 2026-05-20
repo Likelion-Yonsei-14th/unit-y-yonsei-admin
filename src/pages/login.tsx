@@ -32,6 +32,16 @@ export function LoginPage() {
         <div className="text-center mb-8">
           <h1 className="ds-display text-foreground mb-2">대동제 Jelly:U 어드민</h1>
           <p className="ds-body-2 text-muted-foreground">관리자 계정으로 로그인해주세요</p>
+          {/* 화면 표시는 w-40(160px). 320×277 PNG 가 retina 2x 와 정확히 매치 — 그 이상은 과스펙.
+              width/height 명시로 이미지 로드 전 layout shift 방지. */}
+          <img
+            src="/jelly-mascot.png"
+            alt="Jelly:U 마스코트"
+            width={320}
+            height={277}
+            decoding="async"
+            className="mx-auto mt-4 w-40 h-auto"
+          />
           {/* 공식 런칭 전 운영진 정보 입력 기간 안내 — 빨간 굵은 글씨로 강조. */}
           <p className="ds-body-2 mt-4 font-bold text-destructive">
             *현재는 부스·공연 운영진의 정보 입력 기간입니다.
