@@ -36,6 +36,11 @@ async function setBoothReservableMock(input: {
   return mockBoothsById[input.id];
 }
 
+async function deleteBoothMock(id: number): Promise<void> {
+  await new Promise((r) => setTimeout(r, 100));
+  delete mockBoothsById[id];
+}
+
 // ---- Real ----
 
 async function getMyBoothReal(): Promise<Booth | null> {
@@ -66,9 +71,18 @@ async function setBoothReservableReal(input: {
   return toBooth(dto);
 }
 
+/**
+ * 부스 행을 DB 에서 완전히 삭제. 어드민 계정 삭제(A-014) 가드를 풀어주는 cascade
+ * 용도 — 단독 호출보다 useDeleteUser 흐름에서 컨펌 후 함께 사용.
+ */
+async function deleteBoothReal(id: number): Promise<void> {
+  await api.delete(`/admin/booths/${id}`);
+}
+
 // ---- 분기 export ----
 
 export const getMyBooth = env.USE_MOCK ? getMyBoothMock : getMyBoothReal;
 export const updateMyBooth = env.USE_MOCK ? updateMyBoothMock : updateMyBoothReal;
 export const listBooths = env.USE_MOCK ? listBoothsMock : listBoothsReal;
 export const setBoothReservable = env.USE_MOCK ? setBoothReservableMock : setBoothReservableReal;
+export const deleteBooth = env.USE_MOCK ? deleteBoothMock : deleteBoothReal;
