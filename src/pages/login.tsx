@@ -95,12 +95,12 @@ export function LoginPage() {
         {env.USE_MOCK && (
           <div className="mt-4 rounded-lg bg-ds-warning-subtle border border-ds-warning/30 px-4 py-3">
             <p className="ds-caption font-medium text-ds-warning-pressed mb-1.5">
-              🛠 Mock 모드 안내 (VITE_USE_MOCK=true)
+              🛠 Mock 모드 안내 (VITE_USE_MOCK=true) — 비밀번호는 아무거나 입력
             </p>
             <div className="text-[11px] sm:text-xs text-ds-warning-pressed space-y-0.5 font-mono break-words">
-              <div>super / super1234 (슈퍼어드민)</div>
-              <div>master / master1234 (마스터어드민)</div>
-              <div className="pt-1 text-[10px] opacity-80">─ Booth · 비밀번호 booth1234 ─</div>
+              <div>super (슈퍼어드민)</div>
+              <div>master (마스터어드민)</div>
+              <div className="pt-1 text-[10px] opacity-80">─ Booth ─</div>
               <div>booth1 — 문헌정보학과 · 인기 · 다일 운영</div>
               <div>booth2 — 빈 프로필 (작성 전 데모)</div>
               <div>booth3 — 경영학과 · 한글탑</div>
@@ -109,7 +109,7 @@ export function LoginPage() {
               <div>booth13 — 화학과 아이스크림 · 인기</div>
               <div>booth15 — 별빛 카페 · 다중 자리</div>
               <div>booth28 — 안전 부스 · 모든 날짜</div>
-              <div className="pt-1 text-[10px] opacity-80">─ Performer · 비밀번호 perf1234 ─</div>
+              <div className="pt-1 text-[10px] opacity-80">─ Performer ─</div>
               <div>performer1 — 멋사 · 5/28 백양로</div>
               <div>performer2 — 송도노인정양로원 · 5/27 송도</div>
               <div>performer16 — BTL · 5/28 백양로 헤드라이너</div>

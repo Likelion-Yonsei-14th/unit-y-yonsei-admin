@@ -122,13 +122,17 @@ pages/페이지 컴포넌트  ──uses──►  features/<domain>/hooks.ts
 
 ## Mock 로그인 계정 (`VITE_USE_MOCK=true`)
 
-| user_id | password | role |
-|---|---|---|
-| `super` | `super1234` | Super |
-| `master` | `master1234` | Master |
-| `booth1` | `booth1234` | Booth (booth_id=1) — 프로필 **작성 완료** 상태 |
-| `booth2` | `booth1234` | Booth (booth_id=2) — 프로필 **빈 상태** (작성 전 플로우 확인용) |
-| `performer1` | `perf1234` | Performer (team_id=1) |
+**비밀번호는 검증하지 않는다 — 아무거나 입력하면 로그인된다.** 실제 백엔드 자격증명을
+코드에 두지 않기 위함(레포 유출 대비). user_id 만 알려진 값이면 통과. 전체 mock
+계정 목록은 `src/features/auth/api.ts` 의 `MOCK_USERS` 참고.
+
+| user_id | role |
+|---|---|
+| `super` | Super |
+| `master` | Master |
+| `booth1` | Booth (booth_id=1) — 프로필 **작성 완료** 상태 |
+| `booth2` | Booth (booth_id=2) — 프로필 **빈 상태** (작성 전 플로우 확인용) |
+| `performer1` | Performer (team_id=1) |
 
 ## 외부 산출물 출처
 
