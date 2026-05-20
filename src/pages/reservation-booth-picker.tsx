@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router';
+import { Navigate, useNavigate } from 'react-router';
 import { Calendar, MapPinOff } from 'lucide-react';
 import { BoothMapPicker } from '@/features/booth-layout/components/booth-map-picker';
 import { useMapLocations } from '@/features/booth-layout/hooks';
@@ -147,39 +147,21 @@ export function ReservationBoothPicker() {
     [navigate],
   );
 
-  // Booth 계정 본인 부스 조회 실패.
-  if (isBooth && myBoothQuery.isError) {
-    return (
-      <div className="flex flex-col items-start gap-3 p-8 text-sm">
-        <div className="text-destructive">본인 부스 정보를 불러오지 못했습니다.</div>
-        <button
-          type="button"
-          onClick={() => myBoothQuery.refetch()}
-          className="rounded-md border border-border px-3 py-1.5 text-foreground hover:border-ds-border-strong"
-        >
-          다시 시도
-        </button>
-      </div>
-    );
-  }
-
-  // Booth 계정인데 본인 부스가 미배치.
-  if (
-    isBooth &&
-    myBoothQuery.isFetched &&
-    (myBoothQuery.data == null || myBoothQuery.data.locationId == null)
-  ) {
+  // Booth 계정은 picker 뎁스 없이 자기 부스 예약 리스트로 직행 — 자기 부스 하나만
+  // 보면 되는데 지도 picker 를 거치는 게 불필요한 클릭이라 제거.
+  // boothId 가 없는(부스 미할당) 잘못된 상태만 안내 화면을 띄운다.
+  if (isBooth) {
+    if (user.boothId != null) {
+      return <Navigate to={`/reservations/${user.boothId}`} replace />;
+    }
     return (
       <div className="flex min-h-[60vh] flex-col items-center justify-center gap-3 p-8 text-center">
         <div className="flex h-14 w-14 items-center justify-center rounded-full bg-muted text-muted-foreground">
           <MapPinOff size={28} aria-hidden="true" />
         </div>
-        <h2 className="text-lg font-semibold text-foreground">
-          지도 배치가 아직 설정되지 않았어요
-        </h2>
+        <h2 className="text-lg font-semibold text-foreground">소속된 부스가 없습니다</h2>
         <p className="max-w-sm text-sm leading-relaxed text-muted-foreground">
-          소속 부스의 자리가 축제 배치도에 아직 등록되지 않았습니다. 운영진이 배치를 완료하면 이
-          화면에서 예약을 관리할 수 있어요. 배치가 필요하면 운영진에게 문의해 주세요.
+          Booth 계정에 부스가 아직 배정되지 않았습니다. 운영진에게 문의해 주세요.
         </p>
       </div>
     );
