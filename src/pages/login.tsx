@@ -50,6 +50,26 @@ export function LoginPage() {
           </p>
         </div>
 
+        {/* 운영진 가입 안내 — 계정이 없는 운영진을 위한 진입 동선. 로그인 폼 위로 노출. */}
+        <div className="mb-6 rounded-2xl bg-background p-6 shadow-sm">
+          <p className="ds-body-2 text-muted-foreground mb-3">부스·공연 운영진이라면?</p>
+          <ol className="ds-body-2 list-decimal list-inside space-y-1.5 text-foreground">
+            <li>
+              <a
+                href="https://open.kakao.com/o/g6GxwAvi"
+                target="_blank"
+                rel="noreferrer"
+                className="text-primary underline underline-offset-2 hover:text-ds-primary-pressed"
+              >
+                오픈카톡 입장
+              </a>
+            </li>
+            <li>오픈카톡 공지내 구글폼으로 가입 신청</li>
+            <li>할당된 전용 계정 ID/PW로 로그인</li>
+            <li>부스·공연 정보 입력</li>
+          </ol>
+        </div>
+
         <form
           onSubmit={handleSubmit(onSubmit)}
           className="bg-background rounded-2xl p-8 space-y-5 shadow-sm"
@@ -107,26 +127,6 @@ export function LoginPage() {
             {login.isPending ? '로그인 중...' : '로그인'}
           </button>
         </form>
-
-        {/* 운영진 가입 안내 — 계정이 없는 운영진을 위한 진입 동선. */}
-        <div className="mt-6 rounded-2xl bg-background p-6 shadow-sm">
-          <p className="ds-body-2 text-muted-foreground mb-3">부스·공연 운영진이라면?</p>
-          <ol className="ds-body-2 list-decimal list-inside space-y-1.5 text-foreground">
-            <li>
-              <a
-                href="https://open.kakao.com/o/g6GxwAvi"
-                target="_blank"
-                rel="noreferrer"
-                className="text-primary underline underline-offset-2 hover:text-ds-primary-pressed"
-              >
-                오픈카톡 입장
-              </a>
-            </li>
-            <li>오픈카톡 공지내 구글폼으로 가입 신청</li>
-            <li>할당된 전용 계정 ID/PW로 로그인</li>
-            <li>부스·공연 정보 입력</li>
-          </ol>
-        </div>
 
         {env.USE_MOCK && (
           <div className="mt-4 rounded-lg bg-ds-warning-subtle border border-ds-warning/30 px-4 py-3">
