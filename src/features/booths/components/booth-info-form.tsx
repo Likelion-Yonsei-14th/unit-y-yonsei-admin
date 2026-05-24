@@ -678,7 +678,7 @@ export function BoothInfoForm({
           )}
           {isFood && (
             <p className="mt-2 text-xs text-muted-foreground">
-              모든 메뉴는 '메뉴 리스트 작성'에서 작성해주세요!
+              모든 메뉴는 &lsquo;메뉴 리스트 작성&rsquo;에서 작성해주세요!
             </p>
           )}
         </div>
