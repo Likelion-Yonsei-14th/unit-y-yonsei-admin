@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
-import { Check, Edit, Megaphone } from 'lucide-react';
+import { Check, Edit, Megaphone, Plus, X } from 'lucide-react';
 import { toast } from 'sonner';
 import type { UseMutationResult } from '@tanstack/react-query';
 import type { Booth, BoothSector, BoothStatus } from '@/features/booths/types';
 import { BOOTH_STATUS_LABEL } from '@/features/booths/types';
+import { uploadImage } from '@/features/uploads/api';
 import { TagInput } from '@/components/common/tag-input';
 
 const SECTORS: BoothSector[] = ['한글탑', '백양로', '송도'];
@@ -143,6 +144,8 @@ export function BoothInfoForm({
     booth.representativeMenus.join(', '),
   );
   const [tags, setTags] = useState<string[]>(booth.tags);
+  const [thumbnailUrl, setThumbnailUrl] = useState(booth.thumbnailUrl);
+  const [isUploading, setIsUploading] = useState(false);
 
   // 서버 데이터로 다시 채워질 때 form state 를 다시 hydrate.
   useEffect(() => {
@@ -161,6 +164,7 @@ export function BoothInfoForm({
     setAccount(booth.account);
     setRepresentativeMenusRaw(booth.representativeMenus.join(', '));
     setTags(booth.tags);
+    setThumbnailUrl(booth.thumbnailUrl);
   }, [booth]);
 
   // 일차 변경 시 구역 정합 — 2일차(국제캠)는 송도 강제, 3·4일차에서 송도였으면 해제.
@@ -171,6 +175,19 @@ export function BoothInfoForm({
       setSector('송도');
     } else if (sector && !sectorsForDay(nextDate).includes(sector)) {
       setSector(null);
+    }
+  };
+
+  const handleImageSelect = async (file: File | null) => {
+    if (!file) return;
+    setIsUploading(true);
+    try {
+      const url = await uploadImage(file, 'booth');
+      setThumbnailUrl(url);
+    } catch {
+      toast.error('이미지 업로드에 실패했습니다.');
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -196,6 +213,7 @@ export function BoothInfoForm({
         .map((m) => m.trim())
         .filter(Boolean),
       tags,
+      thumbnailUrl,
     };
     updateMutation.mutate(next, {
       onSuccess: () => {
@@ -665,18 +683,57 @@ export function BoothInfoForm({
           )}
         </div>
 
-        {booth.thumbnailUrl && (
-          <div>
-            <span className="block text-sm font-semibold text-foreground mb-2">부스 이미지</span>
-            <div className="aspect-[3/2] w-full max-w-sm rounded-lg overflow-hidden border border-border">
-              <img
-                src={booth.thumbnailUrl}
-                alt="부스 대표 이미지"
-                className="w-full h-full object-cover"
-              />
+        <div>
+          <span className="block text-sm font-semibold text-foreground mb-2">부스 이미지</span>
+          {thumbnailUrl ? (
+            <div className="space-y-2">
+              <div className="aspect-[3/2] w-full max-w-sm rounded-lg overflow-hidden border border-border">
+                <img
+                  src={thumbnailUrl}
+                  alt="부스 대표 이미지"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              {isEditing && (
+                <div className="flex items-center gap-2">
+                  <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-sm text-foreground hover:border-ds-border-strong transition-colors">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => handleImageSelect(e.target.files?.[0] ?? null)}
+                    />
+                    <Edit size={14} />
+                    {isUploading ? '업로드 중…' : '이미지 교체'}
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setThumbnailUrl(null)}
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-sm text-foreground hover:border-ds-border-strong transition-colors"
+                  >
+                    <X size={14} />
+                    제거
+                  </button>
+                </div>
+              )}
             </div>
-          </div>
-        )}
+          ) : isEditing ? (
+            <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-dashed border-border px-4 py-3 text-sm text-muted-foreground hover:border-ds-border-strong transition-colors">
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => handleImageSelect(e.target.files?.[0] ?? null)}
+              />
+              <Plus size={16} />
+              {isUploading ? '업로드 중…' : '이미지 추가'}
+            </label>
+          ) : (
+            <div className="w-full max-w-sm px-4 py-3 border border-border rounded-lg bg-muted text-muted-foreground text-sm">
+              등록된 부스 이미지가 없습니다.
+            </div>
+          )}
+        </div>
 
         {/* 하단 저장 버튼 — 긴 폼을 끝까지 스크롤한 뒤 상단으로 올라가지 않아도 저장 가능. */}
         {isEditing && (
