@@ -687,23 +687,33 @@ export function ReservationManagement() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>취소</AlertDialogCancel>
+            <AlertDialogCancel disabled={setReservable.isPending}>취소</AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => {
+              disabled={setReservable.isPending}
+              onClick={(e) => {
                 const target = pendingReservable;
                 if (target === null) return;
-                // 전용 엔드포인트로 즉시 저장 — 성공 시 캐시 갱신 → 토글이 따라 움직인다.
+                // 뮤테이션 동안 다이얼로그를 닫지 않고 유지 — 더블클릭으로 같은 PATCH 가
+                // 중복 전송되는 것을 막고(버튼 disable), 성공해야 닫는다.
+                e.preventDefault();
+                if (setReservable.isPending) return;
                 setReservable.mutate(
                   { id: booth.id, isReservable: target },
                   {
-                    onSuccess: () =>
-                      toast.success(target ? '예약 받기를 켰습니다.' : '예약 받기를 껐습니다.'),
+                    onSuccess: () => {
+                      toast.success(target ? '예약 받기를 켰습니다.' : '예약 받기를 껐습니다.');
+                      setPendingReservable(null);
+                    },
                     onError: () => toast.error('예약 받기 상태 변경에 실패했습니다.'),
                   },
                 );
               }}
             >
-              {pendingReservable ? '예약 받기 켜기' : '예약 받기 끄기'}
+              {setReservable.isPending
+                ? '저장 중…'
+                : pendingReservable
+                  ? '예약 받기 켜기'
+                  : '예약 받기 끄기'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
