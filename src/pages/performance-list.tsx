@@ -32,6 +32,12 @@ const PERFORMANCE_DATE_OPTIONS: { value: number | null; label: string }[] = [
 ];
 
 /**
+ * 라이브 송출이 가능한 무대 — 운영 정책상 노천극장(STAGE) 아티스트 공연만 라이브로 지정한다.
+ * 노천극장 MapLocation id = 3 (mock·운영 DB 동일). 무대가 바뀌면 여기 한 곳만 고친다.
+ */
+const LIVE_VENUE_LOCATION_ID = 3;
+
+/**
  * 라이브 표시용 펄스 점 — 방송 ON AIR 사인처럼 빨간 점에서 halo 가 퍼져나간다.
  * 동작 민감 사용자(prefers-reduced-motion)에게는 정적인 점만 보이도록 motion-safe 게이트.
  */
@@ -265,6 +271,11 @@ export function PerformanceListPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filtered.map((p) => {
             const isLive = p.id === livePerformanceId;
+            // 라이브 지정은 노천극장 아티스트 공연만. 해제는 위 배너에서 항상 가능하다.
+            const canGoLive =
+              canLive &&
+              p.performanceCategory === 'ARTIST' &&
+              p.locationId === LIVE_VENUE_LOCATION_ID;
             return (
               <div
                 key={p.id}
@@ -298,7 +309,7 @@ export function PerformanceListPage() {
                     </div>
                   </div>
                 </Link>
-                {canLive && (
+                {canGoLive && (
                   <div className="px-5 pb-4">
                     <button
                       type="button"
