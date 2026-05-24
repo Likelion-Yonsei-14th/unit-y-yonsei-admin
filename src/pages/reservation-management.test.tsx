@@ -25,6 +25,7 @@ vi.mock('@/features/reservations/hooks', () => ({
 }));
 vi.mock('@/features/booths/hooks', () => ({
   useBooths: vi.fn(),
+  useSetBoothReservable: vi.fn(),
 }));
 vi.mock('@/features/auth/hooks', () => ({
   useAuth: vi.fn(),
@@ -37,6 +38,7 @@ import { ReservationManagement } from '@/pages/reservation-management';
 
 const setStatusMutate = vi.fn();
 const setStatusBulkMutate = vi.fn();
+const setReservableMutate = vi.fn();
 
 const booth: Booth = {
   id: 1,
@@ -102,6 +104,7 @@ function renderPage() {
 beforeEach(() => {
   setStatusMutate.mockReset();
   setStatusBulkMutate.mockReset();
+  setReservableMutate.mockReset();
   currentReservations = defaultReservations;
 
   // 페이지가 hook 을 호출할 때 mock 이 정의된 객체를 반환하도록 set.
@@ -128,6 +131,10 @@ beforeEach(() => {
   vi.mocked(boothsHooks.useBooths).mockReturnValue({
     data: [booth],
   } as unknown as ReturnType<typeof boothsHooks.useBooths>);
+  vi.mocked(boothsHooks.useSetBoothReservable).mockReturnValue({
+    mutate: setReservableMutate,
+    isPending: false,
+  } as unknown as ReturnType<typeof boothsHooks.useSetBoothReservable>);
 
   // Super 계정 — Booth 가드를 통과(자기 부스 외 접근 가능).
   vi.mocked(authHooks.useAuth).mockReturnValue({
@@ -212,6 +219,22 @@ describe('ReservationManagement', () => {
   it('regression: "예약 시간" 컬럼 헤더는 더 이상 렌더되지 않는다', () => {
     renderPage();
     expect(screen.queryByText('예약 시간')).not.toBeInTheDocument();
+  });
+
+  it('regression: 예약 가능 토글 → 확인 다이얼로그 → setBoothReservable 로 저장한다 (로컬 state 만 바뀌던 버그)', async () => {
+    // booth.isReservable=true 로 시작하므로 토글은 ON. 클릭하면 OFF 로 끄려는 확인을 먼저 받는다.
+    renderPage();
+    fireEvent.click(screen.getByRole('switch'));
+    expect(await screen.findByText('예약 받기를 끄시겠어요?')).toBeInTheDocument();
+    // 확인 전에는 아직 mutation 이 호출되면 안 된다(다이얼로그가 게이트).
+    expect(setReservableMutate).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: '예약 받기 끄기' }));
+    await waitFor(() =>
+      expect(setReservableMutate).toHaveBeenCalledWith(
+        { id: 1, isReservable: false },
+        expect.anything(),
+      ),
+    );
   });
 
   it('regression: 대기 번호는 reservationNumber 오름차순으로 매겨진다', () => {
