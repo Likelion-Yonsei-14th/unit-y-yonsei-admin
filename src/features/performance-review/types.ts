@@ -12,11 +12,22 @@ export interface Review {
   isHidden: boolean;
 }
 
+/**
+ * 백엔드 `PerformanceCheerMessageResponse` (공연 응원 메시지) 원형.
+ * 이 도메인 응답은 다른 도메인과 달리 **camelCase** 로 내려온다.
+ * GET /api/admin/performances/cheer-messages (SUPER·MASTER, 전 팀 전 상태).
+ */
 export interface ReviewDTO {
   id: number;
-  performance_team: string;
-  favorite_song: string;
+  performanceId: number;
+  /** 공연(팀) 이름 → performanceTeam */
+  performanceName: string;
+  setlistId: number | null;
+  singerName: string | null;
+  /** 곡명 → favoriteSong. 메시지에 셋리스트 미선택 시 null. */
+  songTitle: string | null;
   message: string;
-  created_at: string;
-  is_hidden: boolean;
+  displayStatus: 'VISIBLE' | 'HIDDEN';
+  /** "yyyy-MM-dd HH:mm" */
+  createdAt: string;
 }
