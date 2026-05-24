@@ -30,6 +30,16 @@ const schema = z.object({
     .union([z.string().url(), z.literal('')])
     .optional()
     .transform((v) => (v ? v : undefined)),
+  /**
+   * Grafana 링크아웃 URL (Cloud Stack / 대시보드 / Explore 등).
+   * 시스템 상태 페이지의 "Grafana 열기" 버튼이 이 값을 단순 외부 링크로 연다.
+   * 백엔드는 토큰 노출을 피하려 이 값을 주지 않으므로 FE 환경변수로 받는다.
+   * 값이 비면 버튼을 렌더하지 않는다(KAKAO_CS_URL 과 동일 처리).
+   */
+  VITE_GRAFANA_URL: z
+    .union([z.string().url(), z.literal('')])
+    .optional()
+    .transform((v) => (v ? v : undefined)),
 });
 
 const parsed = schema.safeParse(import.meta.env);
@@ -68,4 +78,6 @@ export const env = {
   USE_MOCK: parsed.data.VITE_USE_MOCK,
   /** 오픈카카오 CS URL. 없으면 undefined — 소비자 쪽에서 분기. */
   KAKAO_CS_URL: parsed.data.VITE_KAKAO_CS_URL,
+  /** Grafana 링크아웃 URL. 없으면 undefined — 버튼 미렌더. */
+  GRAFANA_URL: parsed.data.VITE_GRAFANA_URL,
 } as const;
