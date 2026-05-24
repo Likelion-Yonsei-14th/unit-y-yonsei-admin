@@ -4,7 +4,8 @@
 export interface Review {
   id: number;
   performanceTeam: string;
-  favoriteSong: string;
+  /** 가장 좋았던 곡. 셋리스트 미선택 메시지는 null — 표시 라벨은 화면 레이어에서. */
+  favoriteSong: string | null;
   message: string;
   /** "yyyy-mm-dd HH:mm" — 통계용으로만 쓰여 시간대 보정은 보류. */
   createdAt: string;

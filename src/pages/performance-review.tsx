@@ -53,7 +53,7 @@ export function PerformanceReviewPage() {
     const matchesTeam = selectedTeam === '전체' || review.performanceTeam === selectedTeam;
     const matchesSearch =
       review.message.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      review.favoriteSong.toLowerCase().includes(searchQuery.toLowerCase());
+      (review.favoriteSong?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false);
     const matchesHidden = showHidden || !review.isHidden;
     return matchesTeam && matchesSearch && matchesHidden;
   });
@@ -90,7 +90,8 @@ export function PerformanceReviewPage() {
       topSongs: Object.entries(
         reviews.reduce(
           (acc, r) => {
-            acc[r.favoriteSong] = (acc[r.favoriteSong] || 0) + 1;
+            // 곡 미선택(null)은 인기 곡 집계에서 제외 — 가짜 곡으로 TOP 에 섞이지 않도록.
+            if (r.favoriteSong) acc[r.favoriteSong] = (acc[r.favoriteSong] || 0) + 1;
             return acc;
           },
           {} as Record<string, number>,
@@ -351,7 +352,7 @@ export function PerformanceReviewPage() {
                   <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
                     <Music size={16} />
                     <span className="font-medium">가장 좋았던 곡:</span>
-                    <span className="text-foreground">{review.favoriteSong}</span>
+                    <span className="text-foreground">{review.favoriteSong ?? '(곡 미선택)'}</span>
                   </div>
                   <p className="text-foreground leading-relaxed">{review.message}</p>
                 </div>

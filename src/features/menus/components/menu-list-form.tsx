@@ -18,6 +18,7 @@ import {
   useReorderMenus,
   useUpdateMenu,
 } from '@/features/menus/hooks';
+import { uploadImage } from '@/features/uploads/api';
 import type { Menu } from '@/features/menus/types';
 
 const inputClass =
@@ -30,10 +31,17 @@ interface Draft {
   name: string;
   price: string;
   description: string;
+  imageUrl: string | null;
   isSoldOut: boolean;
 }
 
-const EMPTY_DRAFT: Draft = { name: '', price: '', description: '', isSoldOut: false };
+const EMPTY_DRAFT: Draft = {
+  name: '',
+  price: '',
+  description: '',
+  imageUrl: null,
+  isSoldOut: false,
+};
 
 interface Props {
   boothId: number;
@@ -53,6 +61,7 @@ export function MenuListForm({ boothId }: Props) {
   const [editingId, setEditingId] = useState<DraftId | null>(null);
   const [draft, setDraft] = useState<Draft>(EMPTY_DRAFT);
   const [pendingDelete, setPendingDelete] = useState<Menu | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
 
   // 드래그 재정렬용 로컬 순서 — 서버 데이터로 동기화하되, 드래그 중엔 로컬에서 미리 재배열.
   const [localMenus, setLocalMenus] = useState<Menu[]>([]);
@@ -61,7 +70,7 @@ export function MenuListForm({ boothId }: Props) {
     setLocalMenus(menusQuery.data ?? []);
   }, [menusQuery.data]);
 
-  const saving = createMut.isPending || updateMut.isPending;
+  const saving = createMut.isPending || updateMut.isPending || isUploading;
   // 편집/추가 중이 아니고 메뉴가 2개 이상일 때만 드래그 재정렬 허용.
   const canReorder = editingId === null && localMenus.length > 1 && !reorderMut.isPending;
 
@@ -75,6 +84,7 @@ export function MenuListForm({ boothId }: Props) {
       name: m.name,
       price: String(m.price),
       description: m.description,
+      imageUrl: m.imageUrl,
       isSoldOut: m.isSoldOut,
     });
     setEditingId(m.id);
@@ -95,6 +105,7 @@ export function MenuListForm({ boothId }: Props) {
       name,
       description: draft.description.trim(),
       price,
+      imageUrl: draft.imageUrl,
       isSoldOut: draft.isSoldOut,
     };
     if (editingId === 'new') {
@@ -130,6 +141,19 @@ export function MenuListForm({ boothId }: Props) {
       },
       onError: () => toast.error('메뉴 삭제에 실패했습니다.'),
     });
+  };
+
+  const handleImageSelect = async (file: File | null) => {
+    if (!file) return;
+    setIsUploading(true);
+    try {
+      const url = await uploadImage(file, 'menu');
+      setDraft((d) => ({ ...d, imageUrl: url }));
+    } catch {
+      toast.error('이미지 업로드에 실패했습니다.');
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   // ---- 드래그 재정렬 ----
@@ -202,14 +226,48 @@ export function MenuListForm({ boothId }: Props) {
         >
           설명
         </label>
-        <input
+        <textarea
           id="menu-description"
-          type="text"
-          placeholder="메뉴 설명 (선택)"
+          rows={2}
+          maxLength={44}
+          placeholder="(선택) 메뉴 설명, 44자 이내"
           value={draft.description}
           onChange={(e) => setDraft({ ...draft, description: e.target.value })}
-          className={inputClass}
+          className={`${inputClass} resize-none`}
         />
+      </div>
+      <div>
+        <span className="block text-sm font-semibold text-foreground mb-1.5">
+          메뉴 이미지 (선택)
+        </span>
+        {draft.imageUrl ? (
+          <div className="flex items-center gap-3">
+            <img
+              src={draft.imageUrl}
+              alt="메뉴 이미지 미리보기"
+              className="h-20 w-20 rounded-lg border border-border object-cover"
+            />
+            <button
+              type="button"
+              onClick={() => setDraft({ ...draft, imageUrl: null })}
+              className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-sm text-foreground hover:border-ds-border-strong transition-colors"
+            >
+              <X size={14} />
+              이미지 제거
+            </button>
+          </div>
+        ) : (
+          <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-dashed border-border px-4 py-2 text-sm text-muted-foreground hover:border-ds-border-strong transition-colors">
+            <input
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => handleImageSelect(e.target.files?.[0] ?? null)}
+            />
+            <Plus size={14} />
+            {isUploading ? '업로드 중…' : '이미지 선택'}
+          </label>
+        )}
       </div>
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -319,6 +377,13 @@ export function MenuListForm({ boothId }: Props) {
                       size={18}
                       className="shrink-0 text-muted-foreground"
                       aria-hidden="true"
+                    />
+                  )}
+                  {m.imageUrl && (
+                    <img
+                      src={m.imageUrl}
+                      alt=""
+                      className="h-10 w-10 shrink-0 rounded-md border border-border object-cover"
                     />
                   )}
                   <div className="min-w-0">

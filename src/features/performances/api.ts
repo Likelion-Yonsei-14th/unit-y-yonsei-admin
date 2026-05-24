@@ -115,14 +115,13 @@ async function deleteSetlistItemReal(setlistId: number): Promise<void> {
 }
 
 // ---- 라이브 수동지정 ----
-// GET  /performances/live       — 공개 조회. 운영진이 수동 지정한 라이브 공연. 미지정 시 응답 null.
-// PUT  /admin/performances/live — SUPER 전용 지정/교체/해제. performanceId=null 이면 해제.
-// 백엔드 bac-89 (LivePerformanceAdminController). 둘 다 PerformanceCurrentResponse 를 반환하나
-// FE 는 공연 id 만 필요하므로 그 필드만 좁혀 number|null 로 다룬다.
+// GET  /home/current-performance — 공개 조회(HomeController). 수동 지정한 현재 라이브 공연. 미지정 시 data=null.
+// PUT  /admin/performances/live  — SUPER 전용 지정/교체/해제(LivePerformanceAdminController). performanceId=null 이면 해제.
+// 둘 다 PerformanceCurrentResponse(camelCase)를 반환하나 FE 는 공연 id 만 필요하므로 그 필드만 좁혀 number|null 로 다룬다.
 type LivePerformanceResponse = { id: number } | null;
 
 async function getLivePerformanceReal(): Promise<number | null> {
-  const res = await api.get<LivePerformanceResponse>('/performances/live');
+  const res = await api.get<LivePerformanceResponse>('/home/current-performance');
   return res?.id ?? null;
 }
 

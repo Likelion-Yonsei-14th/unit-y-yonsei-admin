@@ -31,7 +31,7 @@ async function createMenuMock(boothId: number, input: CreateMenuInput): Promise<
     name: input.name,
     description: input.description,
     price: input.price,
-    imageUrl: null,
+    imageUrl: input.imageUrl ?? null,
     isSoldOut: input.isSoldOut,
     displayOrder: nextDisplayOrder(list),
   };
@@ -84,6 +84,7 @@ async function createMenuReal(boothId: number, input: CreateMenuInput): Promise<
     name: input.name,
     description: input.description,
     price: input.price,
+    imageUrl: input.imageUrl,
     isSoldOut: input.isSoldOut,
     displayOrder: nextDisplayOrder(existing),
   });
