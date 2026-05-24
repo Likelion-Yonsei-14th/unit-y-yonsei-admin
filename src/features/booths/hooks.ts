@@ -45,6 +45,12 @@ export function useSetBoothReservable() {
     mutationFn: setBoothReservable,
     onSuccess: (data) => {
       queryClient.setQueryData(['booths', 'me', user?.boothId], data);
+      // 전체 목록 캐시(useBooths)도 같은 부스 항목을 갱신 — 예약 관리 페이지(Super/Master)
+      // 의 예약 가능 토글이 저장 직후 즉시 따라오도록. 이게 없으면 백엔드엔 반영돼도
+      // 'all' 캐시가 stale 이라 화면 토글이 안 움직인다.
+      queryClient.setQueryData<Booth[]>(['booths', 'all'], (old) =>
+        old?.map((b) => (b.id === data.id ? data : b)),
+      );
     },
   });
 }
