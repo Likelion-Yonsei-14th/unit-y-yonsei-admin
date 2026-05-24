@@ -202,13 +202,14 @@ export function MenuListForm({ boothId }: Props) {
         >
           설명
         </label>
-        <input
+        <textarea
           id="menu-description"
-          type="text"
-          placeholder="메뉴 설명 (선택)"
+          rows={2}
+          maxLength={44}
+          placeholder="(선택) 메뉴 설명, 44자 이내"
           value={draft.description}
           onChange={(e) => setDraft({ ...draft, description: e.target.value })}
-          className={inputClass}
+          className={`${inputClass} resize-none`}
         />
       </div>
       <div className="flex items-center justify-between">
