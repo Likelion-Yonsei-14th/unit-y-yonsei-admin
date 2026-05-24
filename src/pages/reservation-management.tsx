@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Navigate, useParams } from 'react-router';
-import { Phone, MessageSquare, Check, X, Calendar, RotateCcw, Search } from 'lucide-react';
+import { Phone, MessageSquare, Check, X, Calendar, Search } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   useBoothReservations,
@@ -543,8 +543,9 @@ export function ReservationManagement() {
               </div>
 
               {/*
-                상태 전이 버튼은 "현재 상태 제외" 규칙으로 항상 2개 노출 — 총 4칸으로 grid-cols-2 채움.
-                입장/대기로 되돌리기 는 즉시 반영, 취소 는 파괴성이 있어 별도 AlertDialog 로 확인.
+                상태 전이 버튼은 "현재 상태 제외" 규칙. 백엔드가 PENDING(대기) 되돌리기를 막아
+                어드민 전이는 입장(완료)·취소 두 방향만 노출한다. 입장은 즉시 반영, 취소는
+                파괴성이 있어 별도 AlertDialog 로 확인.
               */}
               <div className="grid grid-cols-2 gap-3 mt-2">
                 {selectedReservation.status !== 'completed' && (
@@ -557,18 +558,6 @@ export function ReservationManagement() {
                   >
                     <Check size={18} />
                     입장
-                  </button>
-                )}
-                {selectedReservation.status !== 'waiting' && (
-                  <button
-                    onClick={() => {
-                      applyStatus(selectedReservation.id, 'waiting');
-                      setSelectedReservation(null);
-                    }}
-                    className="px-4 py-3 border border-border bg-background text-foreground rounded-lg hover:bg-muted transition-colors flex items-center justify-center gap-2"
-                  >
-                    <RotateCcw size={18} />
-                    대기로 되돌리기
                   </button>
                 )}
                 {selectedReservation.status !== 'cancelled' && (
@@ -615,12 +604,6 @@ export function ReservationManagement() {
           </DialogHeader>
 
           <DialogFooter className="flex-col sm:flex-col gap-3">
-            <button
-              onClick={() => handleStatusChange('waiting')}
-              className="w-full px-4 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-ds-primary-pressed transition-colors flex items-center justify-center gap-2"
-            >
-              대기로 변경
-            </button>
             <button
               onClick={() => handleStatusChange('completed')}
               className="w-full px-4 py-3 bg-ds-success text-white rounded-lg hover:bg-ds-success-pressed transition-colors flex items-center justify-center gap-2"
