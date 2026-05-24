@@ -1,10 +1,9 @@
 import { useMemo } from 'react';
 import { Link } from 'react-router';
-import { Calendar, FileText, MessageCircle, Music, Package, Store, Users } from 'lucide-react';
+import { Calendar, FileText, Music, Package, Store, Users } from 'lucide-react';
 import { useBooths } from '@/features/booths/hooks';
 import { useLostItems } from '@/features/lost-found/hooks';
 import { useNotices } from '@/features/notices/hooks';
-import { useReviews } from '@/features/performance-review/hooks';
 import { usePerformances } from '@/features/performances/hooks';
 import { useReservationSummary } from '@/features/reservations/hooks';
 import { useAdminUsers } from '@/features/users/hooks';
@@ -21,7 +20,6 @@ export function DashboardPage() {
   const reservationSummaryQuery = useReservationSummary();
   const boothsQuery = useBooths();
   const performancesQuery = usePerformances();
-  const reviewsQuery = useReviews();
   const noticesQuery = useNotices();
   const lostItemsQuery = useLostItems();
   const usersQuery = useAdminUsers();
@@ -42,17 +40,6 @@ export function DashboardPage() {
       userCount: users.length,
     };
   }, [reservationSummaryQuery.data, boothsQuery.data, performancesQuery.data, usersQuery.data]);
-
-  // ---- 인기 곡 TOP 3 ----
-  const topSongs = useMemo(() => {
-    const reviews = reviewsQuery.data ?? [];
-    const counter = new Map<string, number>();
-    for (const r of reviews) {
-      if (r.isHidden) continue;
-      counter.set(r.favoriteSong, (counter.get(r.favoriteSong) ?? 0) + 1);
-    }
-    return [...counter.entries()].sort((a, b) => b[1] - a[1]).slice(0, 3);
-  }, [reviewsQuery.data]);
 
   // 최신순 정렬 후 상위 N개 — list API 가 정렬 보장 안 할 수 있어 화면 단계에서 한번 더.
   // 같은 date 내 안정 순위는 id 큰 쪽(나중 등록) 우선.
@@ -170,40 +157,6 @@ export function DashboardPage() {
                 </div>
                 <span className="shrink-0 text-xs text-muted-foreground">{item.date}</span>
               </div>
-            </li>
-          ))}
-        </ListCard>
-      </div>
-
-      {/* 인기 곡 TOP 3 */}
-      <div className="mt-6">
-        <ListCard
-          title="공연 후기 인기 곡 TOP 3"
-          icon={<MessageCircle size={18} />}
-          to="/general/performance-review"
-          loading={reviewsQuery.isLoading}
-          isError={reviewsQuery.isError}
-          onRetry={() => reviewsQuery.refetch()}
-          empty={topSongs.length === 0}
-        >
-          {topSongs.map(([song, count], idx) => (
-            <li
-              key={song}
-              className="border-b border-border last:border-b-0 py-3 flex items-center gap-3"
-            >
-              <span
-                className={`inline-flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold text-white shrink-0 ${
-                  idx === 0
-                    ? 'bg-ds-warning'
-                    : idx === 1
-                      ? 'bg-ds-gray-300'
-                      : 'bg-ds-warning-pressed'
-                }`}
-              >
-                {idx + 1}
-              </span>
-              <span className="text-sm font-medium text-foreground flex-1 truncate">{song}</span>
-              <span className="text-sm text-muted-foreground shrink-0">{count}회 선택</span>
             </li>
           ))}
         </ListCard>
