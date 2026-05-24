@@ -5,7 +5,6 @@ import type { UseMutationResult } from '@tanstack/react-query';
 import type { Booth, BoothSector, BoothStatus } from '@/features/booths/types';
 import { BOOTH_STATUS_LABEL } from '@/features/booths/types';
 import { uploadImage } from '@/features/uploads/api';
-import { TagInput } from '@/components/common/tag-input';
 
 const SECTORS: BoothSector[] = ['한글탑', '백양로', '송도'];
 const STATUSES: BoothStatus[] = ['OPEN', 'PREPARING', 'CLOSED'];
@@ -192,6 +191,15 @@ export function BoothInfoForm({
   };
 
   const handleSave = () => {
+    const parsedMenus = representativeMenusRaw
+      .split(',')
+      .map((m) => m.trim())
+      .filter(Boolean);
+    // 먹거리 부스의 '부스 태그' 는 태그당 5글자 이내. 초과 시 저장 차단.
+    if (isFood && parsedMenus.some((tag) => tag.length > 5)) {
+      toast.error('부스 태그는 태그당 5글자 이내로 입력해주세요.');
+      return;
+    }
     const next: Booth = {
       ...booth,
       name,
@@ -208,10 +216,7 @@ export function BoothInfoForm({
       instagram,
       account,
       isReservable,
-      representativeMenus: representativeMenusRaw
-        .split(',')
-        .map((m) => m.trim())
-        .filter(Boolean),
+      representativeMenus: parsedMenus,
       tags,
       thumbnailUrl,
     };
@@ -433,30 +438,6 @@ export function BoothInfoForm({
           )}
         </div>
 
-        <div>
-          <span className="block text-sm font-semibold text-foreground mb-2">부스 태그</span>
-          {isEditing ? (
-            <TagInput
-              value={tags}
-              onChange={setTags}
-              inputLabel="부스 태그 입력"
-              placeholderExample="먹거리"
-            />
-          ) : tags.length > 0 ? (
-            <div className="flex flex-wrap gap-2">
-              {tags.map((tag) => (
-                <span key={tag} className="px-3 py-1 bg-muted text-foreground text-sm rounded-full">
-                  {tag}
-                </span>
-              ))}
-            </div>
-          ) : (
-            <div className="w-full px-4 py-3 border border-border rounded-lg bg-muted text-muted-foreground">
-              등록된 태그가 없습니다.
-            </div>
-          )}
-        </div>
-
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
           <div>
             <label
@@ -652,7 +633,7 @@ export function BoothInfoForm({
             htmlFor="booth-representative-menus"
             className="block text-sm font-semibold text-foreground mb-2"
           >
-            {isFood ? '대표 메뉴' : '체험명'}
+            {isFood ? '부스 태그 입력' : '체험명'}
           </label>
           {isEditing ? (
             <input
@@ -677,9 +658,7 @@ export function BoothInfoForm({
             </div>
           )}
           {isFood && (
-            <p className="mt-2 text-xs text-muted-foreground">
-              모든 메뉴는 &lsquo;메뉴 리스트 작성&rsquo;에서 작성해주세요!
-            </p>
+            <p className="mt-2 text-xs text-muted-foreground">5글자 이내로 작성해주세요.</p>
           )}
         </div>
 
