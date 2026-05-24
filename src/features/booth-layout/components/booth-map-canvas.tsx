@@ -10,7 +10,7 @@ import { computePinRadius } from '@/features/booth-layout/utils/pin-radius';
 import type { MapSection, MapSectionId, PickerBooth } from '@/features/booth-layout/types';
 
 /**
- * 섹션별 기본 줌 — 백양로는 종횡비가 매우 좁고 길어(1272x4524) 1x 로는 핀이
+ * 섹션별 기본 줌 — 백양로는 종횡비가 매우 좁고 길어(3420x12156) 1x 로는 핀이
  * 너무 작게 보인다. 최대 확대값(MAX_SCALE) 을 기본값으로 두어 가독성 확보.
  */
 const MIN_SCALE = 1;

@@ -1,6 +1,6 @@
 import globalImg from '@/assets/map/global-section.jpg';
-import baekyangImg from '@/assets/map/baekyang-section.jpg';
-import hangeulImg from '@/assets/map/hangeul-section.jpg';
+import baekyangImg from '@/assets/map/baekyang-section.png';
+import hangeulImg from '@/assets/map/hangeul-section.png';
 import type { BoothSector } from '@/features/booths/types';
 import type { MapSection, MapSectionId } from './types';
 
@@ -17,14 +17,14 @@ export const MAP_SECTIONS: Record<MapSectionId, MapSection> = {
     label: '백양로',
     imageUrl: baekyangImg,
     validDates: ['2026-05-28', '2026-05-29'],
-    imageAspectRatio: 1272 / 4524,
+    imageAspectRatio: 3420 / 12156,
   },
   hangeul: {
     id: 'hangeul',
     label: '한글탑',
     imageUrl: hangeulImg,
     validDates: ['2026-05-28', '2026-05-29'],
-    imageAspectRatio: 1272 / 1016,
+    imageAspectRatio: 3420 / 2728,
   },
 };
 
