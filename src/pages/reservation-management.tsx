@@ -30,7 +30,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { useAuth } from '@/features/auth/hooks';
-import { useBooths } from '@/features/booths/hooks';
+import { useBooths, useSetBoothReservable } from '@/features/booths/hooks';
 
 type ReservationStatus = '대기자 목록' | '완료 목록' | '취소 목록' | '전체 목록';
 
@@ -48,6 +48,9 @@ export function ReservationManagement() {
   const reservationsQuery = useBoothReservations(boothId);
   const setStatusMutation = useSetReservationStatus();
   const setStatusBulkMutation = useSetReservationsStatusBulk();
+  // 예약 가능 ON/OFF 는 booth-management 의 '부스 운영' 토글과 같은 isReservable 플래그를
+  // 전용 엔드포인트(PATCH /admin/booths/:id/reservable)로 즉시 저장한다.
+  const setReservable = useSetBoothReservable();
 
   const [selectedStatus, setSelectedStatus] = useState<ReservationStatus>('대기자 목록');
   const [searchQuery, setSearchQuery] = useState('');
@@ -59,6 +62,8 @@ export function ReservationManagement() {
     if (booth) setReservationEnabled(booth.isReservable);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- 의도적으로 좁힌 deps. booth 통째로 deps 에 두면 refetch 마다 로컬 토글이 덮임.
   }, [booth?.id, booth?.isReservable]);
+  // 예약 가능 토글은 켜고/끄기 모두 방문객 접수에 영향을 주는 행동이라 확인 다이얼로그를 거친다.
+  const [pendingReservable, setPendingReservable] = useState<boolean | null>(null);
   const [selectedReservation, setSelectedReservation] = useState<Reservation | null>(null);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [showStatusChangeModal, setShowStatusChangeModal] = useState(false);
@@ -262,7 +267,7 @@ export function ReservationManagement() {
               aria-checked={reservationEnabled}
               aria-labelledby="reservation-toggle-label"
               aria-label={reservationEnabled ? '예약 받기 끄기' : '예약 받기 켜기'}
-              onClick={() => setReservationEnabled(!reservationEnabled)}
+              onClick={() => setPendingReservable(!reservationEnabled)}
               className={`
                 relative w-14 h-7 rounded-full transition-all duration-300
                 ${reservationEnabled ? 'bg-primary shadow-lg' : 'bg-ds-gray-400'}
@@ -664,6 +669,47 @@ export function ReservationManagement() {
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               취소 확정
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* 예약 가능 ON/OFF 확인 — 켜고/끄기 모두 방문객 접수에 직접 영향. booth-management 와 동일 패턴. */}
+      <AlertDialog
+        open={pendingReservable !== null}
+        onOpenChange={(o) => {
+          if (!o) setPendingReservable(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              예약 받기를 {pendingReservable ? '켜시겠어요' : '끄시겠어요'}?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {pendingReservable
+                ? '예약 받기를 켜면 방문객이 이 부스에 예약을 접수할 수 있게 됩니다.'
+                : '예약 받기를 끄면 방문객의 예약 접수가 중단됩니다.'}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>취소</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                const target = pendingReservable;
+                if (target === null) return;
+                // 전용 엔드포인트로 즉시 저장 — 성공 시 캐시 갱신 → useEffect 가 토글을 동기화.
+                setReservable.mutate(
+                  { id: booth.id, isReservable: target },
+                  {
+                    onSuccess: () =>
+                      toast.success(target ? '예약 받기를 켰습니다.' : '예약 받기를 껐습니다.'),
+                    onError: () => toast.error('예약 받기 상태 변경에 실패했습니다.'),
+                  },
+                );
+              }}
+            >
+              {pendingReservable ? '예약 받기 켜기' : '예약 받기 끄기'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
