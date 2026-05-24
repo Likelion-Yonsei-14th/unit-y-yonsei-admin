@@ -658,6 +658,11 @@ export function BoothInfoForm({
               {isFood ? '등록된 대표 메뉴가 없습니다.' : '등록된 체험명이 없습니다.'}
             </div>
           )}
+          {isFood && (
+            <p className="mt-2 text-xs text-muted-foreground">
+              모든 메뉴는 '메뉴 리스트 작성'에서 작성해주세요!
+            </p>
+          )}
         </div>
 
         {booth.thumbnailUrl && (
