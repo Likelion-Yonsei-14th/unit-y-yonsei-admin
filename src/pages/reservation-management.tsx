@@ -54,15 +54,9 @@ export function ReservationManagement() {
 
   const [selectedStatus, setSelectedStatus] = useState<ReservationStatus>('대기자 목록');
   const [searchQuery, setSearchQuery] = useState('');
-  // booth 가 비동기로 도착(useBooths) 하므로 초기값은 booth 가 없을 때의 안전한 기본값(true).
-  // 도착 후/실 동기화 필드 변경 시에만 setState — booth 객체 레퍼런스만 바뀌는 단순 refetch
-  // 에서는 로컬 토글이 서버 값으로 덮이지 않도록 deps 를 실제 트리거가 되는 필드로 좁힌다.
-  const [reservationEnabled, setReservationEnabled] = useState(booth?.isReservable ?? true);
-  useEffect(() => {
-    if (booth) setReservationEnabled(booth.isReservable);
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- 의도적으로 좁힌 deps. booth 통째로 deps 에 두면 refetch 마다 로컬 토글이 덮임.
-  }, [booth?.id, booth?.isReservable]);
-  // 예약 가능 토글은 켜고/끄기 모두 방문객 접수에 영향을 주는 행동이라 확인 다이얼로그를 거친다.
+  // 예약 가능 토글은 booth.isReservable(서버 값)을 직접 그린다 — 토글은 확인 다이얼로그만
+  // 열고, 실제 저장은 useSetBoothReservable 가 캐시(['booths','all'])를 갱신해 반영한다.
+  // 켜고/끄기 모두 방문객 접수에 영향을 주는 행동이라 확인 다이얼로그를 거친다.
   const [pendingReservable, setPendingReservable] = useState<boolean | null>(null);
   const [selectedReservation, setSelectedReservation] = useState<Reservation | null>(null);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -264,20 +258,20 @@ export function ReservationManagement() {
             <button
               type="button"
               role="switch"
-              aria-checked={reservationEnabled}
+              aria-checked={booth.isReservable}
               aria-labelledby="reservation-toggle-label"
-              aria-label={reservationEnabled ? '예약 받기 끄기' : '예약 받기 켜기'}
-              onClick={() => setPendingReservable(!reservationEnabled)}
+              aria-label={booth.isReservable ? '예약 받기 끄기' : '예약 받기 켜기'}
+              onClick={() => setPendingReservable(!booth.isReservable)}
               className={`
                 relative w-14 h-7 rounded-full transition-all duration-300
-                ${reservationEnabled ? 'bg-primary shadow-lg' : 'bg-ds-gray-400'}
+                ${booth.isReservable ? 'bg-primary shadow-lg' : 'bg-ds-gray-400'}
               `}
             >
               <div
                 aria-hidden="true"
                 className={`
                 absolute top-1 w-5 h-5 bg-background rounded-full shadow-md transition-all duration-300
-                ${reservationEnabled ? 'left-8' : 'left-1'}
+                ${booth.isReservable ? 'left-8' : 'left-1'}
               `}
               />
             </button>
@@ -698,7 +692,7 @@ export function ReservationManagement() {
               onClick={() => {
                 const target = pendingReservable;
                 if (target === null) return;
-                // 전용 엔드포인트로 즉시 저장 — 성공 시 캐시 갱신 → useEffect 가 토글을 동기화.
+                // 전용 엔드포인트로 즉시 저장 — 성공 시 캐시 갱신 → 토글이 따라 움직인다.
                 setReservable.mutate(
                   { id: booth.id, isReservable: target },
                   {
