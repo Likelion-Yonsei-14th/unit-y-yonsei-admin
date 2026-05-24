@@ -88,6 +88,7 @@ import { CreateAdmin } from '@/pages/create-admin';
 import { LoginPage } from '@/pages/login';
 import { NotFoundPage } from '@/pages/not-found';
 import { DashboardPage } from '@/pages/dashboard';
+import { SystemPage } from '@/pages/system-page';
 
 /**
  * 라우터 정의.
@@ -227,6 +228,16 @@ export const router = createBrowserRouter([
         element: (
           <RequirePermission permission="admin.create">
             <CreateAdmin />
+          </RequirePermission>
+        ),
+      },
+
+      {
+        // 서버 모니터링. Super 전용(system.read). 백엔드 가드도 SUPER-only 로 일치시킬 것.
+        path: 'system',
+        element: (
+          <RequirePermission permission="system.read">
+            <SystemPage />
           </RequirePermission>
         ),
       },

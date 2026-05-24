@@ -60,6 +60,10 @@ export const PERMISSIONS = {
 
   // 어드민 생성
   'admin.create': ['Super'],
+
+  // 시스템 상태(서버 health/에러/알림 모니터링) — 읽기 전용. 운영 단일 책임이라 Super 만.
+  // ⚠️ 백엔드 /api/admin/system/* 가드(ALLOWED_ROLES)도 SUPER-only 로 맞춰야 드리프트가 없다.
+  'system.read': ['Super'],
 } as const satisfies Record<string, readonly Role[]>;
 
 export type Permission = keyof typeof PERMISSIONS;
