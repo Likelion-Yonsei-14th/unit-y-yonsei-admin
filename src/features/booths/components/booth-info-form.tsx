@@ -62,6 +62,55 @@ const inputClass =
 const readonlyClass = 'w-full px-4 py-3 border border-border rounded-lg bg-muted text-foreground';
 
 /**
+ * 운영 시간 입력 — 24시간제 시(00–23) + 10분 단위 분(00·10·…·50) 드롭다운.
+ * 네이티브 `<input type="time">` 는 브라우저 로케일(ko-KR)에서 오전/오후로 렌더돼 헷갈려서
+ * 로케일에 안 휘둘리도록 select 로 직접 구성. 값은 그대로 "HH:mm" 문자열.
+ */
+const HOUR_OPTIONS = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'));
+const MINUTE_OPTIONS = ['00', '10', '20', '30', '40', '50'];
+
+function TimeSelect({
+  id,
+  value,
+  onChange,
+}: {
+  id: string;
+  value: string;
+  onChange: (next: string) => void;
+}) {
+  const [hour = '', minute = ''] = value.split(':');
+  return (
+    <div className="grid grid-cols-2 gap-2">
+      <select
+        id={id}
+        value={hour}
+        onChange={(e) => onChange(`${e.target.value}:${minute || '00'}`)}
+        className={inputClass}
+        aria-label="시"
+      >
+        {HOUR_OPTIONS.map((h) => (
+          <option key={h} value={h}>
+            {h}시
+          </option>
+        ))}
+      </select>
+      <select
+        value={minute}
+        onChange={(e) => onChange(`${hour || '00'}:${e.target.value}`)}
+        className={inputClass}
+        aria-label="분"
+      >
+        {MINUTE_OPTIONS.map((m) => (
+          <option key={m} value={m}>
+            {m}분
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+}
+
+/**
  * 부스 상세 정보 편집 폼.
  * 자체 state 로 편집 중 Booth 전체를 들고 있고, 외부 booth refetch 시 다시 hydrate.
  * 저장은 편집 중 Booth 전체를 PUT(전체 교체)으로 전송한다.
@@ -428,14 +477,7 @@ export function BoothInfoForm({
               <RequiredMark />
             </label>
             {isEditing ? (
-              <input
-                id="booth-open-time"
-                type="time"
-                step={600}
-                value={openTime}
-                onChange={(e) => setOpenTime(e.target.value)}
-                className={inputClass}
-              />
+              <TimeSelect id="booth-open-time" value={openTime} onChange={setOpenTime} />
             ) : (
               <div id="booth-open-time" className={readonlyClass}>
                 {openTime || '-'}
@@ -451,14 +493,7 @@ export function BoothInfoForm({
               <RequiredMark />
             </label>
             {isEditing ? (
-              <input
-                id="booth-close-time"
-                type="time"
-                step={600}
-                value={closeTime}
-                onChange={(e) => setCloseTime(e.target.value)}
-                className={inputClass}
-              />
+              <TimeSelect id="booth-close-time" value={closeTime} onChange={setCloseTime} />
             ) : (
               <div id="booth-close-time" className={readonlyClass}>
                 {closeTime || '-'}
