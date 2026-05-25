@@ -41,7 +41,17 @@ export function BoothMapPicker({
   onEnter,
   initialFocusBoothId,
 }: BoothMapPickerProps) {
-  const boothsInSection = booths.filter((b) => b.placement.section === selectedSection);
+  // 하단 카드 슬라이더·좌우 이동 순서를 부스 번호(boothNumber) 오름차순으로.
+  // 번호 없는('?' → NaN) 부스는 맨 뒤로. 지도 핀은 좌표로 그려져 정렬 영향 없음.
+  const boothsInSection = booths
+    .filter((b) => b.placement.section === selectedSection)
+    .sort((a, b) => {
+      const na = Number(a.placement.boothNumber);
+      const nb = Number(b.placement.boothNumber);
+      if (Number.isNaN(na)) return Number.isNaN(nb) ? 0 : 1;
+      if (Number.isNaN(nb)) return -1;
+      return na - nb;
+    });
 
   const [focusedBoothId, setFocusedBoothId] = useState<number | null>(
     initialFocusBoothId ?? boothsInSection[0]?.placement.boothId ?? null,
