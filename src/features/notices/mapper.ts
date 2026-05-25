@@ -7,8 +7,8 @@ function toNoticeCategory(value: string): NoticeCategory {
 }
 
 export const toNotice = (d: NoticeDTO): Notice => {
-  // imageUrls 가 진실. 백엔드가 아직 단일 imageUrl 만 주면 1원소 배열로 폴백.
-  const imageUrls = d.imageUrls ?? (d.imageUrl ? [d.imageUrl] : []);
+  // 백엔드 정본은 중첩 images[](displayOrder 순 정렬됨). 레거시 단일 imageUrl 만 오면 폴백.
+  const imageUrls = d.images?.map((img) => img.imageUrl) ?? (d.imageUrl ? [d.imageUrl] : []);
   return {
     id: d.id,
     title: d.title,
@@ -30,8 +30,9 @@ export const fromNotice = (
   return {
     title: n.title,
     content: n.content,
-    imageUrls,
-    // imageUrl·hasImage 는 imageUrls 에서 파생 — 공개 앱 호환 superset.
+    // 백엔드 정본은 중첩 images[] — 배열 인덱스+1 을 display_order 로(1부터·중복 없음).
+    images: imageUrls.map((url, i) => ({ image_url: url, display_order: i + 1 })),
+    // imageUrl·hasImage 는 서버 레거시 fallback 용 파생값(images 가 있으면 서버가 무시).
     imageUrl: imageUrls[0] ?? '',
     hasImage: imageUrls.length > 0,
     isPinned: n.isPinned,

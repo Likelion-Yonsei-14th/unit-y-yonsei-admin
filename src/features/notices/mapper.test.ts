@@ -4,7 +4,7 @@ import { isNewNotice, type NoticeDTO } from './types';
 
 describe('notices mapper', () => {
   describe('toNotice', () => {
-    it('imageUrls 배열을 그대로 옮기고 imageUrl·hasImage 를 파생한다', () => {
+    it('중첩 images[] 를 imageUrls 로 평탄화하고 imageUrl·hasImage 를 파생한다', () => {
       const dto: NoticeDTO = {
         id: 7,
         title: '제목',
@@ -12,7 +12,10 @@ describe('notices mapper', () => {
         date: '2026-05-01',
         hasImage: true,
         imageUrl: 'https://img/a.jpg',
-        imageUrls: ['https://img/a.jpg', 'https://img/b.jpg'],
+        images: [
+          { id: 1, imageUrl: 'https://img/a.jpg', displayOrder: 1 },
+          { id: 2, imageUrl: 'https://img/b.jpg', displayOrder: 2 },
+        ],
         isPinned: true,
         category: 'BOOTH',
       };
@@ -29,7 +32,7 @@ describe('notices mapper', () => {
       });
     });
 
-    it('imageUrls 가 없으면 레거시 단일 imageUrl 을 1원소 배열로 폴백', () => {
+    it('images 가 없으면 레거시 단일 imageUrl 을 1원소 배열로 폴백', () => {
       const dto: NoticeDTO = {
         id: 8,
         title: '제목',
@@ -90,7 +93,7 @@ describe('notices mapper', () => {
   });
 
   describe('fromNotice', () => {
-    it('imageUrls 를 순서대로 보내고 imageUrl(첫 장)·hasImage 를 파생한다', () => {
+    it('imageUrls 를 순서대로 중첩 images[](display_order 1부터)로 보내고 imageUrl·hasImage 파생', () => {
       const result = fromNotice({
         title: 't',
         content: 'c',
@@ -103,13 +106,16 @@ describe('notices mapper', () => {
         content: 'c',
         hasImage: true,
         imageUrl: 'https://img/c.jpg',
-        imageUrls: ['https://img/c.jpg', 'https://img/d.jpg'],
+        images: [
+          { image_url: 'https://img/c.jpg', display_order: 1 },
+          { image_url: 'https://img/d.jpg', display_order: 2 },
+        ],
         isPinned: true,
         category: 'BLUERUN',
       });
     });
 
-    it('imageUrls 가 비어 있으면 hasImage false·imageUrl 빈 문자열', () => {
+    it('imageUrls 가 비어 있으면 images 빈 배열·hasImage false·imageUrl 빈 문자열', () => {
       const result = fromNotice({
         title: 't',
         content: 'c',
@@ -119,7 +125,7 @@ describe('notices mapper', () => {
       });
       expect(result.hasImage).toBe(false);
       expect(result.imageUrl).toBe('');
-      expect(result.imageUrls).toEqual([]);
+      expect(result.images).toEqual([]);
     });
   });
 });
