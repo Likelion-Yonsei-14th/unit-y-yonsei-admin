@@ -34,10 +34,16 @@ export interface Notice {
   content: string;
   /** 등록일자 — yyyy-mm-dd. */
   date: string;
-  /** 카드뉴스 이미지 첨부 여부. imageUrl 이 비어 있지 않은지와 동치. */
+  /** 카드뉴스 이미지 첨부 여부. imageUrls 가 비어 있지 않은지와 동치. */
   hasImage: boolean;
-  /** 카드뉴스 이미지 URL. 없으면 빈 문자열. */
+  /** 대표(첫 장) 카드뉴스 이미지 URL — 목록 썸네일·공개 앱 호환용 파생값. 없으면 빈 문자열. */
   imageUrl: string;
+  /**
+   * 카드뉴스 이미지 URL 목록. 배열 순서 = 카드 슬라이드 순서, 첫 장이 대표.
+   * 레거시 단일-이미지 응답엔 없을 수 있어 옵셔널 — 매퍼/목 api 가 항상 채운다.
+   * 소비처는 `?? []` 로 안전 처리.
+   */
+  imageUrls?: string[];
   /** 상단 고정 여부 — 목록·앱 상단에 우선 노출. */
   isPinned: boolean;
   category: NoticeCategory;
@@ -69,7 +75,12 @@ export interface NoticeDTO {
   content: string;
   date: string;
   hasImage: boolean;
+  /** 대표(첫 장) 이미지 URL. imageUrls 의 첫 원소와 동일하게 백엔드가 파생해 내려준다. */
   imageUrl: string;
+  /**
+   * 카드뉴스 이미지 URL 목록(순서 보존). 백엔드가 아직 안 내려주면 toNotice 가 imageUrl 로 폴백.
+   */
+  imageUrls?: string[];
   isPinned: boolean;
   /** 백엔드는 자유 문자열. toNotice 가 NoticeCategory 로 정규화. */
   category: string;

@@ -10,7 +10,11 @@ import type { CreateNoticeInput, Notice, NoticeDTO, UpdateNoticeInput } from './
 // mockNotices 배열을 직접 mutate 하지 않고 한 단계 떼어 놓는 편이 다른
 // 화면에서 mockNotices 를 import 하더라도 영향 없음.
 
-const memory: Notice[] = mockNotices.map((n) => ({ ...n }));
+// 목 데이터는 레거시 단일 imageUrl 만 가지므로 여기서 imageUrls(다중)로 파생해 둔다.
+const memory: Notice[] = mockNotices.map((n) => ({
+  ...n,
+  imageUrls: n.imageUrls ?? (n.imageUrl ? [n.imageUrl] : []),
+}));
 
 const todayString = () => new Date().toISOString().slice(0, 10);
 

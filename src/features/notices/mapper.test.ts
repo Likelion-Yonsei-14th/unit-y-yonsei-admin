@@ -4,14 +4,15 @@ import { isNewNotice, type NoticeDTO } from './types';
 
 describe('notices mapper', () => {
   describe('toNotice', () => {
-    it('백엔드 DTO 를 Notice 모델로 옮긴다', () => {
+    it('imageUrls 배열을 그대로 옮기고 imageUrl·hasImage 를 파생한다', () => {
       const dto: NoticeDTO = {
         id: 7,
         title: '제목',
         content: '본문',
         date: '2026-05-01',
         hasImage: true,
-        imageUrl: 'https://img/x.jpg',
+        imageUrl: 'https://img/a.jpg',
+        imageUrls: ['https://img/a.jpg', 'https://img/b.jpg'],
         isPinned: true,
         category: 'BOOTH',
       };
@@ -21,10 +22,28 @@ describe('notices mapper', () => {
         content: '본문',
         date: '2026-05-01',
         hasImage: true,
-        imageUrl: 'https://img/x.jpg',
+        imageUrl: 'https://img/a.jpg',
+        imageUrls: ['https://img/a.jpg', 'https://img/b.jpg'],
         isPinned: true,
         category: 'BOOTH',
       });
+    });
+
+    it('imageUrls 가 없으면 레거시 단일 imageUrl 을 1원소 배열로 폴백', () => {
+      const dto: NoticeDTO = {
+        id: 8,
+        title: '제목',
+        content: '본문',
+        date: '2026-05-01',
+        hasImage: true,
+        imageUrl: 'https://img/x.jpg',
+        isPinned: false,
+        category: 'BOOTH',
+      };
+      const result = toNotice(dto);
+      expect(result.imageUrls).toEqual(['https://img/x.jpg']);
+      expect(result.imageUrl).toBe('https://img/x.jpg');
+      expect(result.hasImage).toBe(true);
     });
 
     it('hasImage false 도 그대로 false 로 매핑', () => {
