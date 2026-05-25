@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { createUser, deleteUser, listAdminUsers, resetUserPassword } from './api';
+import { bulkCreateUsers, createUser, deleteUser, listAdminUsers, resetUserPassword } from './api';
 
 /**
  * 관리자 페이지 — 어드민 풀 전체 조회.
@@ -45,6 +45,22 @@ export function useDeleteUser() {
 
   return useMutation({
     mutationFn: deleteUser,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+    },
+  });
+}
+
+/**
+ * CSV 일괄 생성 mutation (Super 전용 — user.manage).
+ * 일부만 성공해도(failCount>0) 새로 만들어진 계정이 목록에 즉시 보이도록
+ * 성공 시 어드민 목록 캐시(useAdminUsers 의 ['users']) 를 invalidate 한다.
+ */
+export function useBulkCreateUsers() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: bulkCreateUsers,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
     },
