@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { BoothMapCanvas } from './booth-map-canvas';
 import { BoothSlider } from './booth-slider';
 import { MapSectionTabs } from './map-section-tabs';
@@ -41,7 +41,23 @@ export function BoothMapPicker({
   onEnter,
   initialFocusBoothId,
 }: BoothMapPickerProps) {
-  const boothsInSection = booths.filter((b) => b.placement.section === selectedSection);
+  // 하단 카드 슬라이더·좌우 이동 순서를 부스 번호(boothNumber) 오름차순으로.
+  // 번호 없는('?' → NaN) 부스는 맨 뒤로. 지도 핀은 좌표로 그려져 정렬 영향 없음.
+  // useMemo 로 안정화 — 매 렌더 새 배열을 만들면 이를 deps 로 쓰는 아래 effect 가
+  // 입력 불변에도 매번 실행되므로, booths/selectedSection 이 바뀔 때만 재계산한다.
+  const boothsInSection = useMemo(
+    () =>
+      booths
+        .filter((b) => b.placement.section === selectedSection)
+        .sort((a, b) => {
+          const na = Number(a.placement.boothNumber);
+          const nb = Number(b.placement.boothNumber);
+          if (Number.isNaN(na)) return Number.isNaN(nb) ? 0 : 1;
+          if (Number.isNaN(nb)) return -1;
+          return na - nb;
+        }),
+    [booths, selectedSection],
+  );
 
   const [focusedBoothId, setFocusedBoothId] = useState<number | null>(
     initialFocusBoothId ?? boothsInSection[0]?.placement.boothId ?? null,
