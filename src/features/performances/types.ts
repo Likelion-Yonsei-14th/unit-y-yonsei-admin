@@ -121,6 +121,96 @@ export interface PerformanceImageDTO {
   imageType: PerformanceImageType;
 }
 
+// ---- 타임테이블 (GET /performances/timetable) ----
+// 백엔드 PerformanceTimetableResponse 미러. startTime/endTime 은 LocalTime('HH:mm[:ss]')
+// — 타임존 없는 벽시계 시간이므로 new Date() 변환 없이 문자열 그대로 'HH:mm' 로만 자른다.
+
+export interface PerformanceTimetableItemDTO {
+  id: number;
+  performanceName: string;
+  performanceDate: number | null;
+  startTime: string | null;
+  endTime: string | null;
+  performanceCategory: PerformanceCategory | null;
+  lineupName: string | null;
+  hashtag1?: string | null;
+  hashtag2?: string | null;
+  hashtag3?: string | null;
+  youtubeUrl?: string | null;
+  instagramUrl?: string | null;
+  performanceStatus: PerformanceStatus;
+  locationId: number | null;
+  locationName: string | null;
+}
+
+/** 타임테이블 카드용 모델. 해시태그는 '#' 접두 배열로 정규화. */
+export interface PerformanceTimetableItem {
+  id: number;
+  performanceName: string;
+  lineupName: string;
+  performanceDate: number | null;
+  startTime: string | null; // 'HH:mm'
+  endTime: string | null;
+  performanceCategory: PerformanceCategory | null;
+  performanceStatus: PerformanceStatus;
+  hashtags: string[];
+  instagramUrl: string;
+  youtubeUrl: string;
+  locationId: number | null;
+  locationName: string | null;
+}
+
+// ---- 라이브 무대 (GET /performances/live-stages) ----
+// 백엔드 LiveStageResponse 미러. MANUAL=운영진 수동 지정(아티스트), AUTO=시간 자동(동아리).
+// nested performance 는 PerformanceCurrentResponse (타임테이블과 유사하나 lineupName 없음).
+
+export type LiveStageSource = 'MANUAL' | 'AUTO';
+
+export const LIVE_STAGE_SOURCE_LABEL: Record<LiveStageSource, string> = {
+  MANUAL: '수동 지정',
+  AUTO: '시간 자동',
+};
+
+export interface LiveStagePerformanceDTO {
+  id: number;
+  performanceName: string;
+  startTime: string | null;
+  endTime: string | null;
+  performanceStatus: PerformanceStatus;
+  performanceCategory: PerformanceCategory | null;
+  hashtag1?: string | null;
+  hashtag2?: string | null;
+  hashtag3?: string | null;
+  youtubeUrl?: string | null;
+  instagramUrl?: string | null;
+  locationId: number | null;
+  locationName: string | null;
+}
+
+export interface LiveStageDTO {
+  source: LiveStageSource;
+  performance: LiveStagePerformanceDTO;
+}
+
+export interface LiveStagePerformance {
+  id: number;
+  performanceName: string;
+  startTime: string | null; // 'HH:mm'
+  endTime: string | null;
+  performanceStatus: PerformanceStatus;
+  performanceCategory: PerformanceCategory | null;
+  hashtags: string[];
+  instagramUrl: string;
+  youtubeUrl: string;
+  locationId: number | null;
+  locationName: string | null;
+}
+
+export interface LiveStage {
+  source: LiveStageSource;
+  performance: LiveStagePerformance;
+}
+
 export interface SetlistItemDTO {
   id: number;
   performanceId: number;
@@ -155,6 +245,32 @@ export interface PerformanceImageCreateDTO {
   imageUrl: string;
   imageOrder: number;
   imageType: PerformanceImageType;
+}
+
+// ---- 내 공연 응원 메시지 (GET /admin/performances/me/cheer-messages) ----
+// 백엔드 PerformanceCheerMessageResponse 미러 — 다른 도메인과 달리 camelCase 로 내려온다.
+// 와이어 DTO 는 performance-review 의 ReviewDTO 와 동일 shape 라 거기서 import 해 재사용한다
+// (api.ts 참고). 다만 performance-review 의 Review 모델은 어드민 모더레이션용으로
+// singerName 을 버리고 favoriteSong 으로 좁히므로, Performer 본인이 곡/가수/상태를 그대로
+// 보는 이 화면 전용으로 별도 모델을 둔다.
+export type CheerMessageDisplayStatus = 'VISIBLE' | 'HIDDEN';
+
+export interface MyCheerMessage {
+  id: number;
+  performanceId: number;
+  performanceName: string;
+  setlistId: number | null;
+  /** 응원이 향한 셋리스트 곡의 가수. 곡 미선택 메시지는 null. */
+  singerName: string | null;
+  /** 응원이 향한 셋리스트 곡명. 곡 미선택 메시지는 null. */
+  songTitle: string | null;
+  message: string;
+  displayStatus: CheerMessageDisplayStatus;
+  /**
+   * "yyyy-MM-dd HH:mm" — 백엔드 LocalDateTime(타임존 없음)을 그대로 받은 문자열.
+   * new Date() 로 파싱하면 로컬 타임존만큼 밀리므로 문자열 그대로 표시한다.
+   */
+  createdAt: string;
 }
 
 export interface SetlistCreateDTO {

@@ -117,3 +117,34 @@ export interface CreatedUser {
 export interface ResetPasswordResult {
   tempPassword: string;
 }
+
+// ---- CSV 일괄 생성 (POST /admin/users/bulk) ----
+
+/** 일괄 생성에 성공한 계정 한 건. password 는 서버가 생성해 1회만 내려준다. */
+export interface BulkCreatedUser {
+  loginId: string;
+  password: string;
+  name: string;
+}
+
+/** 일괄 생성에 실패한 행 한 건 — 어떤 행이 왜 막혔는지 운영자에게 노출. */
+export interface BulkCreateFailure {
+  /** 백엔드가 파싱한 역할 문자열 (행 식별 보조용, 변환 없이 그대로 표시). */
+  role: string;
+  name: string;
+  reason: string;
+}
+
+/**
+ * CSV 일괄 생성 응답 (AdminUserBulkCreateResponse).
+ *
+ * 백엔드 DTO 와 프론트 모델의 필드명이 동일(camelCase)하고 중첩 구조도 같아
+ * 별도 매퍼 없이 그대로 사용한다. 필드명이 갈라지면 그때 mapper 를 추가한다.
+ */
+export interface AdminUserBulkCreateResultDTO {
+  successCount: number;
+  failCount: number;
+  successList: BulkCreatedUser[];
+  failList: BulkCreateFailure[];
+}
+export type AdminUserBulkCreateResult = AdminUserBulkCreateResultDTO;

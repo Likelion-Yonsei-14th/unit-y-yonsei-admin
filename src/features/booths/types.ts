@@ -94,6 +94,45 @@ export interface BoothDTO {
   tags?: string[];
 }
 
+/**
+ * 부스 이미지 모델 (camelCase). 백엔드 BoothImageResponse 미러.
+ * 이미지 바이너리는 uploads(presigned→S3)로 따로 올리고, 이 도메인은
+ * imageUrl + displayOrder 참조만 CRUD 한다.
+ */
+export interface BoothImage {
+  id: number;
+  boothId: number;
+  imageUrl: string;
+  /** 표시 순서. 1-base(백엔드 @Min(1)). display_order=1 이 썸네일. */
+  displayOrder: number;
+}
+
+/** 백엔드 BoothImageResponse 응답 DTO. JSON 은 camelCase(@JsonProperty 없음). */
+export interface BoothImageDTO {
+  id: number;
+  boothId: number;
+  imageUrl: string;
+  displayOrder: number;
+}
+
+/**
+ * POST /admin/booths/{boothId}/images 요청 바디 (BoothImageCreateRequest).
+ * 둘 다 @NotBlank/@NotNull 필수. displayOrder 는 1 이상.
+ */
+export interface BoothImageCreateDTO {
+  imageUrl: string;
+  displayOrder: number;
+}
+
+/**
+ * PATCH /admin/booths/{boothId}/images/{imageId} 요청 바디 (BoothImageUpdateRequest).
+ * 둘 다 optional(부분 수정) — 보낸 필드만 갱신. imageUrl 공백 불가, displayOrder 1 이상.
+ */
+export interface BoothImageUpdateDTO {
+  imageUrl?: string;
+  displayOrder?: number;
+}
+
 /** PUT /admin/booths/{id} 요청 바디 (BoothUpdateRequest). */
 export interface BoothUpdateDTO {
   name: string;

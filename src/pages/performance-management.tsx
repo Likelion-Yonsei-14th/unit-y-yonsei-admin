@@ -15,13 +15,14 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
-import { ArrowLeft, Plus, Music, Check, Edit, X } from 'lucide-react';
+import { ArrowLeft, Plus, Music, Check, Edit, X, MessageCircle, EyeOff } from 'lucide-react';
 import { useAuth } from '@/features/auth/hooks';
 import {
   useAddPerformanceImage,
   useAddSetlistItem,
   useDeletePerformanceImage,
   useDeleteSetlistItem,
+  useMyCheerMessages,
   useMyPerformance,
   usePerformance,
   usePerformanceImages,
@@ -66,6 +67,9 @@ export function PerformanceManagement() {
   const performanceId = data?.id ?? null;
   const imagesQuery = usePerformanceImages(performanceId);
   const setlistQuery = useSetlist(performanceId);
+  // 내 공연 응원 메시지 — Performer 본인 공연(`/me`)에서만 읽기 전용으로 노출.
+  // hook 내부에서 역할로 게이트하므로 Super/Master 가 :teamId 로 진입해도 쿼리는 안 나간다.
+  const cheerMessagesQuery = useMyCheerMessages();
 
   const { can, canEditPerformance } = useAuth();
   // 편집 권한: 본인 공연이면 자기 팀, 운영진(`performance.manage`)이면 임의 공연.
@@ -489,6 +493,76 @@ export function PerformanceManagement() {
           </div>
         )}
       </div>
+
+      {/* 내 응원 메시지 — Performer 본인 공연(`/me`)에서만 노출. 읽기 전용.
+          관객이 남긴 응원을 본인이 확인하는 용도. 숨김 처리(모더레이션)는 운영진 도메인의 책임이라
+          여기선 상태 배지만 보여준다. */}
+      {isMe && (
+        <div className="bg-background rounded-2xl p-4 md:p-8 mt-6 shadow-sm">
+          <h2 className="text-xl font-bold text-foreground mb-6 flex items-center gap-2">
+            <MessageCircle size={20} />내 응원 메시지
+          </h2>
+
+          {cheerMessagesQuery.isLoading && (
+            <div className="text-center py-12 text-muted-foreground">
+              응원 메시지를 불러오는 중…
+            </div>
+          )}
+
+          {cheerMessagesQuery.isError && (
+            <div className="bg-ds-error-subtle border border-destructive text-destructive rounded-lg p-6 text-center">
+              <p className="mb-3">응원 메시지를 가져오지 못했습니다.</p>
+              <button
+                type="button"
+                onClick={() => cheerMessagesQuery.refetch()}
+                className="px-4 py-2 rounded-lg bg-destructive text-destructive-foreground hover:bg-ds-error-pressed transition-colors"
+              >
+                다시 시도
+              </button>
+            </div>
+          )}
+
+          {!cheerMessagesQuery.isLoading &&
+            !cheerMessagesQuery.isError &&
+            (cheerMessagesQuery.data ?? []).length === 0 && (
+              <div className="text-center py-12 text-ds-text-disabled">
+                <MessageCircle size={48} className="mx-auto mb-4 opacity-50" />
+                <p>아직 받은 응원 메시지가 없습니다.</p>
+              </div>
+            )}
+
+          {!cheerMessagesQuery.isLoading &&
+            !cheerMessagesQuery.isError &&
+            (cheerMessagesQuery.data ?? []).length > 0 && (
+              <ul className="space-y-3">
+                {(cheerMessagesQuery.data ?? []).map((m) => (
+                  <li
+                    key={m.id}
+                    className="p-4 border border-border rounded-lg flex flex-col gap-2"
+                  >
+                    <div className="flex flex-wrap items-center gap-2">
+                      {m.songTitle && (
+                        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-muted text-muted-foreground text-xs font-medium">
+                          <Music size={12} />
+                          {m.songTitle}
+                          {m.singerName ? ` · ${m.singerName}` : ''}
+                        </span>
+                      )}
+                      {m.displayStatus === 'HIDDEN' && (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-ds-error-subtle text-destructive text-xs font-medium">
+                          <EyeOff size={12} />
+                          숨김
+                        </span>
+                      )}
+                      <span className="ml-auto text-xs text-muted-foreground">{m.createdAt}</span>
+                    </div>
+                    <p className="text-foreground whitespace-pre-wrap break-words">{m.message}</p>
+                  </li>
+                ))}
+              </ul>
+            )}
+        </div>
+      )}
 
       {/* 공연 일차 표시 — view 모드 보조 정보. */}
       {!isEditMode && (

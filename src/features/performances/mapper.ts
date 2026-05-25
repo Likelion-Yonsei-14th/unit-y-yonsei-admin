@@ -1,10 +1,18 @@
+import type { ReviewDTO } from '@/features/performance-review/types';
 import type {
+  LiveStage,
+  LiveStageDTO,
+  LiveStagePerformance,
+  LiveStagePerformanceDTO,
+  MyCheerMessage,
   Performance,
   PerformanceDTO,
   PerformanceImage,
   PerformanceImageDTO,
   PerformanceListItem,
   PerformanceListItemDTO,
+  PerformanceTimetableItem,
+  PerformanceTimetableItemDTO,
   PerformanceUpdateDTO,
   SetlistItem,
   SetlistItemDTO,
@@ -13,11 +21,18 @@ import type {
 /** 'HH:mm:ss' / 'HH:mm' → 'HH:mm'. null 통과. */
 const toHm = (t: string | null): string | null => (t ? t.slice(0, 5) : null);
 
-/** 백엔드 hashtag1/2/3 → '#' 접두 태그 배열. 빈 값 제외. */
-const toHashtags = (d: PerformanceDTO): string[] =>
+/** hashtag1/2/3 필드를 가진 임의 DTO → '#' 접두 태그 배열. 빈 값 제외. */
+const hashtagsOf = (d: {
+  hashtag1?: string | null;
+  hashtag2?: string | null;
+  hashtag3?: string | null;
+}): string[] =>
   [d.hashtag1, d.hashtag2, d.hashtag3]
     .filter((h): h is string => !!h && h.trim() !== '')
     .map((h) => (h.startsWith('#') ? h : `#${h}`));
+
+/** 백엔드 hashtag1/2/3 → '#' 접두 태그 배열. 빈 값 제외. */
+const toHashtags = (d: PerformanceDTO): string[] => hashtagsOf(d);
 
 /** '#' 접두 태그 → 백엔드 저장용 내용('#' 제거). 빈 값이면 null. */
 const hashtagContent = (tag: string | undefined): string | null => {
@@ -62,6 +77,59 @@ export const toPerformanceImage = (d: PerformanceImageDTO): PerformanceImage => 
   imageUrl: d.imageUrl,
   imageOrder: d.imageOrder,
   imageType: d.imageType,
+});
+
+export const toPerformanceTimetableItem = (
+  d: PerformanceTimetableItemDTO,
+): PerformanceTimetableItem => ({
+  id: d.id,
+  performanceName: d.performanceName,
+  lineupName: d.lineupName ?? '',
+  performanceDate: d.performanceDate,
+  startTime: toHm(d.startTime),
+  endTime: toHm(d.endTime),
+  performanceCategory: d.performanceCategory,
+  performanceStatus: d.performanceStatus,
+  hashtags: hashtagsOf(d),
+  instagramUrl: d.instagramUrl ?? '',
+  youtubeUrl: d.youtubeUrl ?? '',
+  locationId: d.locationId,
+  locationName: d.locationName,
+});
+
+const toLiveStagePerformance = (d: LiveStagePerformanceDTO): LiveStagePerformance => ({
+  id: d.id,
+  performanceName: d.performanceName,
+  startTime: toHm(d.startTime),
+  endTime: toHm(d.endTime),
+  performanceStatus: d.performanceStatus,
+  performanceCategory: d.performanceCategory,
+  hashtags: hashtagsOf(d),
+  instagramUrl: d.instagramUrl ?? '',
+  youtubeUrl: d.youtubeUrl ?? '',
+  locationId: d.locationId,
+  locationName: d.locationName,
+});
+
+export const toLiveStage = (d: LiveStageDTO): LiveStage => ({
+  source: d.source,
+  performance: toLiveStagePerformance(d.performance),
+});
+
+/**
+ * 백엔드 PerformanceCheerMessageResponse(= performance-review ReviewDTO 와 동일 shape)
+ * → Performer 본인 화면용 MyCheerMessage. createdAt 은 타임존 변환 없이 문자열 그대로.
+ */
+export const toMyCheerMessage = (d: ReviewDTO): MyCheerMessage => ({
+  id: d.id,
+  performanceId: d.performanceId,
+  performanceName: d.performanceName,
+  setlistId: d.setlistId,
+  singerName: d.singerName,
+  songTitle: d.songTitle,
+  message: d.message,
+  displayStatus: d.displayStatus,
+  createdAt: d.createdAt,
 });
 
 export const toSetlistItem = (d: SetlistItemDTO): SetlistItem => ({

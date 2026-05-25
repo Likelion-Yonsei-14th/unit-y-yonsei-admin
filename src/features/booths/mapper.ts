@@ -1,4 +1,4 @@
-import type { Booth, BoothDTO, BoothUpdateDTO } from './types';
+import type { Booth, BoothDTO, BoothImage, BoothImageDTO, BoothUpdateDTO } from './types';
 
 /** 'HH:mm:ss' / 'HH:mm' 어느 쪽이든 'HH:mm' 으로 정규화. null 통과. */
 const toHm = (t: string | null): string | null => (t ? t.slice(0, 5) : null);
@@ -29,6 +29,14 @@ export const toBooth = (d: BoothDTO): Booth => ({
   thumbnailUrl: d.thumbnailUrl ?? null,
   // 백엔드 tags 도입 전: 응답에 tags 없음 → 빈 배열로 방어.
   tags: d.tags ?? [],
+});
+
+/** 백엔드 BoothImageResponse → 프론트 BoothImage 모델. */
+export const toBoothImage = (d: BoothImageDTO): BoothImage => ({
+  id: d.id,
+  boothId: d.boothId,
+  imageUrl: d.imageUrl,
+  displayOrder: d.displayOrder,
 });
 
 /** Booth 모델 → PUT /admin/booths/{id} 요청 바디. id/adminId/profileComplete 는 전송 제외. */

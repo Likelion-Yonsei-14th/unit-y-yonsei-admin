@@ -1,11 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router';
-import { Music, Calendar, MapPin, Radio } from 'lucide-react';
+import { Music, Calendar, MapPin, Radio, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { ApiError } from '@/lib/api-client';
 import {
   usePerformances,
   useLivePerformance,
   useSetLivePerformance,
+  useDeletePerformance,
 } from '@/features/performances/hooks';
 import { useAuth } from '@/features/auth/hooks';
 import {
@@ -68,8 +70,11 @@ export function PerformanceListPage() {
 
   const { can } = useAuth();
   const canLive = can('performance.live');
+  // 공연 삭제는 운영진(SUPER/MASTER) 전용 — 편집과 동일하게 performance.manage 로 게이트.
+  const canManage = can('performance.manage');
   const { data: livePerformanceId } = useLivePerformance();
   const setLive = useSetLivePerformance();
+  const deletePerformance = useDeletePerformance();
 
   // 라이브로 지정된 공연의 목록 아이템 — 현재 필터와 무관하게 전체에서 찾는다.
   const livePerformance = useMemo(
@@ -80,6 +85,8 @@ export function PerformanceListPage() {
 
   // 라이브 지정은 오작동 방지를 위해 확인 다이얼로그를 거친다. 해제는 확인 없이 즉시.
   const [pendingLiveId, setPendingLiveId] = useState<number | null>(null);
+  // 공연 삭제는 파괴적이라 항상 확인 다이얼로그를 거친다.
+  const [pendingDeleteId, setPendingDeleteId] = useState<number | null>(null);
 
   const handleSetLive = (id: number | null) => {
     setLive.mutate(id, {
@@ -87,6 +94,21 @@ export function PerformanceListPage() {
         toast(next == null ? '라이브 공연을 해제했습니다.' : '라이브 공연으로 지정했습니다.');
       },
       onError: () => toast.error('라이브 지정에 실패했습니다. 잠시 후 다시 시도해주세요.'),
+    });
+  };
+
+  const handleDelete = (id: number) => {
+    deletePerformance.mutate(id, {
+      onSuccess: () => toast('공연을 삭제했습니다.'),
+      onError: (err) => {
+        // 자식 데이터(이미지/셋리스트/공지) 잔존 시 백엔드가 400(P-009/P-010/P-011)으로 차단 →
+        // 서버 메시지를 그대로 노출해 "먼저 무엇을 정리해야 하는지" 알 수 있게 한다.
+        const message =
+          err instanceof ApiError && err.message
+            ? err.message
+            : '공연 삭제에 실패했습니다. 잠시 후 다시 시도해주세요.';
+        toast.error(message);
+      },
     });
   };
 
@@ -309,20 +331,36 @@ export function PerformanceListPage() {
                     </div>
                   </div>
                 </Link>
-                {canGoLive && (
-                  <div className="px-5 pb-4">
-                    <button
-                      type="button"
-                      onClick={() => (isLive ? handleSetLive(null) : setPendingLiveId(p.id))}
-                      disabled={setLive.isPending}
-                      className={`w-full px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                        isLive
-                          ? 'border border-border bg-background text-foreground hover:bg-muted disabled:opacity-50'
-                          : 'bg-primary text-primary-foreground hover:bg-ds-primary-pressed disabled:opacity-50'
-                      }`}
-                    >
-                      {isLive ? '라이브 해제' : '라이브로 지정'}
-                    </button>
+                {(canGoLive || canManage) && (
+                  <div className="px-5 pb-4 flex items-center gap-2">
+                    {canGoLive && (
+                      <button
+                        type="button"
+                        onClick={() => (isLive ? handleSetLive(null) : setPendingLiveId(p.id))}
+                        disabled={setLive.isPending}
+                        className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                          isLive
+                            ? 'border border-border bg-background text-foreground hover:bg-muted disabled:opacity-50'
+                            : 'bg-primary text-primary-foreground hover:bg-ds-primary-pressed disabled:opacity-50'
+                        }`}
+                      >
+                        {isLive ? '라이브 해제' : '라이브로 지정'}
+                      </button>
+                    )}
+                    {canManage && (
+                      <button
+                        type="button"
+                        onClick={() => setPendingDeleteId(p.id)}
+                        disabled={deletePerformance.isPending}
+                        aria-label={`${p.performanceName} 공연 삭제`}
+                        className={`inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border border-destructive text-destructive text-sm font-medium hover:bg-ds-error-subtle transition-colors disabled:opacity-50 ${
+                          canGoLive ? '' : 'flex-1'
+                        }`}
+                      >
+                        <Trash2 size={16} />
+                        {canGoLive ? '' : '삭제'}
+                      </button>
+                    )}
                   </div>
                 )}
               </div>
@@ -355,6 +393,37 @@ export function PerformanceListPage() {
               }}
             >
               라이브로 지정
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* 공연 삭제 확인 — 파괴적 동작이라 항상 확인을 거친다. */}
+      <AlertDialog
+        open={pendingDeleteId != null}
+        onOpenChange={(o) => {
+          if (!o) setPendingDeleteId(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>공연 삭제</AlertDialogTitle>
+            <AlertDialogDescription>
+              &ldquo;{data?.find((p) => p.id === pendingDeleteId)?.performanceName}&rdquo; 공연을
+              삭제합니다. 이 작업은 되돌릴 수 없습니다. 이미지·셋리스트·공지가 남아 있으면 먼저
+              정리해야 삭제할 수 있습니다.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>취소</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-ds-error-pressed"
+              onClick={() => {
+                if (pendingDeleteId != null) handleDelete(pendingDeleteId);
+                setPendingDeleteId(null);
+              }}
+            >
+              삭제
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

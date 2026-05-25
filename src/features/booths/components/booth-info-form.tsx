@@ -1,9 +1,20 @@
 import { useEffect, useState } from 'react';
-import { Check, Edit, Megaphone, Plus, X } from 'lucide-react';
+import { Check, Edit, Megaphone, Plus, Trash2, X } from 'lucide-react';
 import { toast } from 'sonner';
 import type { UseMutationResult } from '@tanstack/react-query';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import type { Booth, BoothSector, BoothStatus } from '@/features/booths/types';
 import { BOOTH_STATUS_LABEL } from '@/features/booths/types';
+import { useAddBoothImage, useBoothImages, useDeleteBoothImage } from '@/features/booths/hooks';
 import { uploadImage } from '@/features/uploads/api';
 
 const SECTORS: BoothSector[] = ['한글탑', '백양로', '송도'];
@@ -106,6 +117,143 @@ function TimeSelect({
           </option>
         ))}
       </select>
+    </div>
+  );
+}
+
+/**
+ * 부스 이미지 갤러리 — 기존 부스(boothId 있음)에서만 노출.
+ *
+ * 단일 썸네일(thumbnailUrl, display_order=1)은 Booth 본체 PUT 으로 관리되고,
+ * 이 갤러리는 그와 **별개의 추가 이미지 컬렉션**(booth_images 테이블)을 다룬다.
+ * displayOrder 오름차순으로 나열하고, 추가 시 현재 최대 displayOrder + 1 을 부여한다.
+ * 업로드는 uploadImage(file,'booth') → S3 URL → useAddBoothImage 로 URL 참조만 저장.
+ *
+ * displayOrder 중복(백엔드 409)에 견고하도록 add/delete 실패는 토스트로만 처리한다.
+ */
+function BoothImageGallery({ boothId, editable }: { boothId: number; editable: boolean }) {
+  const { data: images, isPending, isError } = useBoothImages(boothId);
+  const addImage = useAddBoothImage();
+  const deleteImage = useDeleteBoothImage();
+  const [isUploading, setIsUploading] = useState(false);
+  const [pendingDeleteId, setPendingDeleteId] = useState<number | null>(null);
+
+  const handleAdd = async (file: File | null) => {
+    if (!file) return;
+    // 업로드(S3) + add mutation(URL 저장) 전체가 끝날 때까지 로딩/disabled 를 유지한다.
+    // finally 로 일찍 풀면 mutation 진행 중에 잠금이 풀려 연속/중복 업로드가 가능해진다.
+    setIsUploading(true);
+    let imageUrl: string;
+    try {
+      imageUrl = await uploadImage(file, 'booth');
+    } catch {
+      toast.error('이미지 업로드에 실패했습니다.');
+      setIsUploading(false);
+      return;
+    }
+    // displayOrder 는 현재 최대값 + 1. 비어 있으면 1 부터.
+    const nextOrder = (images ?? []).reduce((max, img) => Math.max(max, img.displayOrder), 0) + 1;
+    addImage.mutate(
+      { boothId, input: { imageUrl, displayOrder: nextOrder } },
+      {
+        onSuccess: () => toast.success('이미지를 추가했습니다.'),
+        // 409(displayOrder 중복) 등 — 상태코드 가리지 않고 토스트로만 안내.
+        onError: () => toast.error('이미지 추가에 실패했습니다. 잠시 후 다시 시도해주세요.'),
+        // 업로드 잠금은 mutation 까지 끝난 시점에 해제.
+        onSettled: () => setIsUploading(false),
+      },
+    );
+  };
+
+  const handleConfirmDelete = () => {
+    if (pendingDeleteId === null) return;
+    const imageId = pendingDeleteId;
+    deleteImage.mutate(
+      { boothId, imageId },
+      {
+        onSuccess: () => toast.success('이미지를 삭제했습니다.'),
+        onError: () => toast.error('이미지 삭제에 실패했습니다. 잠시 후 다시 시도해주세요.'),
+        onSettled: () => setPendingDeleteId(null),
+      },
+    );
+  };
+
+  return (
+    <div>
+      <span className="block text-sm font-semibold text-foreground mb-2">부스 추가 이미지</span>
+      <p className="mb-3 text-xs text-muted-foreground">
+        대표 이미지 외에 방문객용 앱 부스 상세에 함께 노출할 이미지입니다.
+      </p>
+
+      {isPending ? (
+        <div className="w-full px-4 py-3 border border-border rounded-lg bg-muted text-muted-foreground text-sm">
+          이미지를 불러오는 중…
+        </div>
+      ) : isError ? (
+        <div className="w-full px-4 py-3 border border-border rounded-lg bg-muted text-muted-foreground text-sm">
+          이미지를 불러오지 못했습니다.
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          {(images ?? []).map((img) => (
+            <div
+              key={img.id}
+              className="relative aspect-[3/2] rounded-lg overflow-hidden border border-border group"
+            >
+              <img src={img.imageUrl} alt="부스 이미지" className="w-full h-full object-cover" />
+              {editable && (
+                <button
+                  type="button"
+                  onClick={() => setPendingDeleteId(img.id)}
+                  aria-label="이미지 삭제"
+                  className="absolute top-1.5 right-1.5 inline-flex items-center justify-center w-8 h-8 rounded-full bg-background/90 text-destructive shadow-md hover:bg-background transition-colors"
+                >
+                  <Trash2 size={16} />
+                </button>
+              )}
+            </div>
+          ))}
+
+          {editable && (
+            <label className="aspect-[3/2] flex flex-col items-center justify-center gap-1.5 rounded-lg border border-dashed border-border text-sm text-muted-foreground hover:border-ds-border-strong transition-colors cursor-pointer">
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => handleAdd(e.target.files?.[0] ?? null)}
+              />
+              <Plus size={20} />
+              {isUploading ? '업로드 중…' : '이미지 추가'}
+            </label>
+          )}
+
+          {!editable && (images ?? []).length === 0 && (
+            <div className="col-span-full w-full px-4 py-3 border border-border rounded-lg bg-muted text-muted-foreground text-sm">
+              등록된 추가 이미지가 없습니다.
+            </div>
+          )}
+        </div>
+      )}
+
+      <AlertDialog
+        open={pendingDeleteId !== null}
+        onOpenChange={(o) => {
+          if (!o) setPendingDeleteId(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>이미지를 삭제하시겠어요?</AlertDialogTitle>
+            <AlertDialogDescription>삭제한 이미지는 되돌릴 수 없습니다.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>취소</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmDelete} disabled={deleteImage.isPending}>
+              {deleteImage.isPending ? '삭제 중…' : '삭제'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
@@ -713,6 +861,13 @@ export function BoothInfoForm({
             </div>
           )}
         </div>
+
+        {/*
+          부스 추가 이미지 갤러리 — 위 단일 대표 이미지(thumbnailUrl, display_order=1)와
+          별개의 booth_images 컬렉션. 기존 부스(booth.id 존재) 에서만 노출하고, 편집 중일 때만
+          추가/삭제가 가능하다. 본체 PUT 과 독립된 전용 엔드포인트로 즉시 저장된다.
+        */}
+        <BoothImageGallery boothId={booth.id} editable={isEditing} />
 
         {/* 하단 저장 버튼 — 긴 폼을 끝까지 스크롤한 뒤 상단으로 올라가지 않아도 저장 가능. */}
         {isEditing && (

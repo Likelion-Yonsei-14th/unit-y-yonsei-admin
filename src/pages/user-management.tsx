@@ -1,9 +1,24 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
-import { Copy, KeyRound, Search, Trash2, UserPlus, Users, X } from 'lucide-react';
+import {
+  Copy,
+  FileSpreadsheet,
+  KeyRound,
+  Search,
+  Trash2,
+  Upload,
+  UserPlus,
+  Users,
+  X,
+} from 'lucide-react';
 import { toast } from 'sonner';
-import { useAdminUsers, useDeleteUser, useResetUserPassword } from '@/features/users/hooks';
-import type { AdminUser as User } from '@/features/users/types';
+import {
+  useAdminUsers,
+  useBulkCreateUsers,
+  useDeleteUser,
+  useResetUserPassword,
+} from '@/features/users/hooks';
+import type { AdminUser as User, AdminUserBulkCreateResult } from '@/features/users/types';
 import { PageHeaderAction } from '@/components/common/page-header-action';
 import { TableSkeleton } from '@/components/common/table-skeleton';
 import { useAuth } from '@/features/auth/hooks';
@@ -49,6 +64,7 @@ export function UserManagement() {
   const resetPasswordMutation = useResetUserPassword();
   const deleteMutation = useDeleteUser();
   const deleteBoothMutation = useDeleteBooth();
+  const bulkCreateMutation = useBulkCreateUsers();
 
   const [selectedRole, setSelectedRole] = useState<RoleFilter>('전체');
   const [searchQuery, setSearchQuery] = useState('');
@@ -57,6 +73,11 @@ export function UserManagement() {
   // 계정 삭제가 A-014(소유 부스 존재) 로 막혔을 때 부스 cascade 컨펌 단계.
   const [pendingDeleteWithBooth, setPendingDeleteWithBooth] = useState<User | null>(null);
   const [resetResult, setResetResult] = useState<ResetPasswordDialogState | null>(null);
+  // CSV 일괄 생성 다이얼로그 — 열림 여부 / 선택 파일 / 응답 결과(있으면 결과 뷰).
+  const [bulkDialogOpen, setBulkDialogOpen] = useState(false);
+  const [bulkFile, setBulkFile] = useState<File | null>(null);
+  const [bulkResult, setBulkResult] = useState<AdminUserBulkCreateResult | null>(null);
+  const bulkFileInputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
   const { user: currentUser, can } = useAuth();
 
@@ -64,6 +85,8 @@ export function UserManagement() {
   const canResetPassword = can('user.password.reset');
   // 계정 삭제는 Super 전용 (user.manage). Super 계정 자체는 삭제 대상에서 제외.
   const canDeleteUsers = can('user.manage');
+  // CSV 일괄 생성도 Super 전용 (user.manage) — 대량 계정 발급은 거버넌스 액션.
+  const canBulkCreate = can('user.manage');
 
   // 역할별 계정 수. pill 라벨에 "Super | 3" 형태로 노출해 필터 클릭 전에도 분포 파악.
   const roleCounts = useMemo<Record<RoleFilter, number>>(() => {
@@ -185,6 +208,48 @@ export function UserManagement() {
     }
   };
 
+  /** CSV 일괄 생성 다이얼로그 열기/닫기 — 닫을 때 입력·결과를 모두 초기화. */
+  const openBulkDialog = () => {
+    setBulkFile(null);
+    setBulkResult(null);
+    setBulkDialogOpen(true);
+  };
+
+  const closeBulkDialog = () => {
+    setBulkDialogOpen(false);
+    setBulkFile(null);
+    setBulkResult(null);
+    if (bulkFileInputRef.current) bulkFileInputRef.current.value = '';
+  };
+
+  const submitBulkCreate = () => {
+    if (!bulkFile) return;
+    bulkCreateMutation.mutate(bulkFile, {
+      onSuccess: (result) => {
+        // 같은 다이얼로그 안에서 입력 뷰 → 결과 뷰로 전환. 생성된 계정의 비밀번호는
+        // 서버가 1회만 내려주므로 닫기 전까지 표로 노출한다.
+        setBulkResult(result);
+      },
+      onError: () =>
+        toast.error('CSV 일괄 생성에 실패했습니다. 파일 형식을 확인 후 다시 시도해주세요.'),
+    });
+  };
+
+  /** 생성 결과 표 전체를 "loginId,password,name" 헤더 + 각 행의 CSV 텍스트로 클립보드에 복사. */
+  const copyBulkResult = async () => {
+    if (!bulkResult || bulkResult.successList.length === 0) return;
+    const header = 'loginId,password,name';
+    const rows = bulkResult.successList.map((row) => `${row.loginId},${row.password},${row.name}`);
+    const text = [header, ...rows].join('\n');
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success('생성된 계정 목록을 복사했습니다.');
+    } catch {
+      // HTTPS 가 아닌 환경에선 clipboard API 가 throw — 수동 복사 유도.
+      toast.error('자동 복사에 실패했습니다. 표시된 내용을 직접 복사해주세요.');
+    }
+  };
+
   const roleBadgeClass = (role: Role) =>
     role === 'Booth'
       ? 'bg-ds-primary-subtle text-ds-primary-pressed'
@@ -226,15 +291,26 @@ export function UserManagement() {
           <Users size={32} />
           유저 관리
         </h1>
-        {can('admin.create') && (
-          <PageHeaderAction
-            tone="green"
-            onClick={() => navigate('/create-admin')}
-            icon={<UserPlus size={16} />}
-          >
-            신규 계정 생성
-          </PageHeaderAction>
-        )}
+        <div className="flex flex-wrap items-center gap-2">
+          {canBulkCreate && (
+            <PageHeaderAction
+              tone="blue"
+              onClick={openBulkDialog}
+              icon={<FileSpreadsheet size={16} />}
+            >
+              CSV 일괄 생성
+            </PageHeaderAction>
+          )}
+          {can('admin.create') && (
+            <PageHeaderAction
+              tone="green"
+              onClick={() => navigate('/create-admin')}
+              icon={<UserPlus size={16} />}
+            >
+              신규 계정 생성
+            </PageHeaderAction>
+          )}
+        </div>
       </div>
 
       {/*
@@ -586,6 +662,189 @@ export function UserManagement() {
             >
               닫기
             </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/*
+        CSV 일괄 생성 다이얼로그.
+        - 결과(bulkResult) 가 생기기 전 = 입력 뷰(파일 선택 + 제출).
+        - 결과가 생긴 뒤  = 결과 뷰(성공/실패 카운트 + 생성 계정 표 + 실패 목록).
+        생성된 비밀번호는 서버가 1회만 내려주므로 결과 뷰에서는 overlay 클릭/ESC 로
+        닫히지 않게 막아 실수로 비번을 잃는 것을 방지한다.
+      */}
+      <Dialog
+        open={bulkDialogOpen}
+        onOpenChange={(o) => {
+          if (!o) {
+            // 진행 중이거나 결과를 보고 있는 동안에는 바깥 클릭으로 닫지 않는다.
+            if (bulkCreateMutation.isPending) return;
+            closeBulkDialog();
+          }
+        }}
+      >
+        <DialogContent
+          className="sm:max-w-2xl"
+          onPointerDownOutside={(e) => {
+            if (bulkResult || bulkCreateMutation.isPending) e.preventDefault();
+          }}
+          onEscapeKeyDown={(e) => {
+            if (bulkResult || bulkCreateMutation.isPending) e.preventDefault();
+          }}
+        >
+          <DialogHeader>
+            <DialogTitle>운영진 CSV 일괄 생성</DialogTitle>
+            <DialogDescription>
+              {bulkResult
+                ? '생성 결과입니다. 발급된 비밀번호는 이 창에서만 확인할 수 있습니다.'
+                : 'CSV 파일을 업로드하면 여러 운영진 계정을 한 번에 생성합니다. 비밀번호는 서버가 자동 발급합니다.'}
+            </DialogDescription>
+          </DialogHeader>
+
+          {!bulkResult ? (
+            <div className="space-y-4">
+              <label className="block cursor-pointer rounded-lg border-2 border-dashed border-ds-border-strong p-6 text-center transition-colors hover:border-primary">
+                <input
+                  ref={bulkFileInputRef}
+                  type="file"
+                  accept=".csv,text/csv"
+                  className="hidden"
+                  onChange={(e) => setBulkFile(e.target.files?.[0] ?? null)}
+                />
+                <Upload className="mx-auto mb-3 text-ds-text-disabled" size={28} />
+                {bulkFile ? (
+                  <p className="text-sm font-medium text-foreground break-all">{bulkFile.name}</p>
+                ) : (
+                  <p className="text-sm text-muted-foreground">CSV 파일을 선택하세요 (.csv)</p>
+                )}
+              </label>
+              <p className="text-xs text-muted-foreground">
+                각 행이 한 계정에 대응합니다. 형식이 맞지 않는 행은 건너뛰고, 처리 결과를
+                성공/실패로 나눠 보여줍니다.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {/* 성공/실패 요약 */}
+              <div className="flex gap-3">
+                <div className="flex-1 rounded-lg border border-ds-success bg-ds-success-subtle px-4 py-3">
+                  <div className="text-xs font-medium text-ds-success-pressed">성공</div>
+                  <div className="text-2xl font-bold text-ds-success-pressed">
+                    {bulkResult.successCount}
+                  </div>
+                </div>
+                <div className="flex-1 rounded-lg border border-destructive bg-ds-error-subtle px-4 py-3">
+                  <div className="text-xs font-medium text-ds-error-pressed">실패</div>
+                  <div className="text-2xl font-bold text-ds-error-pressed">
+                    {bulkResult.failCount}
+                  </div>
+                </div>
+              </div>
+
+              {/* 생성된 계정 — loginId / password / name. 비번 1회 노출. */}
+              {bulkResult.successList.length > 0 && (
+                <div>
+                  <div className="mb-2 flex items-center justify-between">
+                    <span className="text-sm font-semibold text-foreground">생성된 계정</span>
+                    <button
+                      type="button"
+                      onClick={copyBulkResult}
+                      aria-label="생성된 계정 목록 복사"
+                      className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium text-foreground bg-background border border-border hover:bg-muted hover:border-ds-border-strong transition-colors"
+                    >
+                      <Copy size={14} />
+                      전체 복사
+                    </button>
+                  </div>
+                  <div className="max-h-60 overflow-auto rounded-lg border border-border">
+                    <table className="w-full text-sm">
+                      <thead className="bg-muted">
+                        <tr>
+                          <th className="px-3 py-2 text-left font-semibold text-foreground">
+                            로그인 ID
+                          </th>
+                          <th className="px-3 py-2 text-left font-semibold text-foreground">
+                            비밀번호
+                          </th>
+                          <th className="px-3 py-2 text-left font-semibold text-foreground">
+                            이름
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {bulkResult.successList.map((row) => (
+                          <tr key={row.loginId} className="border-t border-border">
+                            <td className="px-3 py-2 text-foreground break-all">{row.loginId}</td>
+                            <td className="px-3 py-2">
+                              <code className="select-all font-mono text-foreground break-all">
+                                {row.password}
+                              </code>
+                            </td>
+                            <td className="px-3 py-2 text-muted-foreground break-all">
+                              {row.name}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                  <p className="mt-2 text-xs text-ds-warning-pressed">
+                    이 창을 닫으면 비밀번호는 다시 볼 수 없습니다. 사용자에게 전달해주세요.
+                  </p>
+                </div>
+              )}
+
+              {/* 실패 행 — 이름 + 사유. */}
+              {bulkResult.failList.length > 0 && (
+                <div>
+                  <span className="mb-2 block text-sm font-semibold text-foreground">
+                    실패한 행
+                  </span>
+                  <ul className="max-h-40 space-y-1.5 overflow-auto rounded-lg border border-border bg-ds-error-subtle/40 p-3">
+                    {bulkResult.failList.map((row, i) => (
+                      <li key={`${row.name}-${i}`} className="text-sm">
+                        <span className="font-medium text-foreground">
+                          {row.name || '(이름 없음)'}
+                        </span>
+                        <span className="mx-1.5 text-ds-text-disabled">·</span>
+                        <span className="text-muted-foreground">{row.reason}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          )}
+
+          <DialogFooter>
+            {!bulkResult ? (
+              <>
+                <button
+                  type="button"
+                  onClick={closeBulkDialog}
+                  disabled={bulkCreateMutation.isPending}
+                  className="px-4 py-2 rounded-md border border-border text-foreground text-sm font-medium hover:bg-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  취소
+                </button>
+                <button
+                  type="button"
+                  onClick={submitBulkCreate}
+                  disabled={!bulkFile || bulkCreateMutation.isPending}
+                  className="px-4 py-2 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-ds-primary-pressed transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  {bulkCreateMutation.isPending ? '생성 중…' : '일괄 생성'}
+                </button>
+              </>
+            ) : (
+              <button
+                type="button"
+                onClick={closeBulkDialog}
+                className="px-4 py-2 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-ds-primary-pressed transition-colors"
+              >
+                닫기
+              </button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>

@@ -108,23 +108,25 @@ export function BoothManagement() {
           </h1>
         </div>
 
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-muted-foreground">부스 운영 ON/OFF</span>
-          <button
-            onClick={() => setPendingReservable(!isReservable)}
-            aria-label={isReservable ? '부스 운영 끄기' : '부스 운영 켜기'}
-            className={`
-              relative w-14 h-7 rounded-full transition-all duration-300
-              ${isReservable ? 'bg-primary shadow-lg' : 'bg-ds-gray-400'}
-            `}
-          >
-            <div
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-muted-foreground">부스 운영 ON/OFF</span>
+            <button
+              onClick={() => setPendingReservable(!isReservable)}
+              aria-label={isReservable ? '부스 운영 끄기' : '부스 운영 켜기'}
               className={`
-              absolute top-1 w-5 h-5 bg-background rounded-full shadow-md transition-all duration-300
-              ${isReservable ? 'left-8' : 'left-1'}
-            `}
-            />
-          </button>
+                relative w-14 h-7 rounded-full transition-all duration-300
+                ${isReservable ? 'bg-primary shadow-lg' : 'bg-ds-gray-400'}
+              `}
+            >
+              <div
+                className={`
+                absolute top-1 w-5 h-5 bg-background rounded-full shadow-md transition-all duration-300
+                ${isReservable ? 'left-8' : 'left-1'}
+              `}
+              />
+            </button>
+          </div>
         </div>
       </div>
 
