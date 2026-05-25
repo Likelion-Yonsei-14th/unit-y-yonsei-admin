@@ -1,5 +1,6 @@
 import { api } from '@/lib/api-client';
 import { env } from '@/lib/env';
+import { compressImage } from './compress';
 import type { PresignedUrlDTO, UploadDomain } from './types';
 
 /**
@@ -11,11 +12,15 @@ import type { PresignedUrlDTO, UploadDomain } from './types';
  * 호출부는 비동기다 — 업로드 중 로딩 상태를 직접 다뤄야 한다.
  */
 async function uploadImageReal(file: File, domain: UploadDomain): Promise<string> {
+  // 압축은 반드시 presign "전" — presign 요청에 넘긴 fileSize·contentType 이 서명에
+  // 박히므로, 압축 후 달라진 크기/타입으로 서명을 받아야 PUT 이 통과한다.
+  const upload = await compressImage(file);
+
   const presigned = await api.post<PresignedUrlDTO>('/admin/images/presigned-url', {
     domain,
-    fileName: file.name,
-    contentType: file.type,
-    fileSize: file.size,
+    fileName: upload.name,
+    contentType: upload.type,
+    fileSize: upload.size,
   });
 
   // S3 직접 PUT — api-client(공통 봉투·base URL)를 거치지 않는다.
@@ -24,9 +29,9 @@ async function uploadImageReal(file: File, domain: UploadDomain): Promise<string
   // SignatureDoesNotMatch 로 업로드를 거부한다.
   const res = await fetch(presigned.uploadUrl, {
     method: 'PUT',
-    body: file,
+    body: upload,
     headers: {
-      'Content-Type': file.type,
+      'Content-Type': upload.type,
       'Cache-Control': presigned.cacheControl,
     },
   });
