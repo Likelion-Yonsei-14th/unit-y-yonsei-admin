@@ -62,6 +62,13 @@ export const MAIN_NAV: NavItem[] = [
     requires: 'performance.read',
   },
   {
+    // 서버 health/에러/알림 모니터링. Super 전용(system.read) — 읽기 전용 관측 화면.
+    path: '/system',
+    label: '시스템 상태',
+    icon: Activity,
+    requires: 'system.read',
+  },
+  {
     path: '/general',
     label: '기타 정보 관리',
     icon: Settings,
@@ -86,13 +93,6 @@ export const MAIN_NAV: NavItem[] = [
         requires: 'performancereview.read',
       },
     ],
-  },
-  {
-    // 서버 health/에러/알림 모니터링. Super 전용(system.read) — 읽기 전용 관측 화면.
-    path: '/system',
-    label: '시스템 상태',
-    icon: Activity,
-    requires: 'system.read',
   },
 ];
 
