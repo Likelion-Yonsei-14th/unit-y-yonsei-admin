@@ -138,31 +138,38 @@ function BoothImageGallery({ boothId, editable }: { boothId: number; editable: b
   const [isUploading, setIsUploading] = useState(false);
   const [pendingDeleteId, setPendingDeleteId] = useState<number | null>(null);
 
-  const handleAdd = async (file: File | null) => {
-    if (!file) return;
-    // 업로드(S3) + add mutation(URL 저장) 전체가 끝날 때까지 로딩/disabled 를 유지한다.
-    // finally 로 일찍 풀면 mutation 진행 중에 잠금이 풀려 연속/중복 업로드가 가능해진다.
+  const handleAddFiles = async (fileList: FileList | null) => {
+    const files = fileList ? Array.from(fileList) : [];
+    if (files.length === 0) return;
+    // 업로드(S3) + add mutation(URL 저장) 전체 배치가 끝날 때까지 잠금을 유지한다.
+    // finally 로 일찍 풀면 진행 중에 잠금이 풀려 연속/중복 업로드가 가능해진다.
     setIsUploading(true);
-    let imageUrl: string;
-    try {
-      imageUrl = await uploadImage(file, 'booth');
-    } catch {
-      toast.error('이미지 업로드에 실패했습니다.');
-      setIsUploading(false);
-      return;
+    // displayOrder 베이스 = 현재 최대값 + 1(비어 있으면 1). 파일마다 1씩 올려
+    // 백엔드 UNIQUE(booth_id, display_order) 충돌(409)을 피한다.
+    // images 는 mutation 중 refetch 돼도 이 클로저에선 갱신되지 않으므로 로컬로 증가시킨다.
+    let nextOrder = (images ?? []).reduce((max, img) => Math.max(max, img.displayOrder), 0) + 1;
+    let added = 0;
+    let failed = 0;
+    // 파일별 순차 처리 — 한 장이 실패해도 나머지는 계속(빠른 일괄 추가 친화).
+    for (const file of files) {
+      // displayOrder 는 성공·실패와 무관하게 파일마다 전진시킨다. 한 장이 실패해도
+      // 다음 파일이 같은 슬롯을 재시도하지 않아, 한 번의 409/업로드 실패가 배치
+      // 전체로 번지지 않는다(실패로 생기는 빈 슬롯은 무해 — 백엔드는 ASC 정렬만).
+      const order = nextOrder;
+      nextOrder += 1;
+      try {
+        const imageUrl = await uploadImage(file, 'booth');
+        await addImage.mutateAsync({ boothId, input: { imageUrl, displayOrder: order } });
+        added += 1;
+      } catch {
+        failed += 1;
+      }
     }
-    // displayOrder 는 현재 최대값 + 1. 비어 있으면 1 부터.
-    const nextOrder = (images ?? []).reduce((max, img) => Math.max(max, img.displayOrder), 0) + 1;
-    addImage.mutate(
-      { boothId, input: { imageUrl, displayOrder: nextOrder } },
-      {
-        onSuccess: () => toast.success('이미지를 추가했습니다.'),
-        // 409(displayOrder 중복) 등 — 상태코드 가리지 않고 토스트로만 안내.
-        onError: () => toast.error('이미지 추가에 실패했습니다. 잠시 후 다시 시도해주세요.'),
-        // 업로드 잠금은 mutation 까지 끝난 시점에 해제.
-        onSettled: () => setIsUploading(false),
-      },
-    );
+    setIsUploading(false);
+    if (added > 0) toast.success(`이미지 ${added}장을 추가했습니다.`);
+    // 409(displayOrder 중복)·업로드 실패 등 — 상태코드 가리지 않고 토스트로만 안내.
+    if (failed > 0)
+      toast.error(`이미지 ${failed}장 추가에 실패했습니다. 잠시 후 다시 시도해주세요.`);
   };
 
   const handleConfirmDelete = () => {
@@ -225,11 +232,17 @@ function BoothImageGallery({ boothId, editable }: { boothId: number; editable: b
               <input
                 type="file"
                 accept="image/*"
+                multiple
+                disabled={isUploading}
                 className="hidden"
-                onChange={(e) => handleAdd(e.target.files?.[0] ?? null)}
+                onChange={(e) => {
+                  handleAddFiles(e.target.files);
+                  // 같은 파일 재선택도 onChange 가 다시 뜨도록 초기화.
+                  e.target.value = '';
+                }}
               />
               <Plus size={20} />
-              {isUploading ? '업로드 중…' : '이미지 추가'}
+              {isUploading ? '업로드 중…' : '이미지 추가 (여러 장 가능)'}
             </label>
           )}
 
