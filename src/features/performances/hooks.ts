@@ -28,21 +28,20 @@ import type {
 } from './types';
 
 /**
- * Super/Master 전용 전체 공연 목록 조회.
- * Performer 도 read 권한은 있지만 리스트 페이지 진입 자체가 막혀 있으므로
- * 여기서는 별도 enabled 분기 없이 호출 시점만 신뢰.
- */
-/**
  * 공연 목록 조회.
  * - 기본(공개): /performances — HIDDEN 제외. 대시보드 등 일반 용도.
  * - admin:true + SUPER: /admin/performances — HIDDEN 포함 전체(공개/숨김 관리용).
  *   admin 엔드포인트는 SUPER 전용이라, 비-SUPER 는 자동으로 공개 목록으로 폴백한다.
+ *
+ * 키는 `['performances','list',variant]` 네임스페이스 — 단건(`['performances',id]`)·
+ * 서브리소스와 구분되어, 목록 invalidation 이 prefix `['performances','list']` 로
+ * admin·public 두 변형만 정확히 갱신한다.
  */
 export function usePerformances({ admin = false }: { admin?: boolean } = {}) {
   const user = useAuthStore((s) => s.user);
   const useAdmin = admin && user?.role === 'Super';
   return useQuery({
-    queryKey: ['performances', useAdmin ? 'admin' : 'public'],
+    queryKey: ['performances', 'list', useAdmin ? 'admin' : 'public'],
     queryFn: useAdmin ? listAdminPerformances : listPerformances,
   });
 }
@@ -54,7 +53,7 @@ export function useSetPerformanceStatus() {
     mutationFn: ({ id, status }: { id: number; status: PerformanceStatus }) =>
       updatePerformance(id, { performanceStatus: status }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['performances'] });
+      queryClient.invalidateQueries({ queryKey: ['performances', 'list'] });
     },
   });
 }
@@ -100,7 +99,7 @@ export function useUpdateMyPerformance() {
       queryClient.setQueryData(['performances', 'me'], data);
       queryClient.setQueryData(['performances', data.id], data);
       // 리스트 invalidation — 공연명/날짜/상태 등 리스트 표시 필드가 바뀔 수 있어.
-      queryClient.invalidateQueries({ queryKey: ['performances'], exact: true });
+      queryClient.invalidateQueries({ queryKey: ['performances', 'list'] });
     },
   });
 }
@@ -123,7 +122,7 @@ export function useUpdatePerformance(performanceId: number | null) {
     },
     onSuccess: (data) => {
       queryClient.setQueryData(['performances', data.id], data);
-      queryClient.invalidateQueries({ queryKey: ['performances'], exact: true });
+      queryClient.invalidateQueries({ queryKey: ['performances', 'list'] });
     },
   });
 }
@@ -142,7 +141,7 @@ export function useDeletePerformance() {
     mutationFn: (id: number) => deletePerformance(id),
     onSuccess: (_data, id) => {
       queryClient.removeQueries({ queryKey: ['performances', id] });
-      queryClient.invalidateQueries({ queryKey: ['performances'], exact: true });
+      queryClient.invalidateQueries({ queryKey: ['performances', 'list'] });
     },
   });
 }

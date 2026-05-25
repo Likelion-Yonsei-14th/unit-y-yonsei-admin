@@ -72,10 +72,13 @@ export function PerformanceListPage() {
   // admin:true — SUPER 는 HIDDEN 포함 전체를 보고 공개/숨김을 관리한다(공연 관리 화면).
   const { data, isLoading, isError, refetch } = usePerformances({ admin: true });
 
-  const { can } = useAuth();
+  const { can, user } = useAuth();
   const canLive = can('performance.live');
   // 공연 삭제는 운영진(SUPER/MASTER) 전용 — 편집과 동일하게 performance.manage 로 게이트.
   const canManage = can('performance.manage');
+  // 공개/숨김은 HIDDEN 포함 admin 목록을 볼 수 있는 SUPER 만 — Master 는 공개 목록만 보여
+  // 숨기면 그 공연을 다시 찾아 공개할 수 없으므로 토글을 노출하지 않는다.
+  const canManageVisibility = user?.role === 'Super';
   const { data: livePerformanceId } = useLivePerformance();
   const setLive = useSetLivePerformance();
   const deletePerformance = useDeletePerformance();
@@ -358,7 +361,7 @@ export function PerformanceListPage() {
                 </Link>
                 {(canGoLive || canManage) && (
                   <div className="px-5 pb-4 flex flex-wrap items-center gap-2">
-                    {canManage && (
+                    {canManageVisibility && (
                       <button
                         type="button"
                         onClick={() =>
