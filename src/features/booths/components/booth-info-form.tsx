@@ -14,7 +14,12 @@ import {
 } from '@/components/ui/alert-dialog';
 import type { Booth, BoothSector, BoothStatus } from '@/features/booths/types';
 import { BOOTH_STATUS_LABEL } from '@/features/booths/types';
-import { useAddBoothImage, useBoothImages, useDeleteBoothImage } from '@/features/booths/hooks';
+import {
+  useAddBoothImage,
+  useBoothImages,
+  useDeleteBoothImage,
+  useUpdateBoothImage,
+} from '@/features/booths/hooks';
 import { uploadImage } from '@/features/uploads/api';
 
 const SECTORS: BoothSector[] = ['한글탑', '백양로', '송도'];
@@ -122,39 +127,68 @@ function TimeSelect({
 }
 
 /**
- * 부스 이미지 갤러리 — 기존 부스(boothId 있음)에서만 노출.
+ * 부스 이미지 관리 — 기존 부스(boothId 있음)에서만 노출. 대표 + 추가 이미지를 모두
+ * booth_images 컬렉션 하나에서 다룬다(백엔드 정본).
  *
- * 단일 썸네일(thumbnailUrl, display_order=1)은 Booth 본체 PUT 으로 관리되고,
- * 이 갤러리는 그와 **별개의 추가 이미지 컬렉션**(booth_images 테이블)을 다룬다.
- * displayOrder 오름차순으로 나열하고, 추가 시 현재 최대 displayOrder + 1 을 부여한다.
- * 업로드는 uploadImage(file,'booth') → S3 URL → useAddBoothImage 로 URL 참조만 저장.
+ * - 대표 이미지 = display_order=1 행. BoothResponse.thumbnailUrl 이 이 행에서 파생되므로,
+ *   대표 교체/제거는 Booth 본체 PUT(thumbnailUrl 필드 없음)이 아니라 이 컬렉션의
+ *   PATCH/POST/DELETE 로만 반영된다.
+ * - 추가 이미지 = display_order≥2. 1은 대표로 예약해 둔다.
  *
- * displayOrder 중복(백엔드 409)에 견고하도록 add/delete 실패는 토스트로만 처리한다.
+ * 업로드는 uploadImage(file,'booth') → S3 URL → 이미지 CRUD 로 URL 참조만 저장.
+ * displayOrder 중복(백엔드 409)에 견고하도록 add/update/delete 실패는 토스트로만 처리한다.
  */
 function BoothImageGallery({ boothId, editable }: { boothId: number; editable: boolean }) {
   const { data: images, isPending, isError } = useBoothImages(boothId);
   const addImage = useAddBoothImage();
+  const updateImage = useUpdateBoothImage();
   const deleteImage = useDeleteBoothImage();
   const [isUploading, setIsUploading] = useState(false);
   const [pendingDeleteId, setPendingDeleteId] = useState<number | null>(null);
+
+  // 대표 = display_order=1 행(백엔드 thumbnailUrl 의 정본). 추가 갤러리는 그 외(≥2).
+  const primary = (images ?? []).find((img) => img.displayOrder === 1) ?? null;
+  const extras = (images ?? []).filter((img) => img.displayOrder !== 1);
+
+  // 대표 이미지 교체/추가 — display_order=1 행을 PATCH(있으면) 또는 POST(없으면).
+  const handlePrimarySelect = async (file: File | null) => {
+    if (!file) return;
+    setIsUploading(true);
+    let imageUrl: string;
+    try {
+      imageUrl = await uploadImage(file, 'booth');
+    } catch {
+      toast.error('이미지 업로드에 실패했습니다.');
+      setIsUploading(false);
+      return;
+    }
+    const callbacks = {
+      onSuccess: () => toast.success('대표 이미지를 저장했습니다.'),
+      onError: () => toast.error('대표 이미지 저장에 실패했습니다. 잠시 후 다시 시도해주세요.'),
+      onSettled: () => setIsUploading(false),
+    };
+    if (primary) {
+      updateImage.mutate({ boothId, imageId: primary.id, patch: { imageUrl } }, callbacks);
+    } else {
+      addImage.mutate({ boothId, input: { imageUrl, displayOrder: 1 } }, callbacks);
+    }
+  };
 
   const handleAddFiles = async (fileList: FileList | null) => {
     const files = fileList ? Array.from(fileList) : [];
     if (files.length === 0) return;
     // 업로드(S3) + add mutation(URL 저장) 전체 배치가 끝날 때까지 잠금을 유지한다.
-    // finally 로 일찍 풀면 진행 중에 잠금이 풀려 연속/중복 업로드가 가능해진다.
     setIsUploading(true);
-    // displayOrder 베이스 = 현재 최대값 + 1(비어 있으면 1). 파일마다 1씩 올려
-    // 백엔드 UNIQUE(booth_id, display_order) 충돌(409)을 피한다.
-    // images 는 mutation 중 refetch 돼도 이 클로저에선 갱신되지 않으므로 로컬로 증가시킨다.
-    let nextOrder = (images ?? []).reduce((max, img) => Math.max(max, img.displayOrder), 0) + 1;
+    // 베이스 = max(2, 현재 최대 + 1). display_order=1(대표)은 건드리지 않는다.
+    // 파일마다 성공·실패와 무관하게 1씩 전진시켜 UNIQUE(booth_id, display_order) 충돌(409)·
+    // 연쇄 실패를 피한다. images 는 mutation 중 refetch 돼도 이 클로저에선 안 바뀌므로 로컬 증가.
+    let nextOrder = Math.max(
+      2,
+      (images ?? []).reduce((max, img) => Math.max(max, img.displayOrder), 0) + 1,
+    );
     let added = 0;
     let failed = 0;
-    // 파일별 순차 처리 — 한 장이 실패해도 나머지는 계속(빠른 일괄 추가 친화).
     for (const file of files) {
-      // displayOrder 는 성공·실패와 무관하게 파일마다 전진시킨다. 한 장이 실패해도
-      // 다음 파일이 같은 슬롯을 재시도하지 않아, 한 번의 409/업로드 실패가 배치
-      // 전체로 번지지 않는다(실패로 생기는 빈 슬롯은 무해 — 백엔드는 ASC 정렬만).
       const order = nextOrder;
       nextOrder += 1;
       try {
@@ -167,7 +201,6 @@ function BoothImageGallery({ boothId, editable }: { boothId: number; editable: b
     }
     setIsUploading(false);
     if (added > 0) toast.success(`이미지 ${added}장을 추가했습니다.`);
-    // 409(displayOrder 중복)·업로드 실패 등 — 상태코드 가리지 않고 토스트로만 안내.
     if (failed > 0)
       toast.error(`이미지 ${failed}장 추가에 실패했습니다. 잠시 후 다시 시도해주세요.`);
   };
@@ -185,24 +218,97 @@ function BoothImageGallery({ boothId, editable }: { boothId: number; editable: b
     );
   };
 
-  return (
-    <div>
-      <span className="block text-sm font-semibold text-foreground mb-2">부스 추가 이미지</span>
-      <p className="mb-3 text-xs text-muted-foreground">
-        대표 이미지 외에 방문객용 앱 부스 상세에 함께 노출할 이미지입니다.
-      </p>
+  if (isPending) {
+    return (
+      <div className="w-full px-4 py-3 border border-border rounded-lg bg-muted text-muted-foreground text-sm">
+        이미지를 불러오는 중…
+      </div>
+    );
+  }
+  if (isError) {
+    return (
+      <div className="w-full px-4 py-3 border border-border rounded-lg bg-muted text-muted-foreground text-sm">
+        이미지를 불러오지 못했습니다.
+      </div>
+    );
+  }
 
-      {isPending ? (
-        <div className="w-full px-4 py-3 border border-border rounded-lg bg-muted text-muted-foreground text-sm">
-          이미지를 불러오는 중…
-        </div>
-      ) : isError ? (
-        <div className="w-full px-4 py-3 border border-border rounded-lg bg-muted text-muted-foreground text-sm">
-          이미지를 불러오지 못했습니다.
-        </div>
-      ) : (
+  return (
+    <div className="space-y-6">
+      {/* 대표 이미지 — display_order=1 (방문객 앱 부스 목록/상세 상단 노출) */}
+      <div>
+        <span className="block text-sm font-semibold text-foreground mb-2">부스 대표 이미지</span>
+        <p className="mb-3 text-xs text-muted-foreground">
+          방문객용 앱 부스 목록·상세 상단에 노출되는 대표 이미지입니다.
+        </p>
+        {primary ? (
+          <div className="space-y-2">
+            <div className="aspect-[3/2] w-full max-w-sm rounded-lg overflow-hidden border border-border">
+              <img
+                src={primary.imageUrl}
+                alt="부스 대표 이미지"
+                loading="lazy"
+                decoding="async"
+                className="w-full h-full object-cover"
+              />
+            </div>
+            {editable && (
+              <div className="flex items-center gap-2">
+                <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-sm text-foreground hover:border-ds-border-strong transition-colors">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    disabled={isUploading}
+                    className="hidden"
+                    onChange={(e) => {
+                      handlePrimarySelect(e.target.files?.[0] ?? null);
+                      e.target.value = '';
+                    }}
+                  />
+                  <Edit size={14} />
+                  {isUploading ? '업로드 중…' : '이미지 교체'}
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setPendingDeleteId(primary.id)}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-sm text-foreground hover:border-ds-border-strong transition-colors"
+                >
+                  <X size={14} />
+                  제거
+                </button>
+              </div>
+            )}
+          </div>
+        ) : editable ? (
+          <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-dashed border-border px-4 py-3 text-sm text-muted-foreground hover:border-ds-border-strong transition-colors">
+            <input
+              type="file"
+              accept="image/*"
+              disabled={isUploading}
+              className="hidden"
+              onChange={(e) => {
+                handlePrimarySelect(e.target.files?.[0] ?? null);
+                e.target.value = '';
+              }}
+            />
+            <Plus size={16} />
+            {isUploading ? '업로드 중…' : '대표 이미지 추가'}
+          </label>
+        ) : (
+          <div className="w-full max-w-sm px-4 py-3 border border-border rounded-lg bg-muted text-muted-foreground text-sm">
+            등록된 대표 이미지가 없습니다.
+          </div>
+        )}
+      </div>
+
+      {/* 추가 이미지 — display_order≥2 */}
+      <div>
+        <span className="block text-sm font-semibold text-foreground mb-2">부스 추가 이미지</span>
+        <p className="mb-3 text-xs text-muted-foreground">
+          대표 이미지 외에 방문객용 앱 부스 상세에 함께 노출할 이미지입니다.
+        </p>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-          {(images ?? []).map((img) => (
+          {extras.map((img) => (
             <div
               key={img.id}
               className="relative aspect-[3/2] rounded-lg overflow-hidden border border-border group"
@@ -246,13 +352,13 @@ function BoothImageGallery({ boothId, editable }: { boothId: number; editable: b
             </label>
           )}
 
-          {!editable && (images ?? []).length === 0 && (
+          {!editable && extras.length === 0 && (
             <div className="col-span-full w-full px-4 py-3 border border-border rounded-lg bg-muted text-muted-foreground text-sm">
               등록된 추가 이미지가 없습니다.
             </div>
           )}
         </div>
-      )}
+      </div>
 
       <AlertDialog
         open={pendingDeleteId !== null}
@@ -310,8 +416,6 @@ export function BoothInfoForm({
     booth.representativeMenus.join(', '),
   );
   const [tags, setTags] = useState<string[]>(booth.tags);
-  const [thumbnailUrl, setThumbnailUrl] = useState(booth.thumbnailUrl);
-  const [isUploading, setIsUploading] = useState(false);
 
   // 서버 데이터로 다시 채워질 때 form state 를 다시 hydrate.
   useEffect(() => {
@@ -330,7 +434,6 @@ export function BoothInfoForm({
     setAccount(booth.account);
     setRepresentativeMenusRaw(booth.representativeMenus.join(', '));
     setTags(booth.tags);
-    setThumbnailUrl(booth.thumbnailUrl);
   }, [booth]);
 
   // 일차 변경 시 구역 정합 — 2일차(국제캠)는 송도 강제, 3·4일차에서 송도였으면 해제.
@@ -344,24 +447,16 @@ export function BoothInfoForm({
     }
   };
 
-  const handleImageSelect = async (file: File | null) => {
-    if (!file) return;
-    setIsUploading(true);
-    try {
-      const url = await uploadImage(file, 'booth');
-      setThumbnailUrl(url);
-    } catch {
-      toast.error('이미지 업로드에 실패했습니다.');
-    } finally {
-      setIsUploading(false);
-    }
-  };
-
   const handleSave = () => {
     const parsedMenus = representativeMenusRaw
       .split(',')
       .map((m) => m.trim())
       .filter(Boolean);
+    // 대표 메뉴/체험명은 부스 종류와 무관하게 최대 3개까지만 등록한다. 초과 시 저장 차단.
+    if (parsedMenus.length > 3) {
+      toast.error('최대 3개까지만 입력할 수 있습니다.');
+      return;
+    }
     // 먹거리 부스의 '부스 태그' 는 태그당 5글자 이내. 초과 시 저장 차단.
     if (isFood && parsedMenus.some((tag) => tag.length > 5)) {
       toast.error('부스 태그는 태그당 5글자 이내로 입력해주세요.');
@@ -385,7 +480,6 @@ export function BoothInfoForm({
       isReservable,
       representativeMenus: parsedMenus,
       tags,
-      thumbnailUrl,
     };
     updateMutation.mutate(next, {
       onSuccess: () => {
@@ -824,68 +918,17 @@ export function BoothInfoForm({
               {isFood ? '등록된 대표 메뉴가 없습니다.' : '등록된 체험명이 없습니다.'}
             </div>
           )}
-          {isFood && (
-            <p className="mt-2 text-xs text-muted-foreground">5글자 이내로 작성해주세요.</p>
+          {isEditing && (
+            <p className="mt-2 text-xs text-muted-foreground">
+              {isFood
+                ? '태그당 5글자 이내로, 최대 3개까지 입력할 수 있습니다.'
+                : '최대 3개까지 입력할 수 있습니다.'}
+            </p>
           )}
         </div>
 
-        <div>
-          <span className="block text-sm font-semibold text-foreground mb-2">부스 이미지</span>
-          {thumbnailUrl ? (
-            <div className="space-y-2">
-              <div className="aspect-[3/2] w-full max-w-sm rounded-lg overflow-hidden border border-border">
-                <img
-                  src={thumbnailUrl}
-                  alt="부스 대표 이미지"
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              {isEditing && (
-                <div className="flex items-center gap-2">
-                  <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-sm text-foreground hover:border-ds-border-strong transition-colors">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={(e) => handleImageSelect(e.target.files?.[0] ?? null)}
-                    />
-                    <Edit size={14} />
-                    {isUploading ? '업로드 중…' : '이미지 교체'}
-                  </label>
-                  <button
-                    type="button"
-                    onClick={() => setThumbnailUrl(null)}
-                    className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-sm text-foreground hover:border-ds-border-strong transition-colors"
-                  >
-                    <X size={14} />
-                    제거
-                  </button>
-                </div>
-              )}
-            </div>
-          ) : isEditing ? (
-            <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-dashed border-border px-4 py-3 text-sm text-muted-foreground hover:border-ds-border-strong transition-colors">
-              <input
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={(e) => handleImageSelect(e.target.files?.[0] ?? null)}
-              />
-              <Plus size={16} />
-              {isUploading ? '업로드 중…' : '이미지 추가'}
-            </label>
-          ) : (
-            <div className="w-full max-w-sm px-4 py-3 border border-border rounded-lg bg-muted text-muted-foreground text-sm">
-              등록된 부스 이미지가 없습니다.
-            </div>
-          )}
-        </div>
-
-        {/*
-          부스 추가 이미지 갤러리 — 위 단일 대표 이미지(thumbnailUrl, display_order=1)와
-          별개의 booth_images 컬렉션. 기존 부스(booth.id 존재) 에서만 노출하고, 편집 중일 때만
-          추가/삭제가 가능하다. 본체 PUT 과 독립된 전용 엔드포인트로 즉시 저장된다.
-        */}
+        {/* 부스 이미지 — 대표(display_order=1) + 추가(≥2) 모두 booth_images 컬렉션에서 관리.
+            대표는 BoothResponse.thumbnailUrl 의 정본이라 Booth 본체 PUT 이 아닌 이미지 CRUD 로만 반영된다. */}
         <BoothImageGallery boothId={booth.id} editable={isEditing} />
 
         {/* 하단 저장 버튼 — 긴 폼을 끝까지 스크롤한 뒤 상단으로 올라가지 않아도 저장 가능. */}
