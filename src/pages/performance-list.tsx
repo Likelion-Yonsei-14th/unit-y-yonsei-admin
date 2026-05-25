@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router';
-import { Music, Calendar, MapPin, Radio, Trash2 } from 'lucide-react';
+import { Music, Calendar, MapPin, Radio, Trash2, Eye, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
 import { ApiError } from '@/lib/api-client';
 import {
@@ -8,8 +8,10 @@ import {
   useLivePerformance,
   useSetLivePerformance,
   useDeletePerformance,
+  useSetPerformanceStatus,
 } from '@/features/performances/hooks';
 import { useAuth } from '@/features/auth/hooks';
+import type { PerformanceStatus } from '@/features/performances/types';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -67,15 +69,20 @@ function LiveDot({
  * 카드 클릭 시 `/performance/:id` 상세로 이동.
  */
 export function PerformanceListPage() {
-  const { data, isLoading, isError, refetch } = usePerformances();
+  // admin:true — SUPER 는 HIDDEN 포함 전체를 보고 공개/숨김을 관리한다(공연 관리 화면).
+  const { data, isLoading, isError, refetch } = usePerformances({ admin: true });
 
-  const { can } = useAuth();
+  const { can, user } = useAuth();
   const canLive = can('performance.live');
   // 공연 삭제는 운영진(SUPER/MASTER) 전용 — 편집과 동일하게 performance.manage 로 게이트.
   const canManage = can('performance.manage');
+  // 공개/숨김은 HIDDEN 포함 admin 목록을 볼 수 있는 SUPER 만 — Master 는 공개 목록만 보여
+  // 숨기면 그 공연을 다시 찾아 공개할 수 없으므로 토글을 노출하지 않는다.
+  const canManageVisibility = user?.role === 'Super';
   const { data: livePerformanceId } = useLivePerformance();
   const setLive = useSetLivePerformance();
   const deletePerformance = useDeletePerformance();
+  const setStatus = useSetPerformanceStatus();
 
   // 라이브로 지정된 공연의 목록 아이템 — 현재 필터와 무관하게 전체에서 찾는다.
   const livePerformance = useMemo(
@@ -88,6 +95,11 @@ export function PerformanceListPage() {
   const [pendingLiveId, setPendingLiveId] = useState<number | null>(null);
   // 공연 삭제는 파괴적이라 항상 확인 다이얼로그를 거친다.
   const [pendingDeleteId, setPendingDeleteId] = useState<number | null>(null);
+  // 공개/숨김 전환도 방문객 앱 노출에 영향이라 확인 다이얼로그를 거친다.
+  const [pendingStatus, setPendingStatus] = useState<{
+    id: number;
+    next: PerformanceStatus;
+  } | null>(null);
 
   const handleSetLive = (id: number | null) => {
     setLive.mutate(id, {
@@ -96,6 +108,17 @@ export function PerformanceListPage() {
       },
       onError: () => toast.error('라이브 지정에 실패했습니다. 잠시 후 다시 시도해주세요.'),
     });
+  };
+
+  const handleSetStatus = (id: number, next: PerformanceStatus) => {
+    setStatus.mutate(
+      { id, status: next },
+      {
+        onSuccess: () =>
+          toast(next === 'HIDDEN' ? '공연을 숨김 처리했습니다.' : '공연을 공개했습니다.'),
+        onError: () => toast.error('공연 상태 변경에 실패했습니다. 잠시 후 다시 시도해주세요.'),
+      },
+    );
   };
 
   const handleDelete = (id: number) => {
@@ -294,9 +317,10 @@ export function PerformanceListPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filtered.map((p) => {
             const isLive = p.id === livePerformanceId;
+            // 아티스트 공연은 공식 초청 라인업 — 운영진이 임의 삭제하지 못하도록 삭제를 막는다.
+            const isArtist = p.performanceCategory === 'ARTIST';
             // 라이브 지정은 노천극장 아티스트 공연만. 해제는 위 배너에서 항상 가능하다.
-            const canGoLive =
-              canLive && p.performanceCategory === 'ARTIST' && p.locationName === LIVE_VENUE_NAME;
+            const canGoLive = canLive && isArtist && p.locationName === LIVE_VENUE_NAME;
             return (
               <div
                 key={p.id}
@@ -321,6 +345,11 @@ export function PerformanceListPage() {
                           LIVE
                         </span>
                       )}
+                      {p.performanceStatus === 'HIDDEN' && (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-ds-warning-subtle text-ds-warning-pressed text-xs font-semibold shrink-0">
+                          비공개
+                        </span>
+                      )}
                     </div>
                     <div className="text-sm text-muted-foreground mt-1">
                       {p.locationName ?? '장소 미정'}
@@ -331,7 +360,36 @@ export function PerformanceListPage() {
                   </div>
                 </Link>
                 {(canGoLive || canManage) && (
-                  <div className="px-5 pb-4 flex items-center gap-2">
+                  <div className="px-5 pb-4 flex flex-wrap items-center gap-2">
+                    {canManageVisibility && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          // 알려진 한계(코파일럿 리뷰, 보류): HIDDEN 이 performanceStatus enum 에
+                          // 섞여 있어 숨기면 이전 생명주기 상태(ENDED/CANCELED 등)가 소실되고,
+                          // 공개 시 SCHEDULED 로 강제된다. 정식 해결은 백엔드 visibility 필드 분리.
+                          // 축제 임박이라 보류 — 추후 리팩터 대상.
+                          setPendingStatus({
+                            id: p.id,
+                            next: p.performanceStatus === 'HIDDEN' ? 'SCHEDULED' : 'HIDDEN',
+                          })
+                        }
+                        disabled={setStatus.isPending}
+                        className="inline-flex flex-1 min-w-[88px] items-center justify-center gap-1.5 px-3 py-2 rounded-lg border border-border text-foreground text-sm font-medium hover:bg-muted transition-colors disabled:opacity-50"
+                      >
+                        {p.performanceStatus === 'HIDDEN' ? (
+                          <>
+                            <Eye size={16} />
+                            공개
+                          </>
+                        ) : (
+                          <>
+                            <EyeOff size={16} />
+                            숨김
+                          </>
+                        )}
+                      </button>
+                    )}
                     {canGoLive && (
                       <button
                         type="button"
@@ -350,9 +408,10 @@ export function PerformanceListPage() {
                       <button
                         type="button"
                         onClick={() => setPendingDeleteId(p.id)}
-                        disabled={deletePerformance.isPending}
+                        disabled={deletePerformance.isPending || isArtist}
                         aria-label={`${p.performanceName} 공연 삭제`}
-                        className={`inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border border-destructive text-destructive text-sm font-medium hover:bg-ds-error-subtle transition-colors disabled:opacity-50 ${
+                        title={isArtist ? '아티스트 공연은 삭제할 수 없습니다.' : undefined}
+                        className={`inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border border-destructive text-destructive text-sm font-medium hover:bg-ds-error-subtle transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
                           canGoLive ? '' : 'flex-1'
                         }`}
                       >
@@ -423,6 +482,39 @@ export function PerformanceListPage() {
               }}
             >
               삭제
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* 공개/숨김 전환 확인 — 방문객 앱 노출 여부가 바뀌므로 확인을 거친다. */}
+      <AlertDialog
+        open={pendingStatus != null}
+        onOpenChange={(o) => {
+          if (!o) setPendingStatus(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {pendingStatus?.next === 'HIDDEN' ? '공연 숨김' : '공연 공개'}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              &ldquo;{data?.find((p) => p.id === pendingStatus?.id)?.performanceName}&rdquo; 공연을{' '}
+              {pendingStatus?.next === 'HIDDEN'
+                ? '공개 목록에서 숨깁니다. 방문객 앱 공연 목록·시간표에 더 이상 노출되지 않습니다.'
+                : '공개합니다. 방문객 앱 공연 목록·시간표에 노출됩니다.'}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>취소</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (pendingStatus) handleSetStatus(pendingStatus.id, pendingStatus.next);
+                setPendingStatus(null);
+              }}
+            >
+              {pendingStatus?.next === 'HIDDEN' ? '숨김' : '공개'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

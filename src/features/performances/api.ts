@@ -33,6 +33,13 @@ async function listPerformancesReal(): Promise<PerformanceListItem[]> {
   return dtos.map(toPerformanceListItem);
 }
 
+// SUPER 전용 — HIDDEN 포함 전체 공연. 공개 /performances 는 HIDDEN 을 제외하므로
+// 운영(공개/숨김 관리)용으로는 이 어드민 엔드포인트를 쓴다.
+async function listAdminPerformancesReal(): Promise<PerformanceListItem[]> {
+  const dtos = await api.get<PerformanceListItemDTO[]>('/admin/performances');
+  return dtos.map(toPerformanceListItem);
+}
+
 async function getPerformanceReal(id: number): Promise<Performance | null> {
   const dto = await api.get<PerformanceDTO>(`/performances/${id}`);
   return toPerformance(dto);
@@ -211,6 +218,9 @@ async function setLivePerformanceReal(performanceId: number | null): Promise<num
 // ---- 분기 export ----
 
 export const listPerformances = env.USE_MOCK ? mock.listPerformancesMock : listPerformancesReal;
+export const listAdminPerformances = env.USE_MOCK
+  ? mock.listPerformancesMock
+  : listAdminPerformancesReal;
 export const getPerformance = env.USE_MOCK ? mock.getPerformanceMock : getPerformanceReal;
 export const getMyPerformance = env.USE_MOCK ? mock.getMyPerformanceMock : getMyPerformanceReal;
 export const updateMyPerformance = env.USE_MOCK
