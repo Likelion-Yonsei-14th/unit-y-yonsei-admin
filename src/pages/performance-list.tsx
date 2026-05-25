@@ -317,10 +317,13 @@ export function PerformanceListPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filtered.map((p) => {
             const isLive = p.id === livePerformanceId;
-            // 아티스트 공연은 공식 초청 라인업 — 운영진이 임의 삭제하지 못하도록 삭제를 막는다.
+            // 아티스트 공연은 공식 초청 라인업 — 운영진이 임의로 내리거나 지우지 못하도록
+            // 숨김·삭제 버튼을 (비활성화가 아니라) 아예 렌더하지 않는다.
             const isArtist = p.performanceCategory === 'ARTIST';
             // 라이브 지정은 노천극장 아티스트 공연만. 해제는 위 배너에서 항상 가능하다.
             const canGoLive = canLive && isArtist && p.locationName === LIVE_VENUE_NAME;
+            const showVisibility = canManageVisibility && !isArtist;
+            const showDelete = canManage && !isArtist;
             return (
               <div
                 key={p.id}
@@ -359,9 +362,9 @@ export function PerformanceListPage() {
                     </div>
                   </div>
                 </Link>
-                {(canGoLive || canManage) && (
+                {(showVisibility || canGoLive || showDelete) && (
                   <div className="px-5 pb-4 flex flex-wrap items-center gap-2">
-                    {canManageVisibility && (
+                    {showVisibility && (
                       <button
                         type="button"
                         onClick={() =>
@@ -404,19 +407,16 @@ export function PerformanceListPage() {
                         {isLive ? '라이브 해제' : '라이브로 지정'}
                       </button>
                     )}
-                    {canManage && (
+                    {showDelete && (
                       <button
                         type="button"
                         onClick={() => setPendingDeleteId(p.id)}
-                        disabled={deletePerformance.isPending || isArtist}
+                        disabled={deletePerformance.isPending}
                         aria-label={`${p.performanceName} 공연 삭제`}
-                        title={isArtist ? '아티스트 공연은 삭제할 수 없습니다.' : undefined}
-                        className={`inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border border-destructive text-destructive text-sm font-medium hover:bg-ds-error-subtle transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
-                          canGoLive ? '' : 'flex-1'
-                        }`}
+                        className="inline-flex flex-1 items-center justify-center gap-1.5 px-3 py-2 rounded-lg border border-destructive text-destructive text-sm font-medium hover:bg-ds-error-subtle transition-colors disabled:cursor-not-allowed disabled:opacity-50"
                       >
                         <Trash2 size={16} />
-                        {canGoLive ? '' : '삭제'}
+                        삭제
                       </button>
                     )}
                   </div>
