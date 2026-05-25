@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ArrowLeft, Plus, Store } from 'lucide-react';
+import { ArrowLeft, Store } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   AlertDialog,
@@ -11,10 +11,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { useAuth } from '@/features/auth/hooks';
 import { useMyBooth, useSetBoothReservable, useUpdateMyBooth } from '@/features/booths/hooks';
 import { BoothInfoForm } from '@/features/booths/components/booth-info-form';
-import { BoothCreateForm } from '@/features/booths/components/booth-create-form';
 import { BoothStatusCards } from '@/features/booths/components/booth-status-cards';
 import { useMenus } from '@/features/menus/hooks';
 import { MenuListForm } from '@/features/menus/components/menu-list-form';
@@ -36,11 +34,8 @@ type View = 'cards' | 'booth-info' | 'menu';
 export function BoothManagement() {
   // 이 페이지는 RequirePermission('booth.update.own') 으로 가드 → Booth 역할만 진입.
   const { data: booth, isPending, isError } = useMyBooth();
-  const { can } = useAuth();
   const updateBooth = useUpdateMyBooth();
   const setReservable = useSetBoothReservable();
-  // 부스 생성(Super/Master) 모달 — 권한 있을 때만 진입 버튼 노출.
-  const [createOpen, setCreateOpen] = useState(false);
   // 메뉴 카드의 작성완료 뱃지용 — 음식 부스일 때만 조회한다.
   const menusQuery = useMenus(booth?.isFood ? booth.id : null);
 
@@ -114,18 +109,6 @@ export function BoothManagement() {
         </div>
 
         <div className="flex items-center gap-4">
-          {/* 부스 생성 — Super/Master(booth.create) 만. Booth 역할은 이 페이지에서 자기
-              부스만 다루므로 버튼이 렌더되지 않는다. */}
-          {can('booth.create') && (
-            <button
-              type="button"
-              onClick={() => setCreateOpen(true)}
-              className="flex items-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground rounded-lg hover:bg-ds-primary-pressed transition-colors duration-200"
-            >
-              <Plus size={18} />
-              부스 생성
-            </button>
-          )}
           <div className="flex items-center gap-2">
             <span className="text-sm text-muted-foreground">부스 운영 ON/OFF</span>
             <button
@@ -171,8 +154,6 @@ export function BoothManagement() {
       )}
 
       {view === 'menu' && <MenuListForm boothId={booth.id} />}
-
-      {can('booth.create') && <BoothCreateForm open={createOpen} onOpenChange={setCreateOpen} />}
 
       <AlertDialog
         open={pendingReservable !== null}

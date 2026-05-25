@@ -95,61 +95,6 @@ export interface BoothDTO {
 }
 
 /**
- * POST /admin/booths 요청 바디 (BoothCreateRequest).
- * 백엔드 @NotNull/@NotBlank: adminId·name·status·isFood·isReservable·isFoodTruck 필수.
- * 나머지(organization·date·openTime·closeTime·sector·location·instagram·account·
- * locationId·representativeMenus·notice·description)는 생략 가능(나중에 수정).
- */
-export interface BoothCreateDTO {
-  /** 부스를 배정할 어드민 계정 ID (필수). */
-  adminId: number;
-  name: string;
-  organization: string | null;
-  description: string | null;
-  date: number | null;
-  openTime: string | null;
-  closeTime: string | null;
-  sector: BoothSector | null;
-  location: number | null;
-  status: BoothStatus;
-  isFood: boolean;
-  instagram: string | null;
-  isReservable: boolean;
-  account: string | null;
-  locationId: number | null;
-  representativeMenus: string[];
-  /** 푸드트럭 여부 — 백엔드 @NotNull. */
-  isFoodTruck: boolean;
-  notice: string | null;
-}
-
-/**
- * 프론트 부스 생성 입력 모델. 폼이 채우기 쉬운 형태(adminId·name·status·isFood·
- * isReservable·isFoodTruck 만 필수, 나머지 optional)로 두고 fromBoothCreate 가
- * 누락 필드를 BoothCreateDTO 의 null/[] 로 정규화한다.
- */
-export interface BoothCreateInput {
-  adminId: number;
-  name: string;
-  status: BoothStatus;
-  isFood: boolean;
-  isReservable: boolean;
-  isFoodTruck: boolean;
-  organization?: string;
-  description?: string;
-  date?: number | null;
-  openTime?: string | null;
-  closeTime?: string | null;
-  sector?: BoothSector | null;
-  location?: number | null;
-  instagram?: string;
-  account?: string;
-  locationId?: number | null;
-  representativeMenus?: string[];
-  notice?: string | null;
-}
-
-/**
  * 부스 이미지 모델 (camelCase). 백엔드 BoothImageResponse 미러.
  * 이미지 바이너리는 uploads(presigned→S3)로 따로 올리고, 이 도메인은
  * imageUrl + displayOrder 참조만 CRUD 한다.

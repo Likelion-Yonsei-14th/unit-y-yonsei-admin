@@ -2,7 +2,6 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '@/features/auth/store';
 import {
   addBoothImage,
-  createBooth,
   deleteBooth,
   deleteBoothImage,
   getMyBooth,
@@ -12,7 +11,7 @@ import {
   updateBoothImage,
   updateMyBooth,
 } from './api';
-import type { Booth, BoothCreateInput, BoothImageCreateDTO, BoothImageUpdateDTO } from './types';
+import type { Booth, BoothImageCreateDTO, BoothImageUpdateDTO } from './types';
 
 /** 로그인한 Booth 역할 사용자의 자기 부스 조회. boothId 없으면 enabled=false. */
 export function useMyBooth() {
@@ -92,17 +91,6 @@ export function useDeleteBooth() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['booths'] });
       queryClient.invalidateQueries({ queryKey: ['reservations'] });
-    },
-  });
-}
-
-/** 신규 부스 생성 (POST /admin/booths). 성공 시 부스 목록 캐시 invalidate. */
-export function useCreateBooth() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (input: BoothCreateInput) => createBooth(input),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['booths'] });
     },
   });
 }

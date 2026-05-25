@@ -1,12 +1,4 @@
-import type {
-  Booth,
-  BoothCreateDTO,
-  BoothCreateInput,
-  BoothDTO,
-  BoothImage,
-  BoothImageDTO,
-  BoothUpdateDTO,
-} from './types';
+import type { Booth, BoothDTO, BoothImage, BoothImageDTO, BoothUpdateDTO } from './types';
 
 /** 'HH:mm:ss' / 'HH:mm' 어느 쪽이든 'HH:mm' 으로 정규화. null 통과. */
 const toHm = (t: string | null): string | null => (t ? t.slice(0, 5) : null);
@@ -37,32 +29,6 @@ export const toBooth = (d: BoothDTO): Booth => ({
   thumbnailUrl: d.thumbnailUrl ?? null,
   // 백엔드 tags 도입 전: 응답에 tags 없음 → 빈 배열로 방어.
   tags: d.tags ?? [],
-});
-
-/**
- * BoothCreateInput → POST /admin/booths 요청 바디.
- * 폼에서 비운 optional 필드는 null/빈배열로 정규화(백엔드는 생략값을 nullable 로 받음).
- * 빈 문자열도 null 로 보정해 update 흐름(fromBooth)과 동일한 round-trip 의미를 맞춘다.
- */
-export const fromBoothCreate = (input: BoothCreateInput): BoothCreateDTO => ({
-  adminId: input.adminId,
-  name: input.name,
-  organization: input.organization?.trim() ? input.organization : null,
-  description: input.description?.trim() ? input.description : null,
-  date: input.date ?? null,
-  openTime: input.openTime ?? null,
-  closeTime: input.closeTime ?? null,
-  sector: input.sector ?? null,
-  location: input.location ?? null,
-  status: input.status,
-  isFood: input.isFood,
-  instagram: input.instagram?.trim() ? input.instagram : null,
-  isReservable: input.isReservable,
-  account: input.account?.trim() ? input.account : null,
-  locationId: input.locationId ?? null,
-  representativeMenus: input.representativeMenus ?? [],
-  isFoodTruck: input.isFoodTruck,
-  notice: input.notice ?? null,
 });
 
 /** 백엔드 BoothImageResponse → 프론트 BoothImage 모델. */
