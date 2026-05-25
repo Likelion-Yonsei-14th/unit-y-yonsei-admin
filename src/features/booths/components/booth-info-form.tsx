@@ -144,18 +144,22 @@ function BoothImageGallery({ boothId, editable }: { boothId: number; editable: b
     // 업로드(S3) + add mutation(URL 저장) 전체 배치가 끝날 때까지 잠금을 유지한다.
     // finally 로 일찍 풀면 진행 중에 잠금이 풀려 연속/중복 업로드가 가능해진다.
     setIsUploading(true);
-    // displayOrder 베이스 = 현재 최대값 + 1(비어 있으면 1). 배치 내에서 성공 시마다
-    // 1씩 올려 백엔드 UNIQUE(booth_id, display_order) 충돌(409)을 피한다.
+    // displayOrder 베이스 = 현재 최대값 + 1(비어 있으면 1). 파일마다 1씩 올려
+    // 백엔드 UNIQUE(booth_id, display_order) 충돌(409)을 피한다.
     // images 는 mutation 중 refetch 돼도 이 클로저에선 갱신되지 않으므로 로컬로 증가시킨다.
     let nextOrder = (images ?? []).reduce((max, img) => Math.max(max, img.displayOrder), 0) + 1;
     let added = 0;
     let failed = 0;
     // 파일별 순차 처리 — 한 장이 실패해도 나머지는 계속(빠른 일괄 추가 친화).
     for (const file of files) {
+      // displayOrder 는 성공·실패와 무관하게 파일마다 전진시킨다. 한 장이 실패해도
+      // 다음 파일이 같은 슬롯을 재시도하지 않아, 한 번의 409/업로드 실패가 배치
+      // 전체로 번지지 않는다(실패로 생기는 빈 슬롯은 무해 — 백엔드는 ASC 정렬만).
+      const order = nextOrder;
+      nextOrder += 1;
       try {
         const imageUrl = await uploadImage(file, 'booth');
-        await addImage.mutateAsync({ boothId, input: { imageUrl, displayOrder: nextOrder } });
-        nextOrder += 1;
+        await addImage.mutateAsync({ boothId, input: { imageUrl, displayOrder: order } });
         added += 1;
       } catch {
         failed += 1;
