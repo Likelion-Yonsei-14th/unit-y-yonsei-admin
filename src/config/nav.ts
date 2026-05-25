@@ -10,6 +10,8 @@ import {
   Map,
   MessageCircle,
   Activity,
+  CalendarClock,
+  Smile,
 } from 'lucide-react';
 import type { Permission } from './permissions';
 
@@ -62,6 +64,13 @@ export const MAIN_NAV: NavItem[] = [
     requires: 'performance.read',
   },
   {
+    // 공연 시간표 + 라이브 무대(읽기 전용). 공연 조회 권한 재사용.
+    path: '/performance/schedule',
+    label: '공연 시간표',
+    icon: CalendarClock,
+    requires: 'performance.read',
+  },
+  {
     // 서버 health/에러/알림 모니터링. Super 전용(system.read) — 읽기 전용 관측 화면.
     path: '/system',
     label: '시스템 상태',
@@ -91,6 +100,12 @@ export const MAIN_NAV: NavItem[] = [
         label: '공연 후기 수합',
         icon: MessageCircle,
         requires: 'performancereview.read',
+      },
+      {
+        path: '/satisfaction-review',
+        label: '만족도 후기',
+        icon: Smile,
+        requires: 'satisfactionreview.read',
       },
     ],
   },

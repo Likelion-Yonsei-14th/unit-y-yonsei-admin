@@ -89,6 +89,8 @@ import { LoginPage } from '@/pages/login';
 import { NotFoundPage } from '@/pages/not-found';
 import { DashboardPage } from '@/pages/dashboard';
 import { SystemPage } from '@/pages/system-page';
+import { SatisfactionReviewPage } from '@/pages/satisfaction-review';
+import { PerformanceSchedulePage } from '@/pages/performance-schedule';
 
 /**
  * 라우터 정의.
@@ -178,6 +180,15 @@ export const router = createBrowserRouter([
         ),
       },
       {
+        // 공연 시간표 + 라이브 무대(읽기 전용). ':teamId' 보다 먼저 둬야 'schedule' 이 teamId 로 안 잡힌다.
+        path: 'performance/schedule',
+        element: (
+          <RequirePermission permission="performance.read">
+            <PerformanceSchedulePage />
+          </RequirePermission>
+        ),
+      },
+      {
         // Super/Master 가 리스트에서 선택한 팀 상세.
         path: 'performance/:teamId',
         element: (
@@ -219,6 +230,14 @@ export const router = createBrowserRouter([
         element: (
           <RequirePermission permission="performancereview.read">
             <PerformanceReviewPage />
+          </RequirePermission>
+        ),
+      },
+      {
+        path: 'satisfaction-review',
+        element: (
+          <RequirePermission permission="satisfactionreview.read">
+            <SatisfactionReviewPage />
           </RequirePermission>
         ),
       },
