@@ -23,6 +23,15 @@ async function uploadImageReal(file: File, domain: UploadDomain): Promise<string
     fileSize: upload.size,
   });
 
+  // 백엔드가 cacheControl 을 서명에 포함하므로, 누락되면 'Cache-Control: undefined' 가
+  // 전송돼 서명 불일치(SignatureDoesNotMatch)로 실패한다. 사전에 검증해 원인이
+  // 명확한 에러로 끊는다(백엔드 미배포/스펙 불일치 조기 발견).
+  if (!presigned.cacheControl) {
+    throw new Error(
+      'presigned URL 응답에 cacheControl 이 없습니다. 백엔드 배포/스펙을 확인하세요.',
+    );
+  }
+
   // S3 직접 PUT — api-client(공통 봉투·base URL)를 거치지 않는다.
   // presigned URL 이 content-type·cache-control 을 서명에 포함하므로, 두 헤더를
   // 서명된 값과 **정확히 일치**시켜 보낸다. 한 글자라도 다르면 S3 가
