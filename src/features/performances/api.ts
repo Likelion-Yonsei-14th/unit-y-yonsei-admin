@@ -3,17 +3,13 @@ import { env } from '@/lib/env';
 import type { ReviewDTO } from '@/features/performance-review/types';
 import {
   fromPerformancePatch,
-  toLiveStage,
   toMyCheerMessage,
   toPerformance,
   toPerformanceImage,
   toPerformanceListItem,
-  toPerformanceTimetableItem,
   toSetlistItem,
 } from './mapper';
 import type {
-  LiveStage,
-  LiveStageDTO,
   MyCheerMessage,
   Performance,
   PerformanceDTO,
@@ -22,8 +18,6 @@ import type {
   PerformanceImageDTO,
   PerformanceListItem,
   PerformanceListItemDTO,
-  PerformanceTimetableItem,
-  PerformanceTimetableItemDTO,
   SetlistCreateDTO,
   SetlistItem,
   SetlistItemDTO,
@@ -143,185 +137,7 @@ async function deleteSetlistItemReal(setlistId: number): Promise<void> {
   await api.delete(`/admin/performances/me/setlists/${setlistId}`);
 }
 
-// ---- 타임테이블 / 라이브 무대 (공개 read) ----
-// GET /performances/timetable    — 일차·시작 시간 순 정렬된 공연 타임테이블(PerformanceReadController).
-// GET /performances/live-stages  — 무대별 현재 진행 중인 공연(MANUAL=수동/AUTO=시간). 진행 중인 무대만.
-// 둘 다 LocalTime('HH:mm[:ss]') — 타임존 없는 벽시계 → 매퍼에서 문자열 'HH:mm' 로만 자른다.
-
-async function getPerformanceTimetableReal(): Promise<PerformanceTimetableItem[]> {
-  const dtos = await api.get<PerformanceTimetableItemDTO[]>('/performances/timetable');
-  return dtos.map(toPerformanceTimetableItem);
-}
-
-async function getLiveStagesReal(): Promise<LiveStage[]> {
-  const dtos = await api.get<LiveStageDTO[]>('/performances/live-stages');
-  return dtos.map(toLiveStage);
-}
-
-// ---- 타임테이블 / 라이브 무대 mock ----
-// 기존 mock 공연 시드(@/mocks/performances)를 건드리지 않고 이 도메인 안에서 닫는다.
-// 백엔드 응답 형태(DTO, hashtagN 개별 컬럼, 'HH:mm:ss')를 흉내내 매퍼를 그대로 태운다.
-
-const MOCK_TIMETABLE_DTO: PerformanceTimetableItemDTO[] = [
-  // 5/28 신촌(date=3)
-  {
-    id: 1,
-    performanceName: '멋쟁이사자처럼 연세대',
-    performanceDate: 3,
-    startTime: '14:00:00',
-    endTime: '14:30:00',
-    performanceCategory: 'CLUB',
-    lineupName: '멋쟁이사자처럼 연세대',
-    hashtag1: 'IT창업',
-    hashtag2: '밴드',
-    hashtag3: '열정',
-    youtubeUrl: 'https://youtube.com/likelion',
-    instagramUrl: 'https://instagram.com/likelion_yonsei',
-    performanceStatus: 'ONGOING',
-    locationId: 2,
-    locationName: '동문광장',
-  },
-  {
-    id: 5,
-    performanceName: '재즈필',
-    performanceDate: 3,
-    startTime: '16:30:00',
-    endTime: '16:45:00',
-    performanceCategory: 'CLUB',
-    lineupName: '재즈필',
-    hashtag1: '재즈',
-    hashtag2: '빅밴드',
-    hashtag3: null,
-    youtubeUrl: null,
-    instagramUrl: 'https://instagram.com/jazzfeel_yonsei',
-    performanceStatus: 'SCHEDULED',
-    locationId: 3,
-    locationName: '노천극장',
-  },
-  {
-    id: 16,
-    performanceName: 'BTL',
-    performanceDate: 3,
-    startTime: '18:00:00',
-    endTime: '18:30:00',
-    performanceCategory: 'ARTIST',
-    lineupName: 'BTL',
-    hashtag1: 'KPOP',
-    hashtag2: '댄스',
-    hashtag3: '메인무대',
-    youtubeUrl: 'https://youtube.com/btl_yonsei',
-    instagramUrl: 'https://instagram.com/btl_yonsei',
-    performanceStatus: 'SCHEDULED',
-    locationId: 3,
-    locationName: '노천극장',
-  },
-  // 5/29 신촌(date=4)
-  {
-    id: 10,
-    performanceName: '페르세우스',
-    performanceDate: 4,
-    startTime: '15:15:00',
-    endTime: '15:30:00',
-    performanceCategory: 'CLUB',
-    lineupName: '페르세우스',
-    hashtag1: '록밴드',
-    hashtag2: null,
-    hashtag3: null,
-    youtubeUrl: null,
-    instagramUrl: 'https://instagram.com/perseus_yonsei',
-    performanceStatus: 'SCHEDULED',
-    locationId: 2,
-    locationName: '동문광장',
-  },
-  {
-    id: 24,
-    performanceName: '연세 인디 콜라보',
-    performanceDate: 4,
-    startTime: '19:30:00',
-    endTime: '20:30:00',
-    performanceCategory: 'ARTIST',
-    lineupName: '연세 인디 콜라보',
-    hashtag1: '인디',
-    hashtag2: '콜라보',
-    hashtag3: null,
-    youtubeUrl: null,
-    instagramUrl: null,
-    performanceStatus: 'SCHEDULED',
-    locationId: 3,
-    locationName: '노천극장',
-  },
-  // 5/27 송도(date=2)
-  {
-    id: 4,
-    performanceName: 'Occlusion',
-    performanceDate: 2,
-    startTime: '21:30:00',
-    endTime: '22:00:00',
-    performanceCategory: 'CLUB',
-    lineupName: 'Occlusion',
-    hashtag1: '록밴드',
-    hashtag2: '잔나비',
-    hashtag3: null,
-    youtubeUrl: null,
-    instagramUrl: 'https://instagram.com/occlusion_band',
-    performanceStatus: 'SCHEDULED',
-    locationId: 1,
-    locationName: '언기도 앞',
-  },
-];
-
-const MOCK_LIVE_STAGES_DTO: LiveStageDTO[] = [
-  {
-    // 노천극장 — 운영진이 수동 지정한 아티스트 메인 무대.
-    source: 'MANUAL',
-    performance: {
-      id: 16,
-      performanceName: 'BTL',
-      startTime: '18:00:00',
-      endTime: '18:30:00',
-      performanceStatus: 'ONGOING',
-      performanceCategory: 'ARTIST',
-      hashtag1: 'KPOP',
-      hashtag2: '댄스',
-      hashtag3: '메인무대',
-      youtubeUrl: 'https://youtube.com/btl_yonsei',
-      instagramUrl: 'https://instagram.com/btl_yonsei',
-      locationId: 3,
-      locationName: '노천극장',
-    },
-  },
-  {
-    // 동문광장 — 시간 기반 자동 판정된 동아리 무대.
-    source: 'AUTO',
-    performance: {
-      id: 1,
-      performanceName: '멋쟁이사자처럼 연세대',
-      startTime: '14:00:00',
-      endTime: '14:30:00',
-      performanceStatus: 'ONGOING',
-      performanceCategory: 'CLUB',
-      hashtag1: 'IT창업',
-      hashtag2: '밴드',
-      hashtag3: '열정',
-      youtubeUrl: 'https://youtube.com/likelion',
-      instagramUrl: 'https://instagram.com/likelion_yonsei',
-      locationId: 2,
-      locationName: '동문광장',
-    },
-  },
-];
-
 const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
-
-async function getPerformanceTimetableMock(): Promise<PerformanceTimetableItem[]> {
-  await delay(180);
-  return MOCK_TIMETABLE_DTO.map(toPerformanceTimetableItem);
-}
-
-async function getLiveStagesMock(): Promise<LiveStage[]> {
-  await delay(150);
-  return MOCK_LIVE_STAGES_DTO.map(toLiveStage);
-}
 
 // ---- 공연 삭제 / 내 응원 메시지 mock ----
 // 기존 mock 공연 시드(@/mocks/performances)는 건드리지 않고 이 도메인 안에서 닫는다.
@@ -422,7 +238,3 @@ export const getLivePerformance = env.USE_MOCK
 export const setLivePerformance = env.USE_MOCK
   ? mock.setLivePerformanceMock
   : setLivePerformanceReal;
-export const getPerformanceTimetable = env.USE_MOCK
-  ? getPerformanceTimetableMock
-  : getPerformanceTimetableReal;
-export const getLiveStages = env.USE_MOCK ? getLiveStagesMock : getLiveStagesReal;
