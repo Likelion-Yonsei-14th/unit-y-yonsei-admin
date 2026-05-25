@@ -4,12 +4,17 @@
  * 명세가 확정되면 이 파일만 수정하면 됨.
  */
 
-/** 페이지네이션 응답 컨테이너 (백엔드가 이 형태로 줄 가능성 높음) */
+/**
+ * 백엔드 페이지네이션 응답 래퍼 (커스텀 Page 형태).
+ * 배열은 `content` 에 담기고, 봉투(ApiResponse) 의 `data` 가 이 객체가 된다.
+ */
 export interface PageResponse<T> {
-  items: T[];
-  total: number;
+  content: T[];
   page: number;
   size: number;
+  totalElements: number;
+  totalPages: number;
+  hasNext: boolean;
 }
 
 /** 단건 조회 응답 */

@@ -4,6 +4,7 @@ import { useAuthStore } from '@/features/auth/store';
 import { mockBoothsById } from '@/mocks/booth-profile';
 import { toBooth, fromBooth } from './mapper';
 import type { Booth, BoothDTO } from './types';
+import type { PageResponse } from '@/types/api';
 
 // ---- Mock ----
 
@@ -56,8 +57,22 @@ async function updateMyBoothReal(booth: Booth): Promise<Booth> {
 }
 
 async function listBoothsReal(): Promise<Booth[]> {
-  const dtos = await api.get<BoothDTO[]>('/booths');
-  return dtos.map(toBooth);
+  // 백엔드가 /booths 를 페이지 래퍼({ content, hasNext, ... })로 바꿨다. size 최대 100
+  // 이므로, 부스가 100개를 넘어도 누락이 없도록 hasNext 가 false 가 될 때까지 끝까지
+  // 순회해 전부 수집한다. (useBooths 소비처 — 대시보드·배치도 편집·예약 picker — 는
+  // 모두 페이지가 아니라 '전체 부스 배열'을 기대한다.)
+  const PAGE_SIZE = 100;
+  const all: BoothDTO[] = [];
+  let page = 0;
+  let hasNext = true;
+  while (hasNext) {
+    const res = await api.get<PageResponse<BoothDTO>>(`/booths?page=${page}&size=${PAGE_SIZE}`);
+    all.push(...res.content);
+    // content 가 비거나 hasNext=false 면 종료 — 잘못된 응답에서의 무한루프 방지.
+    hasNext = res.hasNext && res.content.length > 0;
+    page += 1;
+  }
+  return all.map(toBooth);
 }
 
 /** 부스 운영 ON/OFF 단건 변경 — 전체 PUT 과 별개의 전용 엔드포인트. */
