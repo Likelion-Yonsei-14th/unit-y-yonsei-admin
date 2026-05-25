@@ -5,6 +5,7 @@ import { MAIN_NAV, FOOTER_NAV, type NavItem } from '@/config/nav';
 import { useAuth, useLogout } from '@/features/auth/hooks';
 import { ROLE_LABEL } from '@/types/role';
 import { CsFloatingButton } from '@/components/common/cs-floating-button';
+import { OfflineBanner } from '@/components/common/offline-banner';
 import { ChangePasswordDialog } from '@/features/auth/components/change-password-dialog';
 
 /**
@@ -353,6 +354,8 @@ export function AppLayout() {
 
       {/* 메인 콘텐츠 */}
       <main className="flex-1 overflow-auto flex flex-col">
+        {/* 오프라인 배너 — 흐름 맨 위(sticky 상단바보다 위)라 상단바를 가리지 않는다. */}
+        <OfflineBanner />
         {/* 모바일 전용 상단 바 — drawer 열기 + 어드민 라벨. md 이상에서는 숨김. */}
         <div className="md:hidden sticky top-0 z-20 flex items-center gap-3 border-b border-border bg-background/95 px-4 py-3 backdrop-blur">
           <button

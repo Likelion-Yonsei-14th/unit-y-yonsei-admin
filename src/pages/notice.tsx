@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Upload, Plus, Trash2, Edit2, FileText, X, Pin } from 'lucide-react';
+import { Plus, Trash2, Edit2, FileText, Pin } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   useCreateNotice,
@@ -8,6 +8,10 @@ import {
   useUpdateNotice,
 } from '@/features/notices/hooks';
 import { uploadImage } from '@/features/uploads/api';
+import {
+  NoticeImagesField,
+  type DraftImage,
+} from '@/features/notices/components/notice-images-field';
 import {
   isNewNotice,
   NOTICE_CATEGORIES,
@@ -62,11 +66,9 @@ export function NoticePage() {
   const [contentDraft, setContentDraft] = useState('');
   const [categoryDraft, setCategoryDraft] = useState<NoticeCategory>('OTHERS');
   const [isPinnedDraft, setIsPinnedDraft] = useState(false);
-  // 새로 첨부한 파일 + 그 object URL(미리보기·cleanup 대상).
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
-  // 편집 진입 시 이미 저장돼 있던 이미지 URL. 새 파일을 올리지 않으면 그대로 유지된다.
-  const [existingImageUrl, setExistingImageUrl] = useState<string | null>(null);
+  // 폼에서 편집 중인 카드뉴스 이미지 목록(순서 = 카드 슬라이드 순서, 첫 장이 대표).
+  // 기존 URL 과 새로 고른 파일이 섞여 있고, 실제 업로드는 저장 시 일괄 처리한다.
+  const [images, setImages] = useState<DraftImage[]>([]);
   // 이미지 S3 업로드 진행 중 — 저장 버튼 잠금.
   const [isUploading, setIsUploading] = useState(false);
 
@@ -75,43 +77,19 @@ export function NoticePage() {
     if (editingNotice) {
       setTitleDraft(editingNotice.title);
       setContentDraft(editingNotice.content);
-      setExistingImageUrl(editingNotice.imageUrl || null);
+      const urls =
+        editingNotice.imageUrls ?? (editingNotice.imageUrl ? [editingNotice.imageUrl] : []);
+      setImages(urls.map((url): DraftImage => ({ kind: 'existing', url })));
       setIsPinnedDraft(editingNotice.isPinned);
       setCategoryDraft(editingNotice.category);
     } else {
       setTitleDraft('');
       setContentDraft('');
-      setExistingImageUrl(null);
+      setImages([]);
       setIsPinnedDraft(false);
       setCategoryDraft('OTHERS');
     }
-    // 새 파일·미리보기는 폼 진입 시 항상 초기화 — revoke 는 아래 cleanup effect 가 책임.
-    setImageFile(null);
-    setImagePreviewUrl(null);
   }, [editingNotice, showForm]);
-
-  // 현재 미리보기 URL 의 수명을 관리. URL 이 바뀌거나 컴포넌트가 unmount 되면 revoke.
-  // setState 를 cleanup 에서 호출하지 않아 StrictMode 의 mount/unmount 시뮬레이션에서도 안전.
-  useEffect(() => {
-    if (!imagePreviewUrl) return;
-    return () => {
-      URL.revokeObjectURL(imagePreviewUrl);
-    };
-  }, [imagePreviewUrl]);
-
-  const handleImageChange = (file: File | null) => {
-    setImageFile(file);
-    setImagePreviewUrl(file ? URL.createObjectURL(file) : null);
-    // 새 파일을 고르면 기존 이미지는 대체된다.
-    if (file) setExistingImageUrl(null);
-  };
-
-  /** 첨부 이미지 제거 — 신규 파일·기존 이미지 모두 비운다. */
-  const handleRemoveImage = () => {
-    setImageFile(null);
-    setImagePreviewUrl(null);
-    setExistingImageUrl(null);
-  };
 
   const handleCreateNew = () => {
     setEditingNotice(null);
@@ -147,18 +125,21 @@ export function NoticePage() {
       toast.error('제목과 본문을 모두 입력해주세요.');
       return;
     }
-    // 새 파일이 있으면 먼저 S3 업로드해 URL 을 얻고, 없으면 기존 URL 을 유지한다.
-    let imageUrl = existingImageUrl ?? '';
-    if (imageFile) {
-      setIsUploading(true);
-      try {
-        imageUrl = await uploadImage(imageFile, 'notice');
-      } catch {
-        toast.error('이미지 업로드에 실패했습니다. 잠시 후 다시 시도해주세요.');
-        return;
-      } finally {
-        setIsUploading(false);
-      }
+    // 새로 고른 파일만 S3 업로드하고, 기존 URL 은 그대로 둔 채 화면 순서대로 합친다.
+    let imageUrls: string[];
+    const hasNew = images.some((img) => img.kind === 'new');
+    if (hasNew) setIsUploading(true);
+    try {
+      imageUrls = await Promise.all(
+        images.map((img) =>
+          img.kind === 'new' ? uploadImage(img.file, 'notice') : Promise.resolve(img.url),
+        ),
+      );
+    } catch {
+      toast.error('이미지 업로드에 실패했습니다. 잠시 후 다시 시도해주세요.');
+      return;
+    } finally {
+      if (hasNew) setIsUploading(false);
     }
     const onAfter = () => {
       setShowForm(false);
@@ -170,7 +151,7 @@ export function NoticePage() {
           id: editingNotice.id,
           title: titleDraft.trim(),
           content: contentDraft.trim(),
-          imageUrl,
+          imageUrls,
           isPinned: isPinnedDraft,
           category: categoryDraft,
         },
@@ -187,7 +168,7 @@ export function NoticePage() {
         {
           title: titleDraft.trim(),
           content: contentDraft.trim(),
-          imageUrl,
+          imageUrls,
           isPinned: isPinnedDraft,
           category: categoryDraft,
         },
@@ -299,7 +280,7 @@ export function NoticePage() {
                       <td className="px-6 py-4 whitespace-nowrap">
                         {notice.hasImage ? (
                           <span className="inline-block px-3 py-1 bg-ds-success-subtle text-ds-success-pressed rounded-full text-xs font-medium">
-                            있음
+                            {notice.imageUrls?.length ?? 1}장
                           </span>
                         ) : (
                           <span className="inline-block px-3 py-1 bg-muted text-muted-foreground rounded-full text-xs font-medium">
@@ -401,40 +382,10 @@ export function NoticePage() {
             </div>
 
             <div>
-              {/* 그룹 타이틀 — file input 은 아래 wrapping label 안. */}
               <span className="block text-sm font-semibold text-foreground mb-2">
                 카드뉴스 이미지
               </span>
-              {imagePreviewUrl || existingImageUrl ? (
-                <div className="relative inline-block max-w-full overflow-hidden rounded-lg border border-border bg-muted">
-                  <img
-                    src={imagePreviewUrl ?? existingImageUrl ?? ''}
-                    alt="첨부된 카드뉴스 미리보기"
-                    className="block max-h-80 w-auto max-w-full object-contain"
-                  />
-                  <button
-                    type="button"
-                    onClick={handleRemoveImage}
-                    aria-label="이미지 제거"
-                    className="absolute right-2 top-2 inline-flex h-7 w-7 items-center justify-center rounded-full bg-background/90 text-muted-foreground shadow-sm hover:bg-background hover:text-destructive"
-                  >
-                    <X size={14} />
-                  </button>
-                </div>
-              ) : (
-                <label className="block cursor-pointer rounded-lg border-2 border-dashed border-ds-border-strong p-8 text-center transition-colors hover:border-primary">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={(e) => handleImageChange(e.target.files?.[0] ?? null)}
-                  />
-                  <Upload className="mx-auto mb-3 text-ds-text-disabled" size={32} />
-                  <p className="text-sm text-muted-foreground">
-                    인스타그램 카드뉴스 이미지를 업로드하세요
-                  </p>
-                </label>
-              )}
+              <NoticeImagesField images={images} onChange={setImages} disabled={isSaving} />
             </div>
 
             {/* 상단 고정 — 켜면 목록·앱 상단에 우선 노출. */}

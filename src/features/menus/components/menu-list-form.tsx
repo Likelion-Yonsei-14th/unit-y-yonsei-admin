@@ -383,6 +383,8 @@ export function MenuListForm({ boothId }: Props) {
                     <img
                       src={m.imageUrl}
                       alt=""
+                      loading="lazy"
+                      decoding="async"
                       className="h-10 w-10 shrink-0 rounded-md border border-border object-cover"
                     />
                   )}

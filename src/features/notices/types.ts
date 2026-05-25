@@ -34,10 +34,16 @@ export interface Notice {
   content: string;
   /** 등록일자 — yyyy-mm-dd. */
   date: string;
-  /** 카드뉴스 이미지 첨부 여부. imageUrl 이 비어 있지 않은지와 동치. */
+  /** 카드뉴스 이미지 첨부 여부. imageUrls 가 비어 있지 않은지와 동치. */
   hasImage: boolean;
-  /** 카드뉴스 이미지 URL. 없으면 빈 문자열. */
+  /** 대표(첫 장) 카드뉴스 이미지 URL — 목록 썸네일·공개 앱 호환용 파생값. 없으면 빈 문자열. */
   imageUrl: string;
+  /**
+   * 카드뉴스 이미지 URL 목록. 배열 순서 = 카드 슬라이드 순서, 첫 장이 대표.
+   * 레거시 단일-이미지 응답엔 없을 수 있어 옵셔널 — 매퍼/목 api 가 항상 채운다.
+   * 소비처는 `?? []` 로 안전 처리.
+   */
+  imageUrls?: string[];
   /** 상단 고정 여부 — 목록·앱 상단에 우선 노출. */
   isPinned: boolean;
   category: NoticeCategory;
@@ -57,7 +63,24 @@ export function isNewNotice(noticeDate: string, today: Date = new Date()): boole
   return diffDays >= 0 && diffDays <= 3;
 }
 
-// ---- 백엔드 DTO (NoticeResponse / NoticeCreateRequest, camelCase) ----
+// ---- 백엔드 DTO ----
+//
+// 백엔드 정본은 중첩 images[]. 응답(NoticeImageResponse)은 camelCase, 요청
+// (NoticeImageRequest)은 @JsonProperty 로 snake_case 라 읽기/쓰기 모양이 비대칭이다.
+
+/** 응답 중첩 이미지 (NoticeImageResponse, camelCase, displayOrder 순 정렬됨). */
+export interface NoticeImageDTO {
+  id?: number;
+  imageUrl: string;
+  displayOrder: number;
+  createdAt?: string;
+}
+
+/** 요청 중첩 이미지 (NoticeImageRequest, snake_case). display_order 는 1부터·중복 불가. */
+export interface NoticeImageWriteDTO {
+  image_url: string;
+  display_order: number;
+}
 
 /**
  * 백엔드 공지 응답 (NoticeResponse).
@@ -69,18 +92,27 @@ export interface NoticeDTO {
   content: string;
   date: string;
   hasImage: boolean;
+  /** 대표(첫 장) 이미지 URL = getPrimaryImageUrl(). images 의 첫 원소와 동일. */
   imageUrl: string;
+  /** 카드뉴스 이미지 목록(정본). 레거시 단일 응답이면 없을 수 있어 toNotice 가 imageUrl 로 폴백. */
+  images?: NoticeImageDTO[];
   isPinned: boolean;
   /** 백엔드는 자유 문자열. toNotice 가 NoticeCategory 로 정규화. */
   category: string;
 }
 
-/** 백엔드 공지 생성/수정 요청 (NoticeCreateRequest / NoticeUpdateRequest). */
+/**
+ * 백엔드 공지 생성/수정 요청 (NoticeCreateRequest / NoticeUpdateRequest).
+ * images 가 정본 — imageUrl(첫 장)·hasImage 는 서버의 레거시 fallback 용 파생값
+ * (images 가 있으면 서버가 무시한다).
+ */
 export interface NoticeWriteDTO {
   title: string;
   content: string;
   hasImage: boolean;
   imageUrl: string;
+  /** 카드뉴스 이미지 목록(정본, 순서 = display_order). */
+  images: NoticeImageWriteDTO[];
   isPinned: boolean;
   category: string;
 }
@@ -88,8 +120,8 @@ export interface NoticeWriteDTO {
 export interface CreateNoticeInput {
   title: string;
   content: string;
-  /** 업로드 완료된 이미지 URL. 없으면 빈 문자열. */
-  imageUrl: string;
+  /** 업로드 완료된 이미지 URL 목록(순서 = 카드 슬라이드 순서). 없으면 빈 배열. */
+  imageUrls: string[];
   isPinned: boolean;
   category: NoticeCategory;
 }
@@ -98,8 +130,8 @@ export interface UpdateNoticeInput {
   id: number;
   title: string;
   content: string;
-  /** 업로드 완료된 이미지 URL. 없으면 빈 문자열. */
-  imageUrl: string;
+  /** 업로드 완료된 이미지 URL 목록(순서 = 카드 슬라이드 순서). 없으면 빈 배열. */
+  imageUrls: string[];
   isPinned: boolean;
   category: NoticeCategory;
 }
