@@ -8,7 +8,6 @@ import { SpeedInsights } from '@vercel/speed-insights/react';
 import { queryClient } from '@/lib/query-client';
 import { router } from '@/routes';
 import { AuthInitializer } from '@/features/auth/auth-initializer';
-import { OfflineBanner } from '@/components/common/offline-banner';
 
 export default function App() {
   return (
@@ -17,7 +16,6 @@ export default function App() {
         <AuthInitializer>
           <RouterProvider router={router} />
         </AuthInitializer>
-        <OfflineBanner />
         <Toaster position="top-right" richColors />
         <ReactQueryDevtools initialIsOpen={false} />
       </QueryClientProvider>
