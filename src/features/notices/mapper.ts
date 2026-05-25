@@ -24,13 +24,17 @@ export const toNotice = (d: NoticeDTO): Notice => {
 };
 
 export const fromNotice = (
-  n: Pick<Notice, 'title' | 'content' | 'imageUrl' | 'isPinned' | 'category'>,
-): NoticeWriteDTO => ({
-  title: n.title,
-  content: n.content,
-  // 백엔드 hasImage 는 imageUrl 유무와 동치 — 매퍼가 단일 진실로 계산.
-  hasImage: n.imageUrl !== '',
-  imageUrl: n.imageUrl,
-  isPinned: n.isPinned,
-  category: n.category,
-});
+  n: Pick<Notice, 'title' | 'content' | 'imageUrls' | 'isPinned' | 'category'>,
+): NoticeWriteDTO => {
+  const imageUrls = n.imageUrls ?? [];
+  return {
+    title: n.title,
+    content: n.content,
+    imageUrls,
+    // imageUrl·hasImage 는 imageUrls 에서 파생 — 공개 앱 호환 superset.
+    imageUrl: imageUrls[0] ?? '',
+    hasImage: imageUrls.length > 0,
+    isPinned: n.isPinned,
+    category: n.category,
+  };
+};

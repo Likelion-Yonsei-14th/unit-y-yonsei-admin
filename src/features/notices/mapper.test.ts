@@ -90,11 +90,11 @@ describe('notices mapper', () => {
   });
 
   describe('fromNotice', () => {
-    it('이미지 URL 이 있으면 hasImage true 로 변환한다', () => {
+    it('imageUrls 를 순서대로 보내고 imageUrl(첫 장)·hasImage 를 파생한다', () => {
       const result = fromNotice({
         title: 't',
         content: 'c',
-        imageUrl: 'https://img/c.jpg',
+        imageUrls: ['https://img/c.jpg', 'https://img/d.jpg'],
         isPinned: true,
         category: 'BLUERUN',
       });
@@ -103,20 +103,23 @@ describe('notices mapper', () => {
         content: 'c',
         hasImage: true,
         imageUrl: 'https://img/c.jpg',
+        imageUrls: ['https://img/c.jpg', 'https://img/d.jpg'],
         isPinned: true,
         category: 'BLUERUN',
       });
     });
 
-    it('이미지 URL 이 비어 있으면 hasImage false', () => {
+    it('imageUrls 가 비어 있으면 hasImage false·imageUrl 빈 문자열', () => {
       const result = fromNotice({
         title: 't',
         content: 'c',
-        imageUrl: '',
+        imageUrls: [],
         isPinned: false,
         category: 'OTHERS',
       });
       expect(result.hasImage).toBe(false);
+      expect(result.imageUrl).toBe('');
+      expect(result.imageUrls).toEqual([]);
     });
   });
 });

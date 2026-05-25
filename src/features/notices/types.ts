@@ -86,12 +86,18 @@ export interface NoticeDTO {
   category: string;
 }
 
-/** 백엔드 공지 생성/수정 요청 (NoticeCreateRequest / NoticeUpdateRequest). */
+/**
+ * 백엔드 공지 생성/수정 요청 (NoticeCreateRequest / NoticeUpdateRequest).
+ * imageUrls 가 정본 — imageUrl(첫 장)·hasImage 는 공개 앱 호환을 위한 파생 superset.
+ * 서버는 imageUrls 만 읽고 imageUrl/hasImage 를 자체 파생해도 된다.
+ */
 export interface NoticeWriteDTO {
   title: string;
   content: string;
   hasImage: boolean;
   imageUrl: string;
+  /** 카드뉴스 이미지 URL 목록(순서 보존). 정본. */
+  imageUrls: string[];
   isPinned: boolean;
   category: string;
 }
@@ -99,8 +105,8 @@ export interface NoticeWriteDTO {
 export interface CreateNoticeInput {
   title: string;
   content: string;
-  /** 업로드 완료된 이미지 URL. 없으면 빈 문자열. */
-  imageUrl: string;
+  /** 업로드 완료된 이미지 URL 목록(순서 = 카드 슬라이드 순서). 없으면 빈 배열. */
+  imageUrls: string[];
   isPinned: boolean;
   category: NoticeCategory;
 }
@@ -109,8 +115,8 @@ export interface UpdateNoticeInput {
   id: number;
   title: string;
   content: string;
-  /** 업로드 완료된 이미지 URL. 없으면 빈 문자열. */
-  imageUrl: string;
+  /** 업로드 완료된 이미지 URL 목록(순서 = 카드 슬라이드 순서). 없으면 빈 배열. */
+  imageUrls: string[];
   isPinned: boolean;
   category: NoticeCategory;
 }
