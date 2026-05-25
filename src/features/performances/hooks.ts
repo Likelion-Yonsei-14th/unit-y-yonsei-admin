@@ -12,6 +12,7 @@ import {
   getPerformance,
   getPerformanceImages,
   getSetlist,
+  listAdminPerformances,
   listPerformances,
   setLivePerformance,
   updateMyPerformance,
@@ -21,6 +22,7 @@ import {
 import type {
   Performance,
   PerformanceImageCreateDTO,
+  PerformanceStatus,
   SetlistCreateDTO,
   SetlistUpdateDTO,
 } from './types';
@@ -30,10 +32,30 @@ import type {
  * Performer 도 read 권한은 있지만 리스트 페이지 진입 자체가 막혀 있으므로
  * 여기서는 별도 enabled 분기 없이 호출 시점만 신뢰.
  */
-export function usePerformances() {
+/**
+ * 공연 목록 조회.
+ * - 기본(공개): /performances — HIDDEN 제외. 대시보드 등 일반 용도.
+ * - admin:true + SUPER: /admin/performances — HIDDEN 포함 전체(공개/숨김 관리용).
+ *   admin 엔드포인트는 SUPER 전용이라, 비-SUPER 는 자동으로 공개 목록으로 폴백한다.
+ */
+export function usePerformances({ admin = false }: { admin?: boolean } = {}) {
+  const user = useAuthStore((s) => s.user);
+  const useAdmin = admin && user?.role === 'Super';
   return useQuery({
-    queryKey: ['performances'],
-    queryFn: listPerformances,
+    queryKey: ['performances', useAdmin ? 'admin' : 'public'],
+    queryFn: useAdmin ? listAdminPerformances : listPerformances,
+  });
+}
+
+/** 공연 공개/숨김 등 status 변경 (SUPER·MASTER). updatePerformance 의 status 전용 래퍼. */
+export function useSetPerformanceStatus() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, status }: { id: number; status: PerformanceStatus }) =>
+      updatePerformance(id, { performanceStatus: status }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['performances'] });
+    },
   });
 }
 
