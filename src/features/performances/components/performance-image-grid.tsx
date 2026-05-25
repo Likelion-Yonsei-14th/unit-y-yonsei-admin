@@ -79,6 +79,8 @@ export function PerformanceImageGrid({
                 <img
                   src={image.imageUrl}
                   alt="공연 이미지"
+                  loading="lazy"
+                  decoding="async"
                   className="w-full h-full object-cover"
                 />
 

@@ -200,7 +200,13 @@ function BoothImageGallery({ boothId, editable }: { boothId: number; editable: b
               key={img.id}
               className="relative aspect-[3/2] rounded-lg overflow-hidden border border-border group"
             >
-              <img src={img.imageUrl} alt="부스 이미지" className="w-full h-full object-cover" />
+              <img
+                src={img.imageUrl}
+                alt="부스 이미지"
+                loading="lazy"
+                decoding="async"
+                className="w-full h-full object-cover"
+              />
               {editable && (
                 <button
                   type="button"
