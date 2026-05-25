@@ -813,6 +813,11 @@ export function BoothInfoForm({
                 {location ?? '-'}
               </div>
             )}
+            {isEditing && (
+              <p className="mt-2 text-xs text-muted-foreground">
+                여러 번호에 걸친 부스는 시작 부스 번호 하나만 입력하세요. (예: 28~30번 → 28)
+              </p>
+            )}
           </div>
           <div>
             <label
