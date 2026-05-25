@@ -235,12 +235,12 @@ export function UserManagement() {
     });
   };
 
-  /** 생성 결과 표 전체를 "loginId,password,name" CSV 텍스트로 클립보드에 복사. */
+  /** 생성 결과 표 전체를 "loginId,password,name" 헤더 + 각 행의 CSV 텍스트로 클립보드에 복사. */
   const copyBulkResult = async () => {
     if (!bulkResult || bulkResult.successList.length === 0) return;
-    const text = bulkResult.successList
-      .map((row) => `${row.loginId},${row.password},${row.name}`)
-      .join('\n');
+    const header = 'loginId,password,name';
+    const rows = bulkResult.successList.map((row) => `${row.loginId},${row.password},${row.name}`);
+    const text = [header, ...rows].join('\n');
     try {
       await navigator.clipboard.writeText(text);
       toast.success('생성된 계정 목록을 복사했습니다.');
