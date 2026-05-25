@@ -4,6 +4,7 @@ import { useAuthStore } from '@/features/auth/store';
 import { mockBoothsById } from '@/mocks/booth-profile';
 import { toBooth, fromBooth } from './mapper';
 import type { Booth, BoothDTO } from './types';
+import type { PageResponse } from '@/types/api';
 
 // ---- Mock ----
 
@@ -56,8 +57,25 @@ async function updateMyBoothReal(booth: Booth): Promise<Booth> {
 }
 
 async function listBoothsReal(): Promise<Booth[]> {
-  const dtos = await api.get<BoothDTO[]>('/booths');
-  return dtos.map(toBooth);
+  // 백엔드가 /booths 를 페이지 래퍼({ content, hasNext, totalPages, ... })로 바꿨다.
+  // size 최대 100 이므로 부스가 100개를 넘어도 누락이 없도록 끝까지 순회해 전부 수집한다.
+  // (useBooths 소비처 — 대시보드·배치도 편집·예약 picker — 는 페이지가 아니라 '전체 부스
+  // 배열'을 기대한다.) hasNext 만 믿으면 백엔드가 page 를 무시/오계산할 때 무한 루프가
+  // 날 수 있어, totalPages 상한 + 하드 캡(MAX_PAGES) + content 빈 응답 가드로 폭주를 막는다.
+  const PAGE_SIZE = 100;
+  const MAX_PAGES = 50; // 안전 상한(부스 5000개) — 잘못된 응답에서의 요청 폭주 차단.
+  const all: BoothDTO[] = [];
+  let page = 0;
+  let totalPages = 1;
+  while (page < totalPages && page < MAX_PAGES) {
+    const res = await api.get<PageResponse<BoothDTO>>(`/booths?page=${page}&size=${PAGE_SIZE}`);
+    all.push(...res.content);
+    totalPages = res.totalPages;
+    // hasNext=false 거나 content 가 비면 즉시 종료 — 서버가 page 를 무시해도 멈춘다.
+    if (!res.hasNext || res.content.length === 0) break;
+    page += 1;
+  }
+  return all.map(toBooth);
 }
 
 /** 부스 운영 ON/OFF 단건 변경 — 전체 PUT 과 별개의 전용 엔드포인트. */

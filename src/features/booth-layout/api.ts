@@ -2,13 +2,8 @@ import { api } from '@/lib/api-client';
 import { env } from '@/lib/env';
 import { mapLocationStorage } from './storage';
 import { toMapLocation } from './mapper';
-import type {
-  MapLocation,
-  MapLocationDTO,
-  MapLocationType,
-  MapDisplayStatus,
-  PageResponse,
-} from './types';
+import type { MapLocation, MapLocationDTO, MapLocationType, MapDisplayStatus } from './types';
+import type { PageResponse } from '@/types/api';
 
 const BASE = '/admin/map-locations';
 

@@ -26,16 +26,6 @@ export interface MapSection {
   imageAspectRatio: number;
 }
 
-/** Spring Data PageResponse 미러 (목록 응답 래퍼). */
-export interface PageResponse<T> {
-  content: T[];
-  page: number;
-  size: number;
-  totalElements: number;
-  totalPages: number;
-  hasNext: boolean;
-}
-
 /** 백엔드 응답 DTO (MapLocationResponse). 좌표는 BigDecimal → JSON 에서 number|string. */
 export interface MapLocationDTO {
   id: number;
