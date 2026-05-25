@@ -140,24 +140,29 @@ function BoothImageGallery({ boothId, editable }: { boothId: number; editable: b
 
   const handleAdd = async (file: File | null) => {
     if (!file) return;
+    // 업로드(S3) + add mutation(URL 저장) 전체가 끝날 때까지 로딩/disabled 를 유지한다.
+    // finally 로 일찍 풀면 mutation 진행 중에 잠금이 풀려 연속/중복 업로드가 가능해진다.
     setIsUploading(true);
+    let imageUrl: string;
     try {
-      const imageUrl = await uploadImage(file, 'booth');
-      // displayOrder 는 현재 최대값 + 1. 비어 있으면 1 부터.
-      const nextOrder = (images ?? []).reduce((max, img) => Math.max(max, img.displayOrder), 0) + 1;
-      addImage.mutate(
-        { boothId, input: { imageUrl, displayOrder: nextOrder } },
-        {
-          onSuccess: () => toast.success('이미지를 추가했습니다.'),
-          // 409(displayOrder 중복) 등 — 상태코드 가리지 않고 토스트로만 안내.
-          onError: () => toast.error('이미지 추가에 실패했습니다. 잠시 후 다시 시도해주세요.'),
-        },
-      );
+      imageUrl = await uploadImage(file, 'booth');
     } catch {
       toast.error('이미지 업로드에 실패했습니다.');
-    } finally {
       setIsUploading(false);
+      return;
     }
+    // displayOrder 는 현재 최대값 + 1. 비어 있으면 1 부터.
+    const nextOrder = (images ?? []).reduce((max, img) => Math.max(max, img.displayOrder), 0) + 1;
+    addImage.mutate(
+      { boothId, input: { imageUrl, displayOrder: nextOrder } },
+      {
+        onSuccess: () => toast.success('이미지를 추가했습니다.'),
+        // 409(displayOrder 중복) 등 — 상태코드 가리지 않고 토스트로만 안내.
+        onError: () => toast.error('이미지 추가에 실패했습니다. 잠시 후 다시 시도해주세요.'),
+        // 업로드 잠금은 mutation 까지 끝난 시점에 해제.
+        onSettled: () => setIsUploading(false),
+      },
+    );
   };
 
   const handleConfirmDelete = () => {
