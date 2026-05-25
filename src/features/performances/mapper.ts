@@ -1,8 +1,10 @@
+import type { ReviewDTO } from '@/features/performance-review/types';
 import type {
   LiveStage,
   LiveStageDTO,
   LiveStagePerformance,
   LiveStagePerformanceDTO,
+  MyCheerMessage,
   Performance,
   PerformanceDTO,
   PerformanceImage,
@@ -112,6 +114,22 @@ const toLiveStagePerformance = (d: LiveStagePerformanceDTO): LiveStagePerformanc
 export const toLiveStage = (d: LiveStageDTO): LiveStage => ({
   source: d.source,
   performance: toLiveStagePerformance(d.performance),
+});
+
+/**
+ * 백엔드 PerformanceCheerMessageResponse(= performance-review ReviewDTO 와 동일 shape)
+ * → Performer 본인 화면용 MyCheerMessage. createdAt 은 타임존 변환 없이 문자열 그대로.
+ */
+export const toMyCheerMessage = (d: ReviewDTO): MyCheerMessage => ({
+  id: d.id,
+  performanceId: d.performanceId,
+  performanceName: d.performanceName,
+  setlistId: d.setlistId,
+  singerName: d.singerName,
+  songTitle: d.songTitle,
+  message: d.message,
+  displayStatus: d.displayStatus,
+  createdAt: d.createdAt,
 });
 
 export const toSetlistItem = (d: SetlistItemDTO): SetlistItem => ({

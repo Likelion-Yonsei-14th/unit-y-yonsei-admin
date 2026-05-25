@@ -1,8 +1,10 @@
 import { api, ApiError } from '@/lib/api-client';
 import { env } from '@/lib/env';
+import type { ReviewDTO } from '@/features/performance-review/types';
 import {
   fromPerformancePatch,
   toLiveStage,
+  toMyCheerMessage,
   toPerformance,
   toPerformanceImage,
   toPerformanceListItem,
@@ -12,6 +14,7 @@ import {
 import type {
   LiveStage,
   LiveStageDTO,
+  MyCheerMessage,
   Performance,
   PerformanceDTO,
   PerformanceImage,
@@ -77,6 +80,26 @@ async function updatePerformanceReal(
     fromPerformancePatch(patch),
   );
   return toPerformance(dto);
+}
+
+/**
+ * 운영진(SUPER/MASTER)이 임의 공연을 영구 삭제.
+ * 백엔드 PerformanceAdminController.deletePerformance(id) — body 없음, void(성공 시 빈 봉투).
+ * ⚠️ 이미지·셋리스트·공지 등 자식 데이터가 남아 있으면 400(P-009/P-010/P-011)으로 차단된다 —
+ * 호출부가 에러 메시지를 사용자에게 노출해 먼저 자식 데이터를 정리하도록 안내한다.
+ */
+async function deletePerformanceReal(id: number): Promise<void> {
+  await api.delete(`/admin/performances/${id}`);
+}
+
+/**
+ * 로그인한 Performer 본인 공연의 응원 메시지 목록(전 상태: VISIBLE/HIDDEN).
+ * 백엔드 PerformanceCheerMessageController.getMyPerformanceCheerMessages — camelCase 응답,
+ * 와이어 shape 는 performance-review ReviewDTO 와 동일.
+ */
+async function getMyCheerMessagesReal(): Promise<MyCheerMessage[]> {
+  const dtos = await api.get<ReviewDTO[]>('/admin/performances/me/cheer-messages');
+  return dtos.map(toMyCheerMessage);
 }
 
 async function getPerformanceImagesReal(performanceId: number): Promise<PerformanceImage[]> {
@@ -300,6 +323,57 @@ async function getLiveStagesMock(): Promise<LiveStage[]> {
   return MOCK_LIVE_STAGES_DTO.map(toLiveStage);
 }
 
+// ---- 공연 삭제 / 내 응원 메시지 mock ----
+// 기존 mock 공연 시드(@/mocks/performances)는 건드리지 않고 이 도메인 안에서 닫는다.
+
+/** 운영진 공연 삭제 mock — 서버 상태가 없으므로 성공만 흉내낸다(목록 invalidation 은 hook 책임). */
+async function deletePerformanceMock(_id: number): Promise<void> {
+  await delay(150);
+}
+
+// Performer 본인 응원 메시지 mock 시드 — 백엔드 응답(ReviewDTO shape, camelCase)을 흉내내
+// 매퍼를 그대로 태운다. createdAt 은 'yyyy-MM-dd HH:mm' 문자열(타임존 없음).
+const MOCK_MY_CHEER_MESSAGES_DTO: ReviewDTO[] = [
+  {
+    id: 1,
+    performanceId: 1,
+    performanceName: '멋쟁이사자처럼 연세대',
+    setlistId: 11,
+    singerName: '잔나비',
+    songTitle: '주저하는 연인들을 위해',
+    message: '무대 너무 좋았어요! 다음 곡도 기대할게요 🦁',
+    displayStatus: 'VISIBLE',
+    createdAt: '2026-05-28 14:12',
+  },
+  {
+    id: 2,
+    performanceId: 1,
+    performanceName: '멋쟁이사자처럼 연세대',
+    setlistId: null,
+    singerName: null,
+    songTitle: null,
+    message: '백양로에서 응원합니다 화이팅!',
+    displayStatus: 'VISIBLE',
+    createdAt: '2026-05-28 14:20',
+  },
+  {
+    id: 3,
+    performanceId: 1,
+    performanceName: '멋쟁이사자처럼 연세대',
+    setlistId: 12,
+    singerName: '혁오',
+    songTitle: 'TOMBOY',
+    message: '이 곡 라이브로 들으니 소름… 최고의 무대였습니다',
+    displayStatus: 'HIDDEN',
+    createdAt: '2026-05-28 14:35',
+  },
+];
+
+async function getMyCheerMessagesMock(): Promise<MyCheerMessage[]> {
+  await delay(180);
+  return MOCK_MY_CHEER_MESSAGES_DTO.map(toMyCheerMessage);
+}
+
 // ---- 라이브 수동지정 ----
 // GET  /home/current-performance — 공개 조회(HomeController). 수동 지정한 현재 라이브 공연. 미지정 시 data=null.
 // PUT  /admin/performances/live  — SUPER 전용 지정/교체/해제(LivePerformanceAdminController). performanceId=null 이면 해제.
@@ -327,6 +401,8 @@ export const updateMyPerformance = env.USE_MOCK
   ? mock.updateMyPerformanceMock
   : updateMyPerformanceReal;
 export const updatePerformance = env.USE_MOCK ? mock.updatePerformanceMock : updatePerformanceReal;
+export const deletePerformance = env.USE_MOCK ? deletePerformanceMock : deletePerformanceReal;
+export const getMyCheerMessages = env.USE_MOCK ? getMyCheerMessagesMock : getMyCheerMessagesReal;
 export const getPerformanceImages = env.USE_MOCK
   ? mock.getPerformanceImagesMock
   : getPerformanceImagesReal;

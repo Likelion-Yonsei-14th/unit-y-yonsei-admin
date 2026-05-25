@@ -3,10 +3,12 @@ import { useAuthStore } from '@/features/auth/store';
 import {
   addPerformanceImage,
   addSetlistItem,
+  deletePerformance,
   deletePerformanceImage,
   deleteSetlistItem,
   getLivePerformance,
   getLiveStages,
+  getMyCheerMessages,
   getMyPerformance,
   getPerformance,
   getPerformanceImages,
@@ -103,6 +105,40 @@ export function useUpdatePerformance(performanceId: number | null) {
       queryClient.setQueryData(['performances', data.id], data);
       queryClient.invalidateQueries({ queryKey: ['performances'], exact: true });
     },
+  });
+}
+
+/**
+ * 운영진(SUPER/MASTER) 의 공연 영구 삭제.
+ * `DELETE /admin/performances/{id}` — 성공 시 전체 목록을 invalidate 한다.
+ * (단건 캐시는 `removeQueries` 로 폐기 — 삭제된 공연을 stale 상태로 들고 있지 않도록.)
+ * 호출부가 mutate(id) 로 삭제할 공연 id 를 넘긴다. 자식 데이터 잔존 시 400 으로 reject 되며,
+ * 호출부가 그 에러 메시지를 사용자에게 노출한다.
+ */
+export function useDeletePerformance() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: number) => deletePerformance(id),
+    onSuccess: (_data, id) => {
+      queryClient.removeQueries({ queryKey: ['performances', id] });
+      queryClient.invalidateQueries({ queryKey: ['performances'], exact: true });
+    },
+  });
+}
+
+/**
+ * 로그인한 Performer 본인 공연의 응원 메시지 목록(전 상태).
+ * `useMyPerformance` 와 동일하게 역할만으로 게이트 — Super/Master/Booth 면 쿼리가 안 나간다.
+ * 읽기 전용이라 별도 폴링은 두지 않는다(목록·셋리스트와 동일 정책).
+ */
+export function useMyCheerMessages() {
+  const user = useAuthStore((s) => s.user);
+
+  return useQuery({
+    queryKey: ['performances', 'me', 'cheer-messages'],
+    queryFn: getMyCheerMessages,
+    enabled: user?.role === 'Performer',
   });
 }
 

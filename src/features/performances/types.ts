@@ -247,6 +247,32 @@ export interface PerformanceImageCreateDTO {
   imageType: PerformanceImageType;
 }
 
+// ---- 내 공연 응원 메시지 (GET /admin/performances/me/cheer-messages) ----
+// 백엔드 PerformanceCheerMessageResponse 미러 — 다른 도메인과 달리 camelCase 로 내려온다.
+// 와이어 DTO 는 performance-review 의 ReviewDTO 와 동일 shape 라 거기서 import 해 재사용한다
+// (api.ts 참고). 다만 performance-review 의 Review 모델은 어드민 모더레이션용으로
+// singerName 을 버리고 favoriteSong 으로 좁히므로, Performer 본인이 곡/가수/상태를 그대로
+// 보는 이 화면 전용으로 별도 모델을 둔다.
+export type CheerMessageDisplayStatus = 'VISIBLE' | 'HIDDEN';
+
+export interface MyCheerMessage {
+  id: number;
+  performanceId: number;
+  performanceName: string;
+  setlistId: number | null;
+  /** 응원이 향한 셋리스트 곡의 가수. 곡 미선택 메시지는 null. */
+  singerName: string | null;
+  /** 응원이 향한 셋리스트 곡명. 곡 미선택 메시지는 null. */
+  songTitle: string | null;
+  message: string;
+  displayStatus: CheerMessageDisplayStatus;
+  /**
+   * "yyyy-MM-dd HH:mm" — 백엔드 LocalDateTime(타임존 없음)을 그대로 받은 문자열.
+   * new Date() 로 파싱하면 로컬 타임존만큼 밀리므로 문자열 그대로 표시한다.
+   */
+  createdAt: string;
+}
+
 export interface SetlistCreateDTO {
   songTitle: string;
   singerName: string;
