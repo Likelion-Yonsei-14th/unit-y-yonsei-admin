@@ -2,8 +2,17 @@ import { api } from '@/lib/api-client';
 import { env } from '@/lib/env';
 import { useAuthStore } from '@/features/auth/store';
 import { mockBoothsById } from '@/mocks/booth-profile';
-import { toBooth, fromBooth } from './mapper';
-import type { Booth, BoothDTO } from './types';
+import { allocateMockBoothImageId, mockBoothImagesByBoothId } from '@/mocks/booth-images';
+import { fromBooth, fromBoothCreate, toBooth, toBoothImage } from './mapper';
+import type {
+  Booth,
+  BoothCreateInput,
+  BoothDTO,
+  BoothImage,
+  BoothImageCreateDTO,
+  BoothImageDTO,
+  BoothImageUpdateDTO,
+} from './types';
 import type { PageResponse } from '@/types/api';
 
 // ---- Mock ----
@@ -40,6 +49,91 @@ async function setBoothReservableMock(input: {
 async function deleteBoothMock(id: number): Promise<void> {
   await new Promise((r) => setTimeout(r, 100));
   delete mockBoothsById[id];
+}
+
+async function createBoothMock(input: BoothCreateInput): Promise<Booth> {
+  await new Promise((r) => setTimeout(r, 200));
+  // 새 부스 id 는 기존 최대값 + 1. 작성 완료 여부는 백엔드와 동일 규칙으로 계산.
+  const nextId = Math.max(0, ...Object.keys(mockBoothsById).map(Number)) + 1;
+  const profileComplete = Boolean(
+    input.organization?.trim() &&
+    input.date != null &&
+    input.openTime &&
+    input.closeTime &&
+    input.sector &&
+    input.location != null,
+  );
+  const created: Booth = {
+    id: nextId,
+    adminId: input.adminId,
+    name: input.name,
+    organization: input.organization ?? '',
+    description: input.description ?? '',
+    date: input.date ?? null,
+    openTime: input.openTime ?? null,
+    closeTime: input.closeTime ?? null,
+    sector: input.sector ?? null,
+    location: input.location ?? null,
+    status: input.status,
+    isFood: input.isFood,
+    isFoodTruck: input.isFoodTruck,
+    instagram: input.instagram ?? '',
+    isReservable: input.isReservable,
+    account: input.account ?? '',
+    notice: input.notice ?? null,
+    locationId: input.locationId ?? null,
+    profileComplete,
+    representativeMenus: input.representativeMenus ?? [],
+    waitingCount: 0,
+    thumbnailUrl: null,
+    tags: [],
+  };
+  mockBoothsById[nextId] = created;
+  return created;
+}
+
+const sortByDisplayOrder = (a: BoothImage, b: BoothImage) => a.displayOrder - b.displayOrder;
+
+async function listBoothImagesMock(boothId: number): Promise<BoothImage[]> {
+  await new Promise((r) => setTimeout(r, 100));
+  return [...(mockBoothImagesByBoothId[boothId] ?? [])].sort(sortByDisplayOrder);
+}
+
+async function addBoothImageMock(boothId: number, input: BoothImageCreateDTO): Promise<BoothImage> {
+  await new Promise((r) => setTimeout(r, 150));
+  const created: BoothImage = {
+    id: allocateMockBoothImageId(),
+    boothId,
+    imageUrl: input.imageUrl,
+    displayOrder: input.displayOrder,
+  };
+  (mockBoothImagesByBoothId[boothId] ??= []).push(created);
+  return created;
+}
+
+async function updateBoothImageMock(
+  boothId: number,
+  imageId: number,
+  patch: BoothImageUpdateDTO,
+): Promise<BoothImage> {
+  await new Promise((r) => setTimeout(r, 150));
+  const list = mockBoothImagesByBoothId[boothId] ?? [];
+  const idx = list.findIndex((img) => img.id === imageId);
+  if (idx === -1)
+    throw new Error(`mock: booth ${boothId} 이미지 ${imageId} 을(를) 찾을 수 없습니다.`);
+  const next: BoothImage = {
+    ...list[idx],
+    ...(patch.imageUrl !== undefined ? { imageUrl: patch.imageUrl } : {}),
+    ...(patch.displayOrder !== undefined ? { displayOrder: patch.displayOrder } : {}),
+  };
+  list[idx] = next;
+  return next;
+}
+
+async function deleteBoothImageMock(boothId: number, imageId: number): Promise<void> {
+  await new Promise((r) => setTimeout(r, 100));
+  const list = mockBoothImagesByBoothId[boothId];
+  if (list) mockBoothImagesByBoothId[boothId] = list.filter((img) => img.id !== imageId);
 }
 
 // ---- Real ----
@@ -97,6 +191,39 @@ async function deleteBoothReal(id: number): Promise<void> {
   await api.delete(`/admin/booths/${id}`);
 }
 
+/** 신규 부스 생성 — POST /admin/booths. 응답 BoothResponse 를 Booth 모델로 변환. */
+async function createBoothReal(input: BoothCreateInput): Promise<Booth> {
+  const dto = await api.post<BoothDTO>('/admin/booths', fromBoothCreate(input));
+  return toBooth(dto);
+}
+
+/** 부스 이미지 목록 — 공개 GET /booths/{boothId}/images (display_order 오름차순). */
+async function listBoothImagesReal(boothId: number): Promise<BoothImage[]> {
+  const dtos = await api.get<BoothImageDTO[]>(`/booths/${boothId}/images`);
+  return dtos.map(toBoothImage);
+}
+
+/** 부스 이미지 추가 — POST /admin/booths/{boothId}/images. imageUrl 은 uploads 로 먼저 업로드한 URL. */
+async function addBoothImageReal(boothId: number, input: BoothImageCreateDTO): Promise<BoothImage> {
+  const dto = await api.post<BoothImageDTO>(`/admin/booths/${boothId}/images`, input);
+  return toBoothImage(dto);
+}
+
+/** 부스 이미지 수정 — PATCH /admin/booths/{boothId}/images/{imageId} (부분 수정). */
+async function updateBoothImageReal(
+  boothId: number,
+  imageId: number,
+  patch: BoothImageUpdateDTO,
+): Promise<BoothImage> {
+  const dto = await api.patch<BoothImageDTO>(`/admin/booths/${boothId}/images/${imageId}`, patch);
+  return toBoothImage(dto);
+}
+
+/** 부스 이미지 삭제 — DELETE /admin/booths/{boothId}/images/{imageId}. */
+async function deleteBoothImageReal(boothId: number, imageId: number): Promise<void> {
+  await api.delete(`/admin/booths/${boothId}/images/${imageId}`);
+}
+
 // ---- 분기 export ----
 
 export const getMyBooth = env.USE_MOCK ? getMyBoothMock : getMyBoothReal;
@@ -104,3 +231,8 @@ export const updateMyBooth = env.USE_MOCK ? updateMyBoothMock : updateMyBoothRea
 export const listBooths = env.USE_MOCK ? listBoothsMock : listBoothsReal;
 export const setBoothReservable = env.USE_MOCK ? setBoothReservableMock : setBoothReservableReal;
 export const deleteBooth = env.USE_MOCK ? deleteBoothMock : deleteBoothReal;
+export const createBooth = env.USE_MOCK ? createBoothMock : createBoothReal;
+export const listBoothImages = env.USE_MOCK ? listBoothImagesMock : listBoothImagesReal;
+export const addBoothImage = env.USE_MOCK ? addBoothImageMock : addBoothImageReal;
+export const updateBoothImage = env.USE_MOCK ? updateBoothImageMock : updateBoothImageReal;
+export const deleteBoothImage = env.USE_MOCK ? deleteBoothImageMock : deleteBoothImageReal;

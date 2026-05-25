@@ -1,7 +1,18 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '@/features/auth/store';
-import { deleteBooth, getMyBooth, listBooths, setBoothReservable, updateMyBooth } from './api';
-import type { Booth } from './types';
+import {
+  addBoothImage,
+  createBooth,
+  deleteBooth,
+  deleteBoothImage,
+  getMyBooth,
+  listBooths,
+  listBoothImages,
+  setBoothReservable,
+  updateBoothImage,
+  updateMyBooth,
+} from './api';
+import type { Booth, BoothCreateInput, BoothImageCreateDTO, BoothImageUpdateDTO } from './types';
 
 /** 로그인한 Booth 역할 사용자의 자기 부스 조회. boothId 없으면 enabled=false. */
 export function useMyBooth() {
@@ -81,6 +92,72 @@ export function useDeleteBooth() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['booths'] });
       queryClient.invalidateQueries({ queryKey: ['reservations'] });
+    },
+  });
+}
+
+/** 신규 부스 생성 (POST /admin/booths). 성공 시 부스 목록 캐시 invalidate. */
+export function useCreateBooth() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: BoothCreateInput) => createBooth(input),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['booths'] });
+    },
+  });
+}
+
+/** 특정 부스의 이미지 목록 (display_order 오름차순). boothId 없으면 enabled=false. */
+export function useBoothImages(boothId: number | null | undefined) {
+  return useQuery({
+    queryKey: ['booth-images', boothId],
+    queryFn: () => listBoothImages(boothId as number),
+    enabled: boothId != null,
+  });
+}
+
+/**
+ * 부스 이미지 추가 (POST). imageUrl 은 uploads 의 uploadImage(file,'booth') 로
+ * 먼저 S3 에 올린 뒤 받은 공개 URL 을 넘긴다 — 이 mutation 은 URL 참조만 저장한다.
+ */
+export function useAddBoothImage() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ boothId, input }: { boothId: number; input: BoothImageCreateDTO }) =>
+      addBoothImage(boothId, input),
+    onSuccess: (_data, { boothId }) => {
+      queryClient.invalidateQueries({ queryKey: ['booth-images', boothId] });
+    },
+  });
+}
+
+/** 부스 이미지 수정 (PATCH — imageUrl/displayOrder 부분 수정). */
+export function useUpdateBoothImage() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      boothId,
+      imageId,
+      patch,
+    }: {
+      boothId: number;
+      imageId: number;
+      patch: BoothImageUpdateDTO;
+    }) => updateBoothImage(boothId, imageId, patch),
+    onSuccess: (_data, { boothId }) => {
+      queryClient.invalidateQueries({ queryKey: ['booth-images', boothId] });
+    },
+  });
+}
+
+/** 부스 이미지 삭제 (DELETE). */
+export function useDeleteBoothImage() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ boothId, imageId }: { boothId: number; imageId: number }) =>
+      deleteBoothImage(boothId, imageId),
+    onSuccess: (_data, { boothId }) => {
+      queryClient.invalidateQueries({ queryKey: ['booth-images', boothId] });
     },
   });
 }
