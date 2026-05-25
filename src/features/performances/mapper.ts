@@ -1,9 +1,5 @@
 import type { ReviewDTO } from '@/features/performance-review/types';
 import type {
-  LiveStage,
-  LiveStageDTO,
-  LiveStagePerformance,
-  LiveStagePerformanceDTO,
   MyCheerMessage,
   Performance,
   PerformanceDTO,
@@ -11,8 +7,6 @@ import type {
   PerformanceImageDTO,
   PerformanceListItem,
   PerformanceListItemDTO,
-  PerformanceTimetableItem,
-  PerformanceTimetableItemDTO,
   PerformanceUpdateDTO,
   SetlistItem,
   SetlistItemDTO,
@@ -77,43 +71,6 @@ export const toPerformanceImage = (d: PerformanceImageDTO): PerformanceImage => 
   imageUrl: d.imageUrl,
   imageOrder: d.imageOrder,
   imageType: d.imageType,
-});
-
-export const toPerformanceTimetableItem = (
-  d: PerformanceTimetableItemDTO,
-): PerformanceTimetableItem => ({
-  id: d.id,
-  performanceName: d.performanceName,
-  lineupName: d.lineupName ?? '',
-  performanceDate: d.performanceDate,
-  startTime: toHm(d.startTime),
-  endTime: toHm(d.endTime),
-  performanceCategory: d.performanceCategory,
-  performanceStatus: d.performanceStatus,
-  hashtags: hashtagsOf(d),
-  instagramUrl: d.instagramUrl ?? '',
-  youtubeUrl: d.youtubeUrl ?? '',
-  locationId: d.locationId,
-  locationName: d.locationName,
-});
-
-const toLiveStagePerformance = (d: LiveStagePerformanceDTO): LiveStagePerformance => ({
-  id: d.id,
-  performanceName: d.performanceName,
-  startTime: toHm(d.startTime),
-  endTime: toHm(d.endTime),
-  performanceStatus: d.performanceStatus,
-  performanceCategory: d.performanceCategory,
-  hashtags: hashtagsOf(d),
-  instagramUrl: d.instagramUrl ?? '',
-  youtubeUrl: d.youtubeUrl ?? '',
-  locationId: d.locationId,
-  locationName: d.locationName,
-});
-
-export const toLiveStage = (d: LiveStageDTO): LiveStage => ({
-  source: d.source,
-  performance: toLiveStagePerformance(d.performance),
 });
 
 /**

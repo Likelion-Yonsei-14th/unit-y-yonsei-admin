@@ -7,12 +7,10 @@ import {
   deletePerformanceImage,
   deleteSetlistItem,
   getLivePerformance,
-  getLiveStages,
   getMyCheerMessages,
   getMyPerformance,
   getPerformance,
   getPerformanceImages,
-  getPerformanceTimetable,
   getSetlist,
   listPerformances,
   setLivePerformance,
@@ -240,28 +238,5 @@ export function useSetLivePerformance() {
     onSuccess: (id) => {
       queryClient.setQueryData(['performances', 'live'], id);
     },
-  });
-}
-
-/**
- * 공연 타임테이블(GET /performances/timetable) — 일차·시작 시간 순 정렬 응답.
- * 정적인 일정표라 폴링하지 않는다(목록 페이지와 동일 정책).
- */
-export function usePerformanceTimetable() {
-  return useQuery({
-    queryKey: ['performances', 'timetable'],
-    queryFn: getPerformanceTimetable,
-  });
-}
-
-/**
- * 무대별 라이브 공연(GET /performances/live-stages) — 현재 진행 중인 무대만.
- * "지금" 상태가 시간에 따라 바뀌므로 15초 폴링으로 따라잡는다(useLivePerformance 와 동일).
- */
-export function useLiveStages() {
-  return useQuery({
-    queryKey: ['performances', 'live-stages'],
-    queryFn: getLiveStages,
-    refetchInterval: 15_000,
   });
 }

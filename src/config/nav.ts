@@ -10,7 +10,6 @@ import {
   Map,
   MessageCircle,
   Activity,
-  CalendarClock,
   Smile,
 } from 'lucide-react';
 import type { Permission } from './permissions';
@@ -61,13 +60,6 @@ export const MAIN_NAV: NavItem[] = [
     path: '/performance',
     label: '공연 정보 관리',
     icon: Music,
-    requires: 'performance.read',
-  },
-  {
-    // 공연 시간표 + 라이브 무대(읽기 전용). 공연 조회 권한 재사용.
-    path: '/performance/schedule',
-    label: '공연 시간표',
-    icon: CalendarClock,
     requires: 'performance.read',
   },
   {
