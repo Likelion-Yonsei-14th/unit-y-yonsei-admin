@@ -1,9 +1,9 @@
 import { NOTICE_CATEGORIES } from './types';
 import type { Notice, NoticeCategory, NoticeDTO, NoticeWriteDTO } from './types';
 
-/** 백엔드 category 문자열 → NoticeCategory. 모르는 값이면 general 로 폴백. */
+/** 백엔드 category 문자열 → NoticeCategory. 모르는 값이면 OTHERS 로 폴백. */
 function toNoticeCategory(value: string): NoticeCategory {
-  return value in NOTICE_CATEGORIES ? (value as NoticeCategory) : 'general';
+  return value in NOTICE_CATEGORIES ? (value as NoticeCategory) : 'OTHERS';
 }
 
 export const toNotice = (d: NoticeDTO): Notice => ({

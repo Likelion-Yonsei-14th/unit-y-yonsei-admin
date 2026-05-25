@@ -60,7 +60,7 @@ export function NoticePage() {
   // 폼 입력 상태 (controlled)
   const [titleDraft, setTitleDraft] = useState('');
   const [contentDraft, setContentDraft] = useState('');
-  const [categoryDraft, setCategoryDraft] = useState<NoticeCategory>('general');
+  const [categoryDraft, setCategoryDraft] = useState<NoticeCategory>('OTHERS');
   const [isPinnedDraft, setIsPinnedDraft] = useState(false);
   // 새로 첨부한 파일 + 그 object URL(미리보기·cleanup 대상).
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -83,7 +83,7 @@ export function NoticePage() {
       setContentDraft('');
       setExistingImageUrl(null);
       setIsPinnedDraft(false);
-      setCategoryDraft('general');
+      setCategoryDraft('OTHERS');
     }
     // 새 파일·미리보기는 폼 진입 시 항상 초기화 — revoke 는 아래 cleanup effect 가 책임.
     setImageFile(null);

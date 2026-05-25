@@ -24,7 +24,7 @@ export const mockNotices: Notice[] = [
     hasImage: true,
     imageUrl: 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=600&q=80',
     isPinned: true,
-    category: 'general',
+    category: 'OTHERS',
   },
   {
     id: 2,
@@ -35,7 +35,7 @@ export const mockNotices: Notice[] = [
     hasImage: false,
     imageUrl: '',
     isPinned: false,
-    category: 'songdo',
+    category: 'BOOTH',
   },
   {
     id: 3,
@@ -46,7 +46,7 @@ export const mockNotices: Notice[] = [
     hasImage: true,
     imageUrl: 'https://images.unsplash.com/photo-1501386761578-eac5c94b800a?w=600&q=80',
     isPinned: false,
-    category: 'sinchon_28',
+    category: 'PERFORMANCE',
   },
   {
     id: 4,
@@ -57,7 +57,7 @@ export const mockNotices: Notice[] = [
     hasImage: false,
     imageUrl: '',
     isPinned: false,
-    category: 'general',
+    category: 'OTHERS',
   },
   {
     id: 5,
@@ -68,7 +68,7 @@ export const mockNotices: Notice[] = [
     hasImage: false,
     imageUrl: '',
     isPinned: false,
-    category: 'general',
+    category: 'OTHERS',
   },
   {
     id: 6,
@@ -79,7 +79,7 @@ export const mockNotices: Notice[] = [
     hasImage: true,
     imageUrl: 'https://images.unsplash.com/photo-1517457373958-b7bdd4587205?w=600&q=80',
     isPinned: true,
-    category: 'general',
+    category: 'OTHERS',
   },
   {
     id: 7,
@@ -90,7 +90,7 @@ export const mockNotices: Notice[] = [
     hasImage: false,
     imageUrl: '',
     isPinned: false,
-    category: 'songdo',
+    category: 'BOOTH',
   },
   {
     id: 8,
@@ -101,7 +101,7 @@ export const mockNotices: Notice[] = [
     hasImage: false,
     imageUrl: '',
     isPinned: false,
-    category: 'general',
+    category: 'OTHERS',
   },
   {
     id: 9,
@@ -112,7 +112,7 @@ export const mockNotices: Notice[] = [
     hasImage: true,
     imageUrl: 'https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=600&q=80',
     isPinned: false,
-    category: 'sinchon_28',
+    category: 'PERFORMANCE',
   },
   {
     id: 10,
@@ -123,7 +123,7 @@ export const mockNotices: Notice[] = [
     hasImage: true,
     imageUrl: 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=600&q=80',
     isPinned: false,
-    category: 'sinchon_29',
+    category: 'PERFORMANCE',
   },
   {
     id: 11,
@@ -134,7 +134,7 @@ export const mockNotices: Notice[] = [
     hasImage: false,
     imageUrl: '',
     isPinned: false,
-    category: 'general',
+    category: 'OTHERS',
   },
   {
     id: 12,
@@ -145,6 +145,6 @@ export const mockNotices: Notice[] = [
     hasImage: false,
     imageUrl: '',
     isPinned: false,
-    category: 'bluerun',
+    category: 'BLUERUN',
   },
 ];

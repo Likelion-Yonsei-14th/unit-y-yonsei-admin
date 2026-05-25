@@ -5,16 +5,14 @@
  */
 
 /**
- * 공지 분류. 운영진 피드백으로 도입된 날짜+장소 기반 태그.
- * 모바일 웹사이트와 통일.
+ * 공지 분류. 백엔드 `NoticeCategory` enum 과 1:1 — 값(대문자)을 그대로 송수신한다.
  *
- * - general:    날짜·장소 무관 공통 안내(전체 일정·안전 수칙·결제 등)
- * - bluerun:    5/26 블루런
- * - songdo:     5/27 송도(언기도 앞)
- * - sinchon_28: 5/28 신촌(동문광장·노천극장)
- * - sinchon_29: 5/29 신촌(동문광장·노천극장)
+ * - BLUERUN:     블루런 관련
+ * - BOOTH:       부스 관련
+ * - PERFORMANCE: 공연 관련
+ * - OTHERS:      그 외 공통 안내(기본값)
  */
-export type NoticeCategory = 'general' | 'bluerun' | 'songdo' | 'sinchon_28' | 'sinchon_29';
+export type NoticeCategory = 'BLUERUN' | 'BOOTH' | 'PERFORMANCE' | 'OTHERS';
 
 export interface NoticeCategoryMeta {
   id: NoticeCategory;
@@ -24,11 +22,10 @@ export interface NoticeCategoryMeta {
 }
 
 export const NOTICE_CATEGORIES: Record<NoticeCategory, NoticeCategoryMeta> = {
-  general: { id: 'general', label: '전체', tone: 'neutral' },
-  bluerun: { id: 'bluerun', label: '5/26 블루런', tone: 'secondary' },
-  songdo: { id: 'songdo', label: '5/27 송도', tone: 'warning' },
-  sinchon_28: { id: 'sinchon_28', label: '5/28 신촌', tone: 'primary' },
-  sinchon_29: { id: 'sinchon_29', label: '5/29 신촌', tone: 'success' },
+  BLUERUN: { id: 'BLUERUN', label: '블루런', tone: 'secondary' },
+  BOOTH: { id: 'BOOTH', label: '부스', tone: 'primary' },
+  PERFORMANCE: { id: 'PERFORMANCE', label: '공연', tone: 'success' },
+  OTHERS: { id: 'OTHERS', label: '기타', tone: 'neutral' },
 };
 
 export interface Notice {

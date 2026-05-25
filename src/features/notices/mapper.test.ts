@@ -13,7 +13,7 @@ describe('notices mapper', () => {
         hasImage: true,
         imageUrl: 'https://img/x.jpg',
         isPinned: true,
-        category: 'songdo',
+        category: 'BOOTH',
       };
       expect(toNotice(dto)).toEqual({
         id: 7,
@@ -23,7 +23,7 @@ describe('notices mapper', () => {
         hasImage: true,
         imageUrl: 'https://img/x.jpg',
         isPinned: true,
-        category: 'songdo',
+        category: 'BOOTH',
       });
     });
 
@@ -36,7 +36,7 @@ describe('notices mapper', () => {
         hasImage: false,
         imageUrl: '',
         isPinned: false,
-        category: 'general',
+        category: 'OTHERS',
       };
       expect(toNotice(dto).hasImage).toBe(false);
     });
@@ -50,12 +50,12 @@ describe('notices mapper', () => {
         hasImage: false,
         imageUrl: '',
         isPinned: false,
-        category: 'sinchon_29',
+        category: 'PERFORMANCE',
       };
-      expect(toNotice(dto).category).toBe('sinchon_29');
+      expect(toNotice(dto).category).toBe('PERFORMANCE');
     });
 
-    it('알 수 없는 category 문자열은 general 로 폴백', () => {
+    it('알 수 없는 category 문자열은 OTHERS 로 폴백', () => {
       const dto: NoticeDTO = {
         id: 3,
         title: 't',
@@ -66,7 +66,7 @@ describe('notices mapper', () => {
         isPinned: false,
         category: 'unknown_value',
       };
-      expect(toNotice(dto).category).toBe('general');
+      expect(toNotice(dto).category).toBe('OTHERS');
     });
   });
 
@@ -77,7 +77,7 @@ describe('notices mapper', () => {
         content: 'c',
         imageUrl: 'https://img/c.jpg',
         isPinned: true,
-        category: 'bluerun',
+        category: 'BLUERUN',
       });
       expect(result).toEqual({
         title: 't',
@@ -85,7 +85,7 @@ describe('notices mapper', () => {
         hasImage: true,
         imageUrl: 'https://img/c.jpg',
         isPinned: true,
-        category: 'bluerun',
+        category: 'BLUERUN',
       });
     });
 
@@ -95,7 +95,7 @@ describe('notices mapper', () => {
         content: 'c',
         imageUrl: '',
         isPinned: false,
-        category: 'general',
+        category: 'OTHERS',
       });
       expect(result.hasImage).toBe(false);
     });
