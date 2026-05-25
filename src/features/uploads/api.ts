@@ -19,11 +19,16 @@ async function uploadImageReal(file: File, domain: UploadDomain): Promise<string
   });
 
   // S3 직접 PUT — api-client(공통 봉투·base URL)를 거치지 않는다.
-  // presigned URL 이 content-type 을 서명에 포함하므로 헤더를 파일 타입과 일치시킨다.
+  // presigned URL 이 content-type·cache-control 을 서명에 포함하므로, 두 헤더를
+  // 서명된 값과 **정확히 일치**시켜 보낸다. 한 글자라도 다르면 S3 가
+  // SignatureDoesNotMatch 로 업로드를 거부한다.
   const res = await fetch(presigned.uploadUrl, {
     method: 'PUT',
     body: file,
-    headers: { 'Content-Type': file.type },
+    headers: {
+      'Content-Type': file.type,
+      'Cache-Control': presigned.cacheControl,
+    },
   });
   if (!res.ok) {
     throw new Error(`이미지 업로드에 실패했습니다 (S3 ${res.status})`);

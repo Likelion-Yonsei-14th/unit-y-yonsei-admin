@@ -17,4 +17,10 @@ export interface PresignedUrlDTO {
   objectKey: string;
   /** 업로드 후 DB 에 저장 / 화면에 표시할 공개 이미지 URL. */
   imageUrl: string;
+  /**
+   * S3 PUT 시 `Cache-Control` 헤더로 **그대로 echo** 해야 하는 값.
+   * 백엔드가 이 값을 presign 서명에 포함하므로, 1글자라도 다르면 S3 가
+   * SignatureDoesNotMatch 로 업로드를 거부한다. (예: "public, max-age=31536000, immutable")
+   */
+  cacheControl: string;
 }
