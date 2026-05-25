@@ -365,6 +365,10 @@ export function PerformanceListPage() {
                       <button
                         type="button"
                         onClick={() =>
+                          // 알려진 한계(코파일럿 리뷰, 보류): HIDDEN 이 performanceStatus enum 에
+                          // 섞여 있어 숨기면 이전 생명주기 상태(ENDED/CANCELED 등)가 소실되고,
+                          // 공개 시 SCHEDULED 로 강제된다. 정식 해결은 백엔드 visibility 필드 분리.
+                          // 축제 임박이라 보류 — 추후 리팩터 대상.
                           setPendingStatus({
                             id: p.id,
                             next: p.performanceStatus === 'HIDDEN' ? 'SCHEDULED' : 'HIDDEN',
