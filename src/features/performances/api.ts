@@ -40,9 +40,22 @@ async function listAdminPerformancesReal(): Promise<PerformanceListItem[]> {
   return dtos.map(toPerformanceListItem);
 }
 
+// 운영진(SUPER/MASTER) 상세 조회 — 어드민 전용 엔드포인트라 HIDDEN(미발행) 공연도 200 으로 반환.
+// 공개 GET /performances/{id} 는 HIDDEN 을 404(P-006)로 숨기므로, HIDDEN 을 포함하는
+// 어드민 목록(listAdminPerformances)에서 클릭해 상세·수정폼을 채우는 데는 부적합했다.
+// 응답 스키마는 공개 상세와 동일 → toPerformance 매퍼 그대로 재사용.
 async function getPerformanceReal(id: number): Promise<Performance | null> {
-  const dto = await api.get<PerformanceDTO>(`/performances/${id}`);
-  return toPerformance(dto);
+  try {
+    const dto = await api.get<PerformanceDTO>(`/admin/performances/${id}`);
+    return toPerformance(dto);
+  } catch (err) {
+    // 존재하지 않는 공연(404/P-006)은 에러가 아니라 "빈 상태"로 — 반환 타입(`| null`)·
+    // mock(`?? null`)·UI 의 `if (!data)` 빈 상태와 일치시킨다. getMyPerformanceReal 동일 패턴.
+    if (err instanceof ApiError && (err.status === 404 || err.body?.code === 'P-006')) {
+      return null;
+    }
+    throw err;
+  }
 }
 
 async function getMyPerformanceReal(): Promise<Performance | null> {

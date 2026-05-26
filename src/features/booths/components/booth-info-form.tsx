@@ -21,6 +21,7 @@ import {
   useUpdateBoothImage,
 } from '@/features/booths/hooks';
 import { uploadImage } from '@/features/uploads/api';
+import { ApiError } from '@/lib/api-client';
 
 const SECTORS: BoothSector[] = ['한글탑', '백양로', '송도'];
 const STATUSES: BoothStatus[] = ['OPEN', 'PREPARING', 'CLOSED'];
@@ -488,8 +489,14 @@ export function BoothInfoForm({
         // 카드 화면으로 복귀 — 갱신된 작성완료 상태를 바로 보여준다.
         onSaved();
       },
-      onError: () => {
-        toast.error('저장에 실패했습니다. 잠시 후 다시 시도해주세요.');
+      onError: (err) => {
+        // 서버가 준 구체 사유(중복 이름·검증 실패 등)를 그대로 노출 — 운영진이 무엇을
+        // 고쳐야 하는지 알 수 있게. performance-list 의 삭제 onError 와 동일 패턴.
+        const message =
+          err instanceof ApiError && err.message
+            ? err.message
+            : '저장에 실패했습니다. 잠시 후 다시 시도해주세요.';
+        toast.error(message);
       },
     });
   };
