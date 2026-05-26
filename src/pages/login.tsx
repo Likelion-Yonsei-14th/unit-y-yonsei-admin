@@ -42,12 +42,6 @@ export function LoginPage() {
             decoding="async"
             className="mx-auto mt-4 w-40 h-auto"
           />
-          {/* 공식 런칭 전 운영진 정보 입력 기간 안내 — 빨간 굵은 글씨로 강조. */}
-          <p className="ds-body-2 mt-4 font-bold text-destructive">
-            *현재는 부스·공연 운영진의 정보 입력 기간입니다.
-            <br />
-            공식 런칭 24일까지 조금만 기다려주세요 🍬
-          </p>
         </div>
 
         {/* 운영진 가입 안내 — 계정이 없는 운영진을 위한 진입 동선. 로그인 폼 위로 노출. */}
