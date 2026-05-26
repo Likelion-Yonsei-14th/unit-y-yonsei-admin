@@ -62,6 +62,26 @@ function RequiredMark() {
   );
 }
 
+/**
+ * '진짜 미작성' 부스 판별 — 부스 운영자가 아직 한 번도 프로필을 저장하지 않은 상태.
+ * profileComplete 만으로는 isFood(체험/음식)를 이미 저장해둔 미완성 부스의 값까지 덮으므로
+ * (Copilot 리뷰), 운영자가 입력하는 핵심 필드가 전부 비어있을 때만 미작성으로 본다.
+ * name·date·sector·location 은 어드민이 부스 생성 시 미리 지정할 수 있어 신호에서 제외.
+ */
+function isBoothUntouched(b: Booth): boolean {
+  return (
+    !b.profileComplete &&
+    !b.organization &&
+    !b.description &&
+    !b.openTime &&
+    !b.closeTime &&
+    !b.account &&
+    !b.instagram &&
+    b.representativeMenus.length === 0 &&
+    b.tags.length === 0
+  );
+}
+
 interface Props {
   booth: Booth;
   /** 부스 운영 ON/OFF 토글 — 페이지 헤더와 폼이 같은 값을 가리키므로 controlled. */
@@ -408,9 +428,9 @@ export function BoothInfoForm({
   const [sector, setSector] = useState<BoothSector | null>(booth.sector);
   const [location, setLocation] = useState(booth.location);
   const [status, setStatus] = useState<BoothStatus>(booth.status);
-  // 대동제 부스 대부분이 주점(음식·주류 판매)이라, 아직 작성 전(profileComplete=false)인 부스는
-  // '음식 부스'(주점)를 기본 선택으로 둔다. 작성 완료된 부스는 저장된 값을 그대로 보존.
-  const [isFood, setIsFood] = useState(booth.profileComplete ? booth.isFood : true);
+  // 대동제 부스 대부분이 주점(음식·주류 판매)이라, 운영자가 한 번도 작성 안 한 부스는
+  // '음식 부스'(주점)를 기본 선택으로 둔다. 저장값이 있는 부스는 booth.isFood 를 그대로 반영.
+  const [isFood, setIsFood] = useState(isBoothUntouched(booth) ? true : booth.isFood);
   const [instagram, setInstagram] = useState(booth.instagram);
   const [account, setAccount] = useState(booth.account);
   // 대표 메뉴는 쉼표 구분 텍스트 입력. 편집 중 자유로운 쉼표/공백 입력을 위해
@@ -432,7 +452,7 @@ export function BoothInfoForm({
     setSector(booth.sector);
     setLocation(booth.location);
     setStatus(booth.status);
-    setIsFood(booth.profileComplete ? booth.isFood : true);
+    setIsFood(isBoothUntouched(booth) ? true : booth.isFood);
     setInstagram(booth.instagram);
     setAccount(booth.account);
     setRepresentativeMenusRaw(booth.representativeMenus.join(', '));
