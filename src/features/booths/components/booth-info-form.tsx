@@ -408,7 +408,9 @@ export function BoothInfoForm({
   const [sector, setSector] = useState<BoothSector | null>(booth.sector);
   const [location, setLocation] = useState(booth.location);
   const [status, setStatus] = useState<BoothStatus>(booth.status);
-  const [isFood, setIsFood] = useState(booth.isFood);
+  // 대동제 부스 대부분이 주점(음식·주류 판매)이라, 아직 작성 전(profileComplete=false)인 부스는
+  // '음식 부스'(주점)를 기본 선택으로 둔다. 작성 완료된 부스는 저장된 값을 그대로 보존.
+  const [isFood, setIsFood] = useState(booth.profileComplete ? booth.isFood : true);
   const [instagram, setInstagram] = useState(booth.instagram);
   const [account, setAccount] = useState(booth.account);
   // 대표 메뉴는 쉼표 구분 텍스트 입력. 편집 중 자유로운 쉼표/공백 입력을 위해
@@ -430,7 +432,7 @@ export function BoothInfoForm({
     setSector(booth.sector);
     setLocation(booth.location);
     setStatus(booth.status);
-    setIsFood(booth.isFood);
+    setIsFood(booth.profileComplete ? booth.isFood : true);
     setInstagram(booth.instagram);
     setAccount(booth.account);
     setRepresentativeMenusRaw(booth.representativeMenus.join(', '));
