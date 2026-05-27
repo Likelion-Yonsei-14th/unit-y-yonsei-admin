@@ -1,4 +1,4 @@
-import globalImg from '@/assets/map/global-section.jpg';
+import globalImg from '@/assets/map/global-section.png';
 import baekyangImg from '@/assets/map/baekyang-section.png';
 import hangeulImg from '@/assets/map/hangeul-section.png';
 import type { BoothSector } from '@/features/booths/types';
@@ -10,7 +10,7 @@ export const MAP_SECTIONS: Record<MapSectionId, MapSection> = {
     label: '국제캠',
     imageUrl: globalImg,
     validDates: ['2026-05-27'],
-    imageAspectRatio: 3420 / 2728,
+    imageAspectRatio: 2266 / 2104,
   },
   baekyang: {
     id: 'baekyang',
