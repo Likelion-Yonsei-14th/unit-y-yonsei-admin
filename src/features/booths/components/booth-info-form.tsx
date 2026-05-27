@@ -431,6 +431,9 @@ export function BoothInfoForm({
   // 대동제 부스 대부분이 주점(음식·주류 판매)이라, 운영자가 한 번도 작성 안 한 부스는
   // '음식 부스'(주점)를 기본 선택으로 둔다. 저장값이 있는 부스는 booth.isFood 를 그대로 반영.
   const [isFood, setIsFood] = useState(isBoothUntouched(booth) ? true : booth.isFood);
+  // 푸드트럭(외부 업체 운영)은 음식 부스의 하위 구분(isFood=true 전제). 저장값 그대로 —
+  // 미작성 부스는 음식 부스(주점, isFoodTruck=false)가 기본이라 booth.isFoodTruck(=false) 로 충분.
+  const [isFoodTruck, setIsFoodTruck] = useState(booth.isFoodTruck);
   const [instagram, setInstagram] = useState(booth.instagram);
   const [account, setAccount] = useState(booth.account);
   // 대표 메뉴는 쉼표 구분 텍스트 입력. 편집 중 자유로운 쉼표/공백 입력을 위해
@@ -453,6 +456,7 @@ export function BoothInfoForm({
     setLocation(booth.location);
     setStatus(booth.status);
     setIsFood(isBoothUntouched(booth) ? true : booth.isFood);
+    setIsFoodTruck(booth.isFoodTruck);
     setInstagram(booth.instagram);
     setAccount(booth.account);
     setRepresentativeMenusRaw(booth.representativeMenus.join(', '));
@@ -498,6 +502,7 @@ export function BoothInfoForm({
       location,
       status,
       isFood,
+      isFoodTruck,
       instagram,
       account,
       isReservable,
@@ -555,16 +560,20 @@ export function BoothInfoForm({
         {/*
           음식/체험 구분 + 부스 운영 ON/OFF — 부스 타입을 먼저 정해야 아래 라벨
           (소개글/체험 설명, 대표 메뉴/체험명)이 맞는 맥락으로 노출되므로 폼 최상단.
-          음식 / 체험은 상호 배타(둘 중 하나) — `isFood` boolean 으로 인코딩.
+          음식 부스 / 푸드트럭 / 체험은 상호 배타 — isFood + isFoodTruck 두 boolean 으로 인코딩
+          (음식 부스=isFood&&!isFoodTruck, 푸드트럭=isFood&&isFoodTruck, 체험=!isFood).
         */}
         <div className="flex flex-wrap items-center gap-x-8 gap-y-4">
           <div className="flex items-center gap-5">
             <label className="flex cursor-pointer items-center gap-2">
               <input
                 type="checkbox"
-                checked={isFood === true}
+                checked={isFood && !isFoodTruck}
                 disabled={!isEditing}
-                onChange={() => setIsFood(true)}
+                onChange={() => {
+                  setIsFood(true);
+                  setIsFoodTruck(false);
+                }}
                 className="h-4 w-4 accent-primary disabled:cursor-not-allowed disabled:opacity-50"
               />
               <span className="text-sm font-semibold text-foreground">
@@ -575,9 +584,28 @@ export function BoothInfoForm({
             <label className="flex cursor-pointer items-center gap-2">
               <input
                 type="checkbox"
-                checked={isFood === false}
+                checked={isFood && isFoodTruck}
                 disabled={!isEditing}
-                onChange={() => setIsFood(false)}
+                onChange={() => {
+                  setIsFood(true);
+                  setIsFoodTruck(true);
+                }}
+                className="h-4 w-4 accent-primary disabled:cursor-not-allowed disabled:opacity-50"
+              />
+              <span className="text-sm font-semibold text-foreground">
+                푸드트럭
+                <RequiredMark />
+              </span>
+            </label>
+            <label className="flex cursor-pointer items-center gap-2">
+              <input
+                type="checkbox"
+                checked={!isFood}
+                disabled={!isEditing}
+                onChange={() => {
+                  setIsFood(false);
+                  setIsFoodTruck(false);
+                }}
                 className="h-4 w-4 accent-primary disabled:cursor-not-allowed disabled:opacity-50"
               />
               <span className="text-sm font-semibold text-foreground">
