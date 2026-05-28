@@ -64,10 +64,30 @@ const listMapLocationsMock = async (): Promise<MapLocation[]> =>
     .map(toMapLocation);
 
 const listMapLocationsReal = async (): Promise<MapLocation[]> => {
-  // 슬롯 100개 미만 전제 — 단일 페이지 조회.
-  const qs = new URLSearchParams({ location_type: 'BOOTH', size: '100' }).toString();
-  const page = await api.get<PageResponse<MapLocationDTO>>(`${BASE}?${qs}`);
-  return page.content.map(toMapLocation);
+  // 페이지 순회로 BOOTH 타입 슬롯을 전부 수집한다.
+  // 단일 페이지(size=100) 고정 조회로는 슬롯이 100개를 넘는 순간 뒤쪽 location 이
+  // 누락돼, 그걸 가리키는 부스가 FE 에서 "미배치"로 보이고 editor 가 거부하는
+  // 침묵 버그가 났었다(booths.api.ts:listBoothsReal 와 동일한 패턴 적용).
+  // hasNext 만 믿으면 백엔드가 page 를 무시/오계산할 때 무한 루프가 가능하므로
+  // totalPages 상한 + MAX_PAGES 하드 캡 + content 빈 응답 가드를 함께 둔다.
+  const PAGE_SIZE = 100;
+  const MAX_PAGES = 50; // 안전 상한(슬롯 5000개) — 잘못된 응답에서의 요청 폭주 차단.
+  const all: MapLocationDTO[] = [];
+  let page = 0;
+  let totalPages = 1;
+  while (page < totalPages && page < MAX_PAGES) {
+    const qs = new URLSearchParams({
+      location_type: 'BOOTH',
+      size: String(PAGE_SIZE),
+      page: String(page),
+    }).toString();
+    const res = await api.get<PageResponse<MapLocationDTO>>(`${BASE}?${qs}`);
+    all.push(...res.content);
+    totalPages = res.totalPages;
+    if (!res.hasNext || res.content.length === 0) break;
+    page += 1;
+  }
+  return all.map(toMapLocation);
 };
 
 export const listMapLocations = env.USE_MOCK ? listMapLocationsMock : listMapLocationsReal;
