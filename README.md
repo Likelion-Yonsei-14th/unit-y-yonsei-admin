@@ -123,6 +123,7 @@ pnpm e2e:reservation     # 예약 E2E
 
 | 파일 | 내용 |
 |---|---|
+| [`CASE_STUDIES.md`](./CASE_STUDIES.md) | 설계·디버깅 케이스 스터디 — 왜 이렇게 만들었나 (STAR) |
 | [`ARCHITECTURE.md`](./ARCHITECTURE.md) | 전체 설계 (레이어, 인증/권한, 데이터 흐름) |
 | [`API_SPEC.md`](./API_SPEC.md) | 프론트가 기대하는 API 계약 |
 | [`backend.md`](./backend.md) | 백엔드 연동/스펙 메모 |
